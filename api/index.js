@@ -10,7 +10,7 @@
 
 
 require('dotenv').config();
-require('./db');
+require('../db');
 const express = require('express');
 const userAuthRouter = require('../src/routes/website/user-auth-routes');
 const hostAuthRouter = require('../src/routes/website/host-auth-routes');
