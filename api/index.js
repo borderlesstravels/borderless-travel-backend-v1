@@ -1,4 +1,4 @@
-const app = require('../app');
-module.exports = {
-  app
-}
+exports.app = require('../app');
+// module.exports = {
+//   app
+// }
