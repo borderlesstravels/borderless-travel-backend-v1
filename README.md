@@ -53,6 +53,7 @@ Get inside the directory and Install Packages
 cd borderless-travel-backend-v1
 npm install
 npm install -g pm2
+npm install pm2-logrotate
 ```
 
 ## Step 3: Add the PORT number
