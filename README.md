@@ -50,12 +50,14 @@ git clone https://github.com/borderlesstravels/borderless-travel-backend-v1.git
 Get inside the directory and Install Packages
 
 ```bash
-cd nodejs-on-ec2
+cd borderless-travel-backend-v1
 npm install
+npm install -g pm2
 ```
 
-Start the application
-To start the application, run the below command in the terminal:
+## Step 3: Add the PORT number
+
+## Step 4: Run the app
 
 ```bash
 npm start
