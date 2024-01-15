@@ -47,9 +47,9 @@ app.use('/api/v1/admin-app/booking-management', bookingManagementRouter);
 app.use('/api/v1/flight', flightRouter);
 app.use('/api/v1/website', websiteRouter);
 
-app.get("/", (req, res)=>{
-  res.send("ApI is up and running")
-})
+app.get('/', (req, res) => {
+  res.send('Hello, server is running');
+});
 
 app.listen(process.env.APP_PORT || 7000, () => {
   connect();
