@@ -62,4 +62,5 @@ npm install pm2-logrotate
 
 ```bash
 npm start
+pm2 start app.js --name borderless-travels
 ```
