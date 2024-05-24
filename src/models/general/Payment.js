@@ -41,6 +41,7 @@ const paymentSchema = new Schema({
   },
   status: {
     type: String,
+    default: 'completed',
   },
   action_by: {
     type: String,

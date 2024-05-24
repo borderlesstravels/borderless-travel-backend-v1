@@ -7,6 +7,9 @@ const User = require('../../models/user/User');
 
 const fetchAirports = async (req, res) => {
   const response = await fetcher_tiqwa('/airports');
+  if (!response) {
+    return sendError(res, 'Unable to complete this request at this time. Please try again.');
+  }
   if (response?.status === 200) {
     return res.status(response.status).json({ success: true, data: response.data });
   } else {
@@ -16,6 +19,9 @@ const fetchAirports = async (req, res) => {
 
 const fetchAirlines = async (req, res) => {
   const response = await fetcher_tiqwa('/airports');
+  if (!response) {
+    return sendError(res, 'Unable to complete this request at this time. Please try again.');
+  }
   if (response?.status === 200) {
     return res.status(response.status).json({ success: true, data: response.data });
   } else {
@@ -25,6 +31,9 @@ const fetchAirlines = async (req, res) => {
 
 const flightOfferSearch = async (req, res, next) => {
   const response = await fetcher_tiqwa('/flight/search', req.body);
+  if (!response) {
+    return sendError(res, 'Unable to complete this request at this time. Please try again.');
+  }
   if (response?.status === 200) {
     return res.status(response.status).json({ success: true, data: response.data });
   } else {
@@ -35,6 +44,9 @@ const flightOfferSearch = async (req, res, next) => {
 const confirmFlightPrice = async (req, res) => {
   const { flight_id } = req.params;
   const response = await fetcher_tiqwa(`/flight/confirm_price/${flight_id}`);
+  if (!response) {
+    return sendError(res, 'Unable to complete this request at this time.Please try again.');
+  }
   if (response?.status === 200) {
     return res.status(response.status).json({ success: true, data: response.data });
   } else {
@@ -61,10 +73,8 @@ const bookFlight = async (req, res) => {
     passengers: passenger_details,
   });
   if (!response) {
-    return sendError(res, 'Unable to complete this request at this time.Please try again.');
+    return sendError(res, 'Unable to complete this request at this time. Please try again.');
   }
-  log('response', response);
-  log('response data', response.data);
   if (response?.status === 200) {
     const contactDetails = new FlightBooking({
       owner: user._id,
@@ -89,7 +99,7 @@ const bookFlight = async (req, res) => {
   }
 };
 
-const fetchFlightBooking = async (req, res) => {
+const fetchFlightTicketDetails = async (req, res) => {
   const { booking_reference } = req.params;
   const response = await fetcher_tiqwa(`/flight/${booking_reference}`);
   log('response', response.data);
@@ -106,5 +116,5 @@ module.exports = {
   flightOfferSearch,
   confirmFlightPrice,
   bookFlight,
-  fetchFlightBooking,
+  fetchFlightTicketDetails,
 };

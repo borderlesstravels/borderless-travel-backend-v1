@@ -2,6 +2,7 @@ const { log } = require('console');
 const { sender_tiqwa } = require('../../api/sender');
 const { sendError } = require('../../utils/helpers');
 const FlightBooking = require('../../models/general/FlightBooking');
+const { fetcher_tiqwa } = require('../../api/fetcher');
 
 //
 // Flight
@@ -37,12 +38,28 @@ const singleFlightBooking = async (req, res) => {
   }
 };
 
+const fetchTicketDetails = async (req, res) => {
+  const { booking_reference } = req.params;
+  const response = await fetcher_tiqwa(`/flight/${booking_reference}`);
+  log('response', response.data);
+  if (!response) {
+    return sendError(res, 'Unable to complete this request at this time. Please try again.');
+  }
+  if (response?.status === 200) {
+    return res.status(response.status).json({ success: true, data: response.data });
+  } else {
+    return sendError(res, response?.data.message, response?.status);
+  }
+};
+
 const issueFlightTicket = async (req, res) => {
   const adminId = req.id;
   const { booking_reference } = req.params;
 
   const response = await sender_tiqwa(`/flight/pay/${booking_reference}`);
-
+  if (!response) {
+    return sendError(res, 'Unable to complete this request at this time. Please try again.');
+  }
   if (response?.status === 200) {
     try {
       const booking = await FlightBooking.findOne({ booking_reference });
@@ -67,7 +84,9 @@ const cancelFlightTicket = async (req, res) => {
   const { booking_reference } = req.params;
   const adminId = req.id;
   const response = await sender_tiqwa(`/flight/${booking_reference}`);
-
+  if (!response) {
+    return sendError(res, 'Unable to complete this request at this time. Please try again.');
+  }
   console.log(response.status);
 
   if (response?.status === 200) {
@@ -97,6 +116,7 @@ const cancelFlightTicket = async (req, res) => {
 module.exports = {
   allFlightBookings,
   singleFlightBooking,
+  fetchTicketDetails,
   issueFlightTicket,
   cancelFlightTicket,
 };

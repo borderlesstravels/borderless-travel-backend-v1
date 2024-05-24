@@ -15,6 +15,7 @@ const emailSubManagementRouter = require('./src/routes/admin/admin-email-sub-rou
 const careerManagementRouter = require('./src/routes/admin/admin-career-routes');
 const bookingManagementRouter = require('./src/routes/admin/admin-booking-routes');
 const contentManagementRouter = require('./src/routes/admin/admin-content-routes');
+const inventoryRouter = require('./src/routes/admin/admin-inventory-routes');
 const appSettingsRouter = require('./src/routes/admin/admin-app-settings-routes');
 
 const flightRouter = require('./src/routes/website/flight-routes');
@@ -63,6 +64,7 @@ app.use('/api/v1/admin-app/email-subscription', emailSubManagementRouter);
 app.use('/api/v1/admin-app/career-management', careerManagementRouter);
 app.use('/api/v1/admin-app/booking-management', bookingManagementRouter);
 app.use('/api/v1/admin-app/content-management', contentManagementRouter);
+app.use('/api/v1/admin-app/inventory-management', inventoryRouter);
 app.use('/api/v1/admin-app/app-settings', appSettingsRouter);
 
 app.use('/api/v1/flight', flightRouter);

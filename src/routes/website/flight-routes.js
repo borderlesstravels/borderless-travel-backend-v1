@@ -5,7 +5,7 @@ const {
   flightOfferSearch,
   confirmFlightPrice,
   bookFlight,
-  fetchFlightBooking,
+  fetchFlightTicketDetails,
 } = require('../../controllers/website/flight-controller');
 const {
   validateFlightOfferSearch,
@@ -27,6 +27,10 @@ router.post(
   verifyUserLoginToken,
   bookFlight
 );
-router.get('/flight-booking-details/:booking_reference', verifyUserLoginToken, fetchFlightBooking);
+router.get(
+  '/flight-booking-details/:booking_reference',
+  verifyUserLoginToken,
+  fetchFlightTicketDetails
+);
 
 module.exports = router;
