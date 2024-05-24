@@ -37,7 +37,7 @@ const contentSchema = new Schema({
   },
   published_date: {
     type: Date,
-    default: Date.now,
+    required: true,
   },
   created_at: {
     type: Date,

@@ -1,7 +1,7 @@
 const { log } = require('console');
 const { fetcher_tiqwa } = require('../../api/fetcher');
 const { sender_tiqwa } = require('../../api/sender');
-const FlightBooking = require('../../models/FlightBooking');
+const FlightBooking = require('../../models/general/FlightBooking');
 const { sendError } = require('../../utils/helpers');
 const User = require('../../models/user/User');
 
@@ -48,26 +48,27 @@ const bookFlight = async (req, res) => {
   const { contact_details, passenger_details } = req.body;
   const client = passenger_details[0];
 
-  log('flight_id', flight_id);
-  log('client', client);
-
   const user = await User.findById(userId, '-password');
+  if (!user) return sendError(res, 'Sorry, please login first');
   let userBookings = user.bookings;
   userBookings = userBookings + 1;
   console.log(user);
-  if (!user) return sendError(res, 'Sorry, please login first');
 
   if (user.email !== contact_details.c_email)
-    return sendError(res, 'Sorry, kindly use your registered email address fr easy circle backs');
+    return sendError(res, 'Sorry, kindly use your registered email address for easy circle backs');
 
   const response = await sender_tiqwa(`/flight/book/${flight_id}`, {
     passengers: passenger_details,
   });
-  log('response', response.data);
+  if (!response) {
+    return sendError(res, 'Unable to complete this request at this time.Please try again.');
+  }
+  log('response', response);
+  log('response data', response.data);
   if (response?.status === 200) {
     const contactDetails = new FlightBooking({
       owner: user._id,
-      type: 'flight',
+      flight_id: flight_id,
       client_name: `${client.first_name} ${client.last_name}`,
       client_phone: client.phone_number,
       client_email: client.email,
@@ -77,6 +78,7 @@ const bookFlight = async (req, res) => {
       contact_relationship: contact_details.c_relationship_to_p,
       price: response?.data?.amount,
       status: response?.data?.status,
+      payment_status: 'pending',
       booking_reference: response?.data.reference,
     });
     await contactDetails.save();
@@ -85,10 +87,6 @@ const bookFlight = async (req, res) => {
   } else {
     return sendError(res, response?.data.message, response?.status);
   }
-};
-
-const payForFlight = async (req, res, next) => {
-  const { document_required, contact_details, passenger_details } = req.body;
 };
 
 const fetchFlightBooking = async (req, res) => {

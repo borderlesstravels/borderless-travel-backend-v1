@@ -1,7 +1,7 @@
 const { log } = require('console');
 const { sender_tiqwa } = require('../../api/sender');
-const FlightBooking = require('../../models/FlightBooking');
 const { sendError } = require('../../utils/helpers');
+const FlightBooking = require('../../models/general/FlightBooking');
 
 //
 // Flight

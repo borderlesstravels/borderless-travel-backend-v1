@@ -2,54 +2,45 @@ const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
-const flightBookingSchema = new Schema({
+const paymentSchema = new Schema({
   owner: {
     type: String,
     required: true,
   },
-  type: {
-    type: String,
-    required: true,
-  },
-  client_name: {
-    type: String,
-    required: true,
-  },
-  client_phone: {
-    type: String,
-    required: true,
-  },
-  client_email: {
-    type: String,
-    required: true,
-  },
-  contact_name: {
-    type: String,
-    required: true,
-  },
-  contact_email: {
-    type: String,
-    required: true,
-  },
-  contact_phone: {
-    type: String,
-    required: true,
-  },
-  contact_relationship: {
-    type: String,
-    required: true,
-  },
-  price: {
-    type: Number,
-    required: true,
-  },
-  status: {
+  service_name: {
     type: String,
     required: true,
   },
   booking_reference: {
     type: String,
     required: true,
+  },
+  transaction_reference: {
+    type: String,
+    required: true,
+  },
+  amount_paid: {
+    type: Number,
+    required: true,
+  },
+  service_amount: {
+    type: Number,
+    required: true,
+  },
+  commission_percent: {
+    type: Number,
+    required: true,
+  },
+  commission_amount: {
+    type: Number,
+    required: true,
+  },
+  transaction_time: {
+    type: String,
+    required: true,
+  },
+  status: {
+    type: String,
   },
   action_by: {
     type: String,
@@ -60,4 +51,4 @@ const flightBookingSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('FlightBooking', flightBookingSchema);
+module.exports = mongoose.model('Payment', paymentSchema);

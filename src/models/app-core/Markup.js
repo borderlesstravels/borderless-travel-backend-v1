@@ -3,29 +3,33 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const markupSchema = new Schema({
-  localFlight: {
+  service_name: {
+    type: String,
+    required: true,
+  },
+  api_provider: {
+    type: String,
+    required: true,
+  },
+  api_key: {
+    type: String,
+    required: true,
+  },
+  commission: {
     type: Number,
     required: true,
   },
-  internationalFlight: {
-    type: Number,
+  service_region: {
+    type: String,
     required: true,
   },
-  shortlet: {
-    type: Number,
+  action_by: {
+    type: String,
     required: true,
   },
-  hotel: {
-    type: Number,
-    required: true,
-  },
-  cab: {
-    type: Number,
-    required: true,
-  },
-  shortlet: {
-    type: Number,
-    required: true,
+  created_at: {
+    type: Date,
+    default: Date.now,
   },
 });
 

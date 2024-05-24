@@ -1,7 +1,77 @@
+const Markup = require('../../models/app-core/Markup');
+const FlightBooking = require('../../models/general/FlightBooking');
 const Job = require('../../models/general/Job');
 const JobApplication = require('../../models/general/JobApplication');
+const Payment = require('../../models/general/Payment');
 const Subscriber = require('../../models/general/Subscriber');
+const User = require('../../models/user/User');
 const { sendError, sendSuccess } = require('../../utils/helpers');
+
+const services = async (req, res) => {
+  try {
+    const services = await Markup.find().select([
+      '-commission',
+      '-api_provider',
+      '-api_key',
+      '-action_by',
+      '-created_at',
+      '-__v',
+    ]);
+    if (services.length < 1) {
+      return sendSuccess(res, 'No services record found', null);
+    }
+    return sendSuccess(res, 'Successfully fetched services', services);
+  } catch (error) {
+    return sendError(res, 'Something went wrong. Could not fetch services', 500);
+  }
+};
+
+const payForFlight = async (req, res) => {
+  const userId = req.id;
+  const { service_name, booking_reference, transaction_reference, amount, time } = req.body;
+
+  const user = await User.findById(userId, '-password');
+  if (!user) return sendError(res, 'Sorry, please login first');
+
+  try {
+    const markup = await Markup.findOne({ service_name: service_name });
+    if (!markup) {
+      return sendError(res, 'The selected service does not exist');
+    }
+
+    try {
+      const booking = await FlightBooking.findOne({ booking_reference: booking_reference });
+      if (!booking) {
+        return sendError(res, 'No booking record found');
+      }
+      const commission_percent = markup.commission;
+      const commission_amount = (commission_percent / 100) * amount;
+      const service_amount = amount - commission_amount;
+      const newPayment = new Payment({
+        owner: userId,
+        service_name,
+        booking_reference,
+        transaction_reference,
+        amount_paid: amount,
+        service_amount,
+        commission_percent,
+        commission_amount,
+        transaction_time: time,
+      });
+      booking.payment_status = 'paid';
+      await booking.save();
+      await newPayment.save();
+      return sendSuccess(res, 'Your payment has been successfully completed');
+    } catch (error) {
+      return sendError(res, `Unable to record your payment. Error - ${error}`);
+    }
+  } catch (error) {
+    return sendError(
+      res,
+      `Unable to record your payment. Reach out to our support with the payment ID. Error - ${error}`
+    );
+  }
+};
 
 const saveSubscriber = async (req, res) => {
   let existingContact;
@@ -79,4 +149,11 @@ const applyForJob = async (req, res, next) => {
   }
 };
 
-module.exports = { saveSubscriber, fetchJobPostings, fetchSingleJobPosting, applyForJob };
+module.exports = {
+  services,
+  payForFlight,
+  saveSubscriber,
+  fetchJobPostings,
+  fetchSingleJobPosting,
+  applyForJob,
+};

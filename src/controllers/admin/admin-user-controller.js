@@ -2,8 +2,8 @@ const bcrypt = require('bcryptjs');
 const { sendError, sendSuccess, badRequestError } = require('../../utils/helpers');
 const { log } = require('console');
 const User = require('../../models/user/User');
-const FlightBooking = require('../../models/FlightBooking');
 const ShortStayBooking = require('../../models/ShortStayBooking');
+const FlightBooking = require('../../models/general/FlightBooking');
 
 const updateUserProfile = async (req, res) => {
   if (req.body.password) {

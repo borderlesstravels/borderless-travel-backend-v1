@@ -12,6 +12,21 @@ exports.validateFlightOfferSearch = [
   check('infants').trim().not().isEmpty().withMessage('How many infants are flying?'),
   check('cabin').trim().not().isEmpty().withMessage('Select flight class. E.g: economy'),
 ];
+exports.validatePaymentRecord = [
+  check('service_name').trim().not().isEmpty().withMessage('What service are you paying for?'),
+  check('booking_reference')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Kindly supply the flight reference number. Usually starts with TW-'?"),
+  check('transaction_reference')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Payment gateway's transaction id is missing?"),
+  check('amount').trim().not().isEmpty().withMessage('How much was paid?'),
+  check('time').trim().not().isEmpty().withMessage('Transaction time is missing'),
+];
 
 exports.validateContactUsParams = [
   check('name')
@@ -203,6 +218,22 @@ exports.validateAddPost = [
   check('author').trim().not().isEmpty().withMessage('Post author is missing!'),
   check('category').trim().not().isEmpty().withMessage('Post category is missing!'),
   check('post_status').trim().not().isEmpty().withMessage('Post status is missing!'),
+];
+
+exports.validateAddMarkup = [
+  check('service_name').trim().not().isEmpty().withMessage('Service Name is missing!'),
+  check('api_provider')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("API Provider is missing! For Inhouse Service, enter 'Borderles' as the provider"),
+  check('api_key')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("API Key is missing! For Inhouse Service, enter 'Borderles' as the provider"),
+  check('commission').trim().not().isEmpty().withMessage('Commion percent is missing!'),
+  check('service_region').trim().not().isEmpty().withMessage('Provide the Service Region!'),
 ];
 
 // Host dashboard

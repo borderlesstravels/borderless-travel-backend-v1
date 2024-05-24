@@ -29,6 +29,8 @@ const addPost = async (req, res) => {
 
   if (post_status === 'scheduled') {
     published_date = req.body.published_date;
+  } else {
+    published_date = Date.now;
   }
 
   const newPost = new Content({
@@ -38,6 +40,7 @@ const addPost = async (req, res) => {
     category,
     cover_image,
     post_status,
+    published_date,
     published_by: adminId,
   });
   try {

@@ -4,17 +4,23 @@ const {
   validateContactUsParams,
   validateSubscriptionParams,
   validate,
+  validatePaymentRecord,
 } = require('../../middlewares/validator');
 const {
   saveSubscriber,
   applyForJob,
   fetchJobPostings,
   fetchSingleJobPosting,
+  services,
+  payForFlight,
 } = require('../../controllers/website/general-controller');
 const { careerAppDocUpload } = require('../../utils/helpers/files');
+const { verifyUserLoginToken } = require('../../controllers/website/user-auth-controller');
 
 const router = express.Router();
 
+router.get('/services', services);
+router.post('/record-payment', verifyUserLoginToken, validatePaymentRecord, validate, payForFlight);
 router.post('/contact-us', validateContactUsParams, validate, contactUsEmail);
 router.post('/subscribe', validateSubscriptionParams, validate, saveSubscriber);
 router.get('/jobs', fetchJobPostings);

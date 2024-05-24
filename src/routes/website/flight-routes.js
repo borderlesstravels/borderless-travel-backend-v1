@@ -27,6 +27,6 @@ router.post(
   verifyUserLoginToken,
   bookFlight
 );
-router.get('/flight-booking-details/:booking_reference', fetchFlightBooking);
+router.get('/flight-booking-details/:booking_reference', verifyUserLoginToken, fetchFlightBooking);
 
 module.exports = router;

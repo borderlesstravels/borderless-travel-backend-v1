@@ -24,7 +24,7 @@ const validateNewAdmin = async (req, res, next) => {
   if (existingAdmin) {
     return sendError(
       res,
-      `Email already used fpor another admin with name - ${existingAdmin.first_name} ${existingAdmin.last_name}`
+      `Email already used for another admin with name - ${existingAdmin.first_name} ${existingAdmin.last_name}`
     );
   }
 
