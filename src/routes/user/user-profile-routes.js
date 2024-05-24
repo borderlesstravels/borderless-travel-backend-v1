@@ -4,16 +4,13 @@ const {
   getReferralProfile,
   updateUserProfile,
   updateUserPassword,
-  withdrawReferralEarning,
   updateUserEmailAlert,
   setUserProfileAvatar,
+  userFlightBookings,
+  userSingleFlightBooking,
 } = require('../../controllers/user/user-profile-controller');
 const { verifyUserLoginToken } = require('../../controllers/website/user-auth-controller');
-const {
-  passwordUpdatedEmail,
-  profileUpdatedEmail,
-  refEarningWithdrawnEmail,
-} = require('../../services/emailServices');
+const { passwordUpdatedEmail, profileUpdatedEmail } = require('../../services/emailServices');
 const {
   validate,
   validateUpdateProfileUserParams,
@@ -34,13 +31,7 @@ router.put(
   updateUserProfile
 );
 router.put('/update-profile-avatar', verifyUserLoginToken, userImageUpload, setUserProfileAvatar);
-router.put(
-  '/update-profile',
-  verifyUserLoginToken,
-  validateUpdateProfileUserParams,
-  validate,
-  updateUserProfile
-);
+
 router.put(
   '/update-password',
   verifyUserLoginToken,
@@ -56,5 +47,8 @@ router.put(
   validate,
   updateUserEmailAlert
 );
+
+router.get('/flight-bookings', verifyUserLoginToken, userFlightBookings);
+router.get('/single-flight-booking/:id', verifyUserLoginToken, userSingleFlightBooking);
 
 module.exports = router;

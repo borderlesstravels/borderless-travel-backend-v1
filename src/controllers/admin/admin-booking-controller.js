@@ -28,11 +28,10 @@ const allFlightBookings = async (req, res) => {
 const singleFlightBooking = async (req, res) => {
   try {
     const flightBooking = await FlightBooking.findById(req.params.id);
-    return res.status(200).json({
-      success: true,
-      message: 'Successfully fetched all flight bookings',
-      data: flightBooking,
-    });
+    if (!flightBooking) {
+      return sendSuccess(res, 'No flight booking record found');
+    }
+    return sendSuccess(res, 'Successfully fetched booking', flightBooking);
   } catch (error) {
     return sendError(res, 'Cannot fetch flight bookings');
   }

@@ -2,6 +2,7 @@ const User = require('../../models/user/User');
 const { sendError, sendSuccess, badRequestError } = require('../../utils/helpers');
 const UserReferral = require('../../models/user/UserReferral');
 const bcrypt = require('bcryptjs');
+const FlightBooking = require('../../models/general/FlightBooking');
 
 const getUser = async (req, res) => {
   const userId = req.id;
@@ -103,45 +104,31 @@ const getReferralProfile = async (req, res) => {
   return sendSuccess(res, null, userReferrals);
 };
 
-const withdrawReferralEarning = async (req, res, next) => {
+const userFlightBookings = async (req, res) => {
   const userId = req.id;
-  const { amount } = req.body;
-
-  let referralData;
-  let userBalance;
-
-  const user = await User.findById(userId);
-  if (!user) return sendError(res, 'Invalid user profile');
-
   try {
-    referralData = await UserReferral.findOne({ userId });
-  } catch (err) {
-    console.log(err);
-  }
-
-  try {
-    userBalance = await UserBalance.findOne({ owner: userId, ticker: 'NGN' });
-  } catch (err) {
-    console.log(err);
-  }
-
-  const pendingBalance = referralData.pendingBalance;
-  const fiatBalance = userBalance.balance;
-  if (pendingBalance <= amount) return sendError(res, 'Enter an amount lower than your balance');
-
-  const newPendingBalance = pendingBalance - amount;
-  const newfiatBalance = fiatBalance + amount;
-
-  referralData.pendingBalance = newPendingBalance;
-  userBalance.balance = newfiatBalance;
-  try {
-    await referralData.save();
-    await userBalance.save();
-    req.body = { user, amount };
-    next();
+    const flightBookings = await FlightBooking.find({ owner: userId })
+      .select('-action_by')
+      .limit(req.query.limit);
+    if (flightBookings.length < 1) {
+      return sendSuccess(res, 'No flight booking record found');
+    }
+    console.log(flightBookings);
+    return sendSuccess(res, 'Successfully fetched your flight bookings', flightBookings);
   } catch (error) {
-    console.log(err);
-    return sendError(res, err);
+    return sendError(res, 'Cannot fetch flight bookings');
+  }
+};
+
+const userSingleFlightBooking = async (req, res) => {
+  try {
+    const flightBooking = await FlightBooking.findById(req.params.id).select('-action_by');
+    if (!flightBooking) {
+      return sendSuccess(res, 'No flight booking record found');
+    }
+    return sendSuccess(res, 'Successfully fetched booking', flightBooking);
+  } catch (error) {
+    return sendError(res, 'Cannot fetch flight bookings');
   }
 };
 
@@ -153,5 +140,7 @@ module.exports = {
   updateUserEmailAlert,
 
   getReferralProfile,
-  withdrawReferralEarning,
+
+  userFlightBookings,
+  userSingleFlightBooking,
 };
