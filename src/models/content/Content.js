@@ -27,6 +27,10 @@ const contentSchema = new Schema({
     type: String,
     required: true,
   },
+  slug: {
+    type: String,
+    required: true,
+  },
   post_status: {
     type: String,
     required: true,

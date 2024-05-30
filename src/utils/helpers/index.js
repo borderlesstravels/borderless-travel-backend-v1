@@ -51,3 +51,12 @@ exports.checkUserEmailReg = async (email) => {
     return false;
   }
 };
+
+exports.generateSlug = (title) => {
+  const sanitisedTitle = title.replace(
+    /[\\\.\,\+\*\?\^\$\@\#\%\^\&\*\-\_\[\]\(\)\{\}\/\'\#\:\!\=\|]/gi,
+    ''
+  );
+  const slug = sanitisedTitle.split(' ').join('-');
+  return slug;
+};

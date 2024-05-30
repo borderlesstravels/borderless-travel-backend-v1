@@ -1,4 +1,4 @@
-const { sendError, sendSuccess } = require('../../utils/helpers');
+const { sendError, sendSuccess, generateSlug } = require('../../utils/helpers');
 const { log } = require('console');
 const Content = require('../../models/content/Content');
 const ContentCategory = require('../../models/content/ContentCategory');
@@ -19,6 +19,7 @@ const addPost = async (req, res) => {
   const cover_image = formmatedImages.replace(/[,]/g, ', ');
   const { title, content, author, category, post_status } = req.body;
   console.log('cover_image: ', cover_image);
+  const slug = generateSlug(title);
 
   if (
     post_status === 'scheduled' &&
@@ -35,6 +36,7 @@ const addPost = async (req, res) => {
 
   const newPost = new Content({
     title,
+    slug,
     content,
     author,
     category,
