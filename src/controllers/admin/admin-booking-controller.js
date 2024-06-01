@@ -1,8 +1,9 @@
 const { log } = require('console');
 const { sender_tiqwa } = require('../../api/sender');
-const { sendError } = require('../../utils/helpers');
+const { sendError, sendSuccess } = require('../../utils/helpers');
 const FlightBooking = require('../../models/general/FlightBooking');
 const { fetcher_tiqwa } = require('../../api/fetcher');
+const Payment = require('../../models/general/Payment');
 
 //
 // Flight
@@ -108,6 +109,20 @@ const cancelFlightTicket = async (req, res) => {
   }
 };
 
+const fetchBookingPayemnt = async (req, res) => {
+  const { booking_id } = req.params;
+  try {
+    const bookingPayment = await Payment.findOne({ owner: booking_id });
+    if (!bookingPayment) {
+      return sendError(res, 'Booking details does not exist');
+    }
+    return sendSuccess(res, 'Successfully fetched the booking payment details', bookingPayment);
+  } catch (error) {
+    console.log(error);
+    return sendError(res, `Unable to fetch payment details. Error - ${error}`);
+  }
+};
+
 //
 // Stays
 //
@@ -118,4 +133,5 @@ module.exports = {
   fetchTicketDetails,
   issueFlightTicket,
   cancelFlightTicket,
+  fetchBookingPayemnt,
 };
