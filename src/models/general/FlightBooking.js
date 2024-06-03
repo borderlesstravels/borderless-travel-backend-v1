@@ -51,6 +51,14 @@ const flightBookingSchema = new Schema({
     type: Date,
     required: true,
   },
+  origin_code: {
+    type: String,
+    required: true,
+  },
+  destination_code: {
+    type: String,
+    required: true,
+  },
   origin: {
     type: String,
     required: true,

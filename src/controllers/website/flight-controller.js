@@ -85,8 +85,8 @@ const bookFlight = async (req, res) => {
       const departure_time = outboundData[0].departure_time;
       const arrival_time = outboundData[destPicker].arrival_time;
 
-      const originCode = outboundData[0].airport_from;
-      const destinationCode = outboundData[destPicker].airport_to;
+      const origin_code = outboundData[0].airport_from;
+      const destination_code = outboundData[destPicker].airport_to;
 
       const findAirports = await fetcher_tiqwa('/airports');
       if (!findAirports) {
@@ -94,16 +94,16 @@ const bookFlight = async (req, res) => {
       }
       if (findAirports?.status === 200) {
         const allAirports = findAirports.data;
-        const departureAirport = allAirports.filter((airport) => airport.iata_code === originCode);
+        const departureAirport = allAirports.filter((airport) => airport.iata_code === origin_code);
         const arrivalAirport = allAirports.filter(
-          (airport) => airport.iata_code === destinationCode
+          (airport) => airport.iata_code === destination_code
         );
 
         console.log('departureAirport', departureAirport);
         console.log('arrivalAirport', arrivalAirport);
 
-        const origin = departureAirport[0].name;
-        const destination = arrivalAirport[0].name;
+        const origin = departureAirport[0].city;
+        const destination = arrivalAirport[0].city;
 
         const contactDetails = new FlightBooking({
           owner: user._id,
@@ -119,6 +119,8 @@ const bookFlight = async (req, res) => {
           airline_logo,
           departure_time,
           arrival_time,
+          origin_code,
+          destination_code,
           origin,
           destination,
           price: response?.data?.amount,
