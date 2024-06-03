@@ -5,7 +5,7 @@ const JobApplication = require('../../models/general/JobApplication');
 const Payment = require('../../models/general/Payment');
 const Subscriber = require('../../models/general/Subscriber');
 const User = require('../../models/user/User');
-const { sendError, sendSuccess } = require('../../utils/helpers');
+const { sendError, sendSuccess, badRequestError } = require('../../utils/helpers');
 
 const services = async (req, res) => {
   try {
@@ -44,12 +44,17 @@ const payForFlight = async (req, res) => {
       if (!booking) {
         return sendError(res, 'No booking record found');
       }
+      if (booking.payment_status === 'paid') {
+        return badRequestError(res, 'You have already paid for this service');
+      }
       const commission_percent = markup.commission;
       const commission_amount = (commission_percent / 100) * amount;
       const service_amount = amount - commission_amount;
       const newPayment = new Payment({
         owner: userId,
         service_name,
+        payer_name: `${user.first_name} ${user.last_name}`,
+        payer_email: user.email,
         booking_reference,
         transaction_reference,
         amount_paid: amount,

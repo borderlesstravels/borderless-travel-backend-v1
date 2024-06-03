@@ -141,7 +141,7 @@ const bookFlight = async (req, res) => {
     } else if (response?.status === 403) {
       return sendError(res, response.data.Message, response?.status);
     } else if (response?.status === 404) {
-      return sendError(res, response.data.Message, response?.status);
+      return sendError(res, response.data.message, response?.status);
     } else {
       return sendError(res, response?.statusText, response?.status);
     }

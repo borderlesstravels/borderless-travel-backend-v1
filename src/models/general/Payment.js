@@ -11,6 +11,14 @@ const paymentSchema = new Schema({
     type: String,
     required: true,
   },
+  payer_name: {
+    type: String,
+    required: true,
+  },
+  payer_email: {
+    type: String,
+    required: true,
+  },
   booking_reference: {
     type: String,
     required: true,
