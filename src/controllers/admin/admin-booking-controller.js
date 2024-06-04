@@ -110,11 +110,11 @@ const cancelFlightTicket = async (req, res) => {
 };
 
 const fetchBookingPayemnt = async (req, res) => {
-  const { booking_id } = req.params;
+  const { booking_reference } = req.params;
   try {
-    const bookingPayment = await Payment.findOne({ owner: booking_id });
+    const bookingPayment = await Payment.findOne({ booking_reference: booking_reference });
     if (!bookingPayment) {
-      return sendError(res, 'Booking details does not exist');
+      return sendError(res, 'Payment has not been made for this booking');
     }
     return sendSuccess(res, 'Successfully fetched the booking payment details', bookingPayment);
   } catch (error) {

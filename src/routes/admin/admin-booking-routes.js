@@ -16,7 +16,7 @@ router.get('/flight/all-bookings', verifyAdminLoginToken, allFlightBookings);
 router.get('/flight/single-booking/:id', verifyAdminLoginToken, singleFlightBooking);
 router.get('/flight/ticket-details/:booking_reference', verifyAdminLoginToken, fetchTicketDetails);
 router.get(
-  '/flight/booking-payment-details/:booking_id',
+  '/flight/booking-payment-details/:booking_reference',
   verifyAdminLoginToken,
   fetchBookingPayemnt
 );
