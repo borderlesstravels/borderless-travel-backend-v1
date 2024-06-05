@@ -66,7 +66,7 @@ const issueFlightTicket = async (req, res) => {
       booking.status = 'issued';
       booking.action_by = adminId;
       await booking.save();
-      return res.status(response.status).json({ success: true, data: response.data });
+      return sendSuccess(res, 'Ticket has been successfully issued', response.data);
     } catch (error) {
       log(error);
       return sendError(
@@ -95,7 +95,7 @@ const cancelFlightTicket = async (req, res) => {
       booking.status = 'canceled';
       booking.action_by = adminId;
       await booking.save();
-      return res.status(response.status).json({ success: true, data: response.data });
+      return sendSuccess(res, 'Ticket has been successfully cancelled', response.data);
     } catch (error) {
       log(error);
       return sendError(

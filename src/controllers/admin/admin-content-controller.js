@@ -49,6 +49,7 @@ const addPost = async (req, res) => {
     await newPost.save();
     return sendSuccess(res, 'The post has been successfully published', newPost);
   } catch (err) {
+    console.log('content post error', err);
     return sendError(res, 'Unable to save the post to the databse', 500);
   }
 };
