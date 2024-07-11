@@ -72,7 +72,7 @@ app.use('/api/v1/website', websiteRouter);
 
 app.get('/', (req, res) => {
   res.send(
-    'Hello, welcome to Borderless Travels app. Server is running with latest update in May 2024\n - Payment management completed'
+    'Hello, welcome to Borderless Travels app. Server is running with latest update in July 2024\n - Flight module completed'
   );
 });
 

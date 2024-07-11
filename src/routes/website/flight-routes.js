@@ -4,8 +4,9 @@ const {
   fetchAirlines,
   flightOfferSearch,
   confirmFlightPrice,
-  bookFlight,
   fetchFlightTicketDetails,
+  bookFlightAuth,
+  bookFlightNoAuth,
 } = require('../../controllers/website/flight-controller');
 const {
   validateFlightOfferSearch,
@@ -20,12 +21,13 @@ router.get('/fetch-airports', fetchAirports);
 router.get('/fetch-airlines', fetchAirlines);
 router.post('/flight-offer-search', validateFlightOfferSearch, validate, flightOfferSearch);
 router.get('/confirm-price/:flight_id', confirmFlightPrice);
+router.post('/book-flight-no-auth/:flight_id', validateFlightBooking, validate, bookFlightNoAuth);
 router.post(
-  '/book-flight/:flight_id',
+  '/book-flight-auth/:flight_id',
   validateFlightBooking,
   validate,
   verifyUserLoginToken,
-  bookFlight
+  bookFlightAuth
 );
 router.get(
   '/flight-booking-details/:booking_reference',

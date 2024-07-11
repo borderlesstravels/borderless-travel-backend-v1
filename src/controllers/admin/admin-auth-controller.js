@@ -95,6 +95,7 @@ const loginAdminAttempt = async (req, res, next) => {
   const { existingAdmin, password } = req.body;
 
   const isPasswordCorrect = bcrypt.compareSync(password, existingAdmin.password);
+  console.log('isPasswordCorrect', isPasswordCorrect);
   if (!isPasswordCorrect) {
     return sendError(res, 'Invalid email or password');
   }

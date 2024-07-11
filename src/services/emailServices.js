@@ -357,94 +357,6 @@ const transferSuccessfulEmail = async (req, res) => {
   }
 };
 
-const cashWithdrawalVerificationEmail = async (req, res) => {
-  const { user, otp, destination, amount, ticker, narration } = req.body;
-  const email = user.email;
-  const name = user.name;
-  const fName = name.split(' ')[0];
-
-  try {
-    const send_to = email;
-    const reply_to = process.env.APP_EMAIL;
-    const send_from = process.env.APP_EMAIL;
-    const subject = 'Verify Cash Withdrawal - Prodox Exchange';
-
-    const email_body = verifyCashWithdrawalCodeTemp(fName, otp, amount, ticker, destination);
-
-    await sendEmail(subject, email_body, send_to, send_from, reply_to);
-    console.log('Transaction OTP sent');
-
-    return res.status(200).json({
-      success: true,
-      message: 'Transaction verification code has been sent to your account email',
-      vals: { destination, amount, ticker, narration },
-    });
-  } catch (error) {
-    res.status(500).json(error.message);
-  }
-};
-const cashWithdrawalSuccessfulEmail = async (req, res) => {
-  const { user, amount, ticker, destination, t_id } = req.body;
-  const email = user.email;
-  const name = user.name;
-  const fName = name.split(' ')[0];
-  try {
-    const send_to = email;
-    const reply_to = process.env.APP_EMAIL;
-    const send_from = process.env.APP_EMAIL;
-    const subject = 'Your Cash Withdrawal Is On The Way - Prodox Exchange';
-
-    const email_body = cashWithdrawalSuccessfulTemp(fName, amount, ticker, destination, t_id);
-
-    try {
-      await sendEmail(subject, email_body, send_to, send_from, reply_to);
-    } catch (error) {
-      res.status(500).json(error.message);
-    }
-    return res.status(200).json({
-      success: true,
-      message: `Successfully created a withdrawal request of ${ticker} ${amount} to ${destination.accountName}, ${destination.bankName}`,
-      data: {
-        amount,
-        asset: ticker,
-        receiver: destination,
-        t_id,
-      },
-    });
-  } catch (error) {
-    res.status(500).json(error.message);
-  }
-};
-
-const cashDepositCreatedEmail = async (req, res) => {
-  const { user, amount, t_id } = req.body;
-  const email = user.email;
-  const name = user.name;
-  const fName = name.split(' ')[0];
-  const formattedAmount = formatCurrency(amount);
-  try {
-    const send_to = email;
-    const reply_to = process.env.APP_EMAIL;
-    const send_from = process.env.APP_EMAIL;
-    const subject = 'Cash Deposit Created - Prodox Exchange';
-
-    const email_body = cashDepositCreatedTemp(fName, formattedAmount, t_id);
-
-    await sendEmail(subject, email_body, send_to, send_from, reply_to);
-
-    return res.status(200).json({
-      success: true,
-      message: `Deposit request created. Be sure to make the deposit to the account provided.`,
-      data: {
-        amount,
-        t_id,
-      },
-    });
-  } catch (error) {
-    res.status(500).json(error.message);
-  }
-};
-
 module.exports = {
   verificationEmail,
   emailVerifiedEmail,
@@ -459,7 +371,4 @@ module.exports = {
   refEarningWithdrawnEmail,
   transferVerificationEmail,
   transferSuccessfulEmail,
-  cashWithdrawalVerificationEmail,
-  cashWithdrawalSuccessfulEmail,
-  cashDepositCreatedEmail,
 };
