@@ -18,7 +18,7 @@ const signupHost = async (req, res, next) => {
     next();
   } catch (err) {
     console.log(err);
-    return sendError(res, 'Unable to sign up');
+    return sendError(res, `Unable to sign up. Error - ${err}`);
   }
 };
 

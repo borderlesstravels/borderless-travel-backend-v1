@@ -155,6 +155,7 @@ exports.validateUserSignupParams = [
     .isLength({ min: 3, max: 20 })
     .withMessage('Last Name must be between 3 and 25 characters'),
   check('email').isEmail().withMessage('Email is invalid'),
+  check('phone').isMobilePhone().withMessage('Phone numbr is invalid'),
   check('password').trim().not().isEmpty().withMessage('Password cannot be empty'),
 ];
 exports.validateUpdateProfileUserParams = [

@@ -38,21 +38,6 @@ const hostSchema = new Schema({
     type: Number,
     default: 0,
   },
-  address: {
-    type: String,
-  },
-  city: {
-    type: String,
-  },
-  state: {
-    type: String,
-  },
-  nationality: {
-    type: String,
-  },
-  country: {
-    type: String,
-  },
   email_verified: {
     type: Boolean,
     default: false,

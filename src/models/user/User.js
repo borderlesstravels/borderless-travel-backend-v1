@@ -21,21 +21,6 @@ const userSchema = new Schema({
   phone: {
     type: String,
   },
-  address: {
-    type: String,
-  },
-  city: {
-    type: String,
-  },
-  state: {
-    type: String,
-  },
-  zip: {
-    type: String,
-  },
-  country: {
-    type: String,
-  },
   referral_code: {
     type: String,
   },
