@@ -71,6 +71,7 @@ const userStorage = multer.diskStorage({
 const userUpload = multer({ storage: userStorage });
 const userImageUpload = userUpload.fields([{ name: 'avatar', maxCount: 1 }]);
 
+// Host avatar
 const hostStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'public/files/imgs/hosts');
@@ -88,10 +89,29 @@ const hostStorage = multer.diskStorage({
 const hostUpload = multer({ storage: hostStorage });
 const hostImageUpload = hostUpload.fields([{ name: 'avatar', maxCount: 1 }]);
 
+// Host shortlet
+const shortletStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'public/files/imgs/shortlets');
+  },
+  filename: (req, file, cb) => {
+    cb(
+      null,
+      file.originalname.replace(/[^a-zA-Z0-9_.,]/g, '') +
+        '_' +
+        Date.now() +
+        path.extname(file.originalname)
+    );
+  },
+});
+const shortletUpload = multer({ storage: shortletStorage });
+const shortletImageUpload = shortletUpload.fields([{ name: 'images', maxCount: 50 }]);
+
 module.exports = {
   careerAppDocUpload,
   postImageUpload,
   adminImageUpload,
   userImageUpload,
   hostImageUpload,
+  shortletImageUpload,
 };

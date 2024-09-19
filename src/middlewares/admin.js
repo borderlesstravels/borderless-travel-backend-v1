@@ -1,8 +1,8 @@
 const { isValidObjectId } = require('mongoose');
 const Admin = require('../models/admin/Admin');
-const ResetPasswordToken = require('../models/user/ResetPasswordToken');
 const { sendError } = require('../utils/helpers');
 const { log } = require('console');
+const ResetAdminPasswordToken = require('../models/admin/ResetAdminPasswordToken');
 
 const validateNewAdmin = async (req, res, next) => {
   const { first_name, last_name, email, phone, role, username, password } = req.body;
@@ -70,7 +70,7 @@ const isAdminPasswordResetTokenValid = async (req, res, next) => {
 
   if (!admin) return sendError(res, 'Admin not found');
 
-  const resToken = await ResetPasswordToken.findOne({ owner: admin._id });
+  const resToken = await ResetAdminPasswordToken.findOne({ owner: admin._id });
   if (!resToken) return sendError(res, 'Reset token not found');
 
   const resetToken = resToken.token;

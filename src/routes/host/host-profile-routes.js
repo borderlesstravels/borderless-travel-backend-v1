@@ -9,13 +9,15 @@ const {
   logoutHost,
   isHostLogin,
   setHostProfileAvatar,
+  addProperty,
 } = require('../../controllers/host/host-profile-controller');
 const {
   validateHostUpdateProfileParams,
   validate,
   validateUpdatePasswordParams,
+  validateAddPropertyParams,
 } = require('../../middlewares/validator');
-const { hostImageUpload } = require('../../utils/helpers/files');
+const { hostImageUpload, shortletImageUpload } = require('../../utils/helpers/files');
 
 const router = express.Router();
 
@@ -46,5 +48,8 @@ router.put(
 
 router.get('/check-session', isHostLogin);
 router.post('/logout', logoutHost);
+
+// Shortlet
+router.post('/add-property', verifyHostLoginToken, shortletImageUpload, addProperty);
 
 module.exports = router;

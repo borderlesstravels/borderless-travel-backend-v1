@@ -1,7 +1,7 @@
 const { isValidObjectId } = require('mongoose');
 const { sendError } = require('../utils/helpers');
-const ResetPasswordToken = require('../models/user/ResetPasswordToken');
 const Host = require('../models/host/Host');
+const ResetHostPasswordToken = require('../models/host/ResetHostPasswordToken');
 
 const validateNewHost = async (req, res, next) => {
   const { first_name, last_name, email, phone, password } = req.body;
@@ -52,7 +52,7 @@ const isHostPasswordResetTokenValid = async (req, res, next) => {
 
   if (!host) return sendError(res, 'Host account not found');
 
-  const resToken = await ResetPasswordToken.findOne({ owner: host._id });
+  const resToken = await ResetHostPasswordToken.findOne({ owner: host._id });
   if (!resToken) return sendError(res, 'Reset token not found');
 
   const resetToken = resToken.token;

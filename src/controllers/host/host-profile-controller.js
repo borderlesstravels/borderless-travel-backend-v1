@@ -91,18 +91,29 @@ const setHostProfileAvatar = async (req, res) => {
 };
 
 const addProperty = async (req, res, next) => {
-  const property = new ShortLet(req.body);
-  try {
-    await property.save();
-    res.status(200).json({
-      success: true,
-      message: `Successfully added a new property - ${req.body.hotel_name}`,
-      data: property,
-    });
-  } catch (err) {
-    console.log(err);
-    return sendError(res, 'Unable to add a new property');
-  }
+  const rawImagesArray = req.files && req.files['images'];
+  const namedImage = rawImagesArray?.map((a) => a.filename);
+  const stringnifiedImages = JSON.stringify(namedImage);
+  const formmatedImages = stringnifiedImages?.replace(/[^a-zA-Z0-9_.,]/g, '');
+  const images = formmatedImages?.replace(/[,]/g, ', ');
+  req.body.images = images;
+  req.body.owner = req.id;
+  console.log('req body', req.body);
+  console.log('images', images);
+  return res.status(200).json({ message: 'Successful' });
+  // const property = new ShortLet(req.body);
+
+  // try {
+  //   await property.save();
+  //   res.status(200).json({
+  //     success: true,
+  //     message: `Successfully added a new property - ${req.body.hotel_name}`,
+  //     data: property,
+  //   });
+  // } catch (err) {
+  //   console.log(err);
+  //   return sendError(res, 'Unable to add a new property');
+  // }
 };
 
 // **

@@ -3,8 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { sendError, createRandomBytes, generateOTP } = require('../../utils/helpers');
 const { isValidObjectId } = require('mongoose');
-const ResetPasswordToken = require('../../models/user/ResetPasswordToken');
 const Host = require('../../models/host/Host');
+const ResetHostPasswordToken = require('../../models/host/ResetHostPasswordToken');
 
 const signupHost = async (req, res, next) => {
   req.body.password = bcrypt.hashSync(req.body.password);
@@ -55,8 +55,8 @@ const generateHostEmailVerificationToken = async (req, res, next) => {
     req.body = {
       user: {
         _id: host._id,
-        email: host.contact_email,
-        first_name: host.contact_first_name,
+        email: host.email,
+        first_name: host.first_name,
       },
       otp,
     };
@@ -96,9 +96,9 @@ const verifyHostEmail = async (req, res, next) => {
   req.body = {
     user: {
       _id: host._id,
-      email: host.contact_email,
-      first_name: host.contact_first_name,
-      last_name: host.contact_last_name,
+      email: host.email,
+      first_name: host.first_name,
+      last_name: host.last_name,
       email_verified: host.email_verified,
     },
   };
@@ -107,10 +107,10 @@ const verifyHostEmail = async (req, res, next) => {
 
 // FORGOT PASSWORD
 const forgotPasswordHost = async (req, res, next) => {
-  const { contact_email } = req.body;
-  if (!contact_email) return sendError(res, 'Please provide your Host account contact email');
+  const { email } = req.body;
+  if (!email) return sendError(res, 'Please provide your Host account contact email');
 
-  const host = await Host.findOne({ contact_email });
+  const host = await Host.findOne({ email });
   if (!host)
     return sendError(
       res,
@@ -125,19 +125,19 @@ const forgotPasswordHost = async (req, res, next) => {
     });
   }
 
-  const checkToken = await ResetPasswordToken.findOne({ owner: host._id });
-  if (checkToken) return sendError(res, 'You can only request a new token after an hour');
+  const checkToken = await ResetHostPasswordToken.findOne({ owner: host._id });
+  if (checkToken) return sendError(res, 'You can only request a new token after 10 minutes');
 
   // Generate token
   const token = await createRandomBytes();
-  const resetToken = new ResetPasswordToken({ owner: host._id, token });
+  const resetToken = new ResetHostPasswordToken({ owner: host._id, token });
   await resetToken.save();
   req.body = {
     user: {
       _id: host._id,
-      email: host.contact_email,
-      first_name: host.contact_first_name,
-      last_name: host.contact_last_name,
+      email: host.email,
+      first_name: host.first_name,
+      last_name: host.last_name,
       email_verified: host.email_verified,
     },
     type: 'user',
@@ -157,14 +157,14 @@ const resetPasswordHost = async (req, res, next) => {
 
   host.password = hashedPassword;
   await host.save();
-  await ResetPasswordToken.findOneAndDelete({ owner: host._id });
+  await ResetHostPasswordToken.findOneAndDelete({ owner: host._id });
 
   req.body = {
     user: {
       _id: host._id,
-      email: host.contact_email,
-      first_name: host.contact_first_name,
-      last_name: host.contact_last_name,
+      email: host.email,
+      first_name: host.first_name,
+      last_name: host.last_name,
       email_verified: host.email_verified,
     },
   };
@@ -202,9 +202,9 @@ const loginHost = async (req, res, next) => {
   req.body = {
     user: {
       _id: host._id,
-      email: host.contact_email,
-      first_name: host.contact_first_name,
-      last_name: host.contact_last_name,
+      email: host.email,
+      first_name: host.first_name,
+      last_name: host.last_name,
       email_verified: host.email_verified,
     },
     token,

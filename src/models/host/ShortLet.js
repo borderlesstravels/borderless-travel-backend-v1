@@ -3,7 +3,12 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const shortLetSchema = new Schema({
-  hotel_name: {
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Host',
+    required: true,
+  },
+  apartment_name: {
     type: String,
     required: true,
   },
@@ -15,15 +20,7 @@ const shortLetSchema = new Schema({
     type: String,
     required: true,
   },
-  city: {
-    type: String,
-    required: true,
-  },
-  neighborhood: {
-    type: String,
-    required: true,
-  },
-  postal_code: {
+  lga: {
     type: String,
     required: true,
   },
@@ -41,29 +38,210 @@ const shortLetSchema = new Schema({
   },
   website: {
     type: String,
+    required: true,
   },
-  contact_first_name: {
+
+  images: {
     type: String,
     required: true,
   },
-  contact_last_name: {
+  single: {
+    type: Number,
+    default: 0,
+  },
+  suites: {
+    type: Number,
+    default: 0,
+  },
+  executive: {
+    type: Number,
+    default: 0,
+  },
+  double_chambers: {
+    type: Number,
+    default: 0,
+  },
+  description: {
     type: String,
     required: true,
   },
-  contact_email: {
-    type: String,
-    required: true,
+  bedrooms: {
+    type: Number,
+    default: 0,
   },
-  contact_phone: {
-    type: String,
-    required: true,
+  bathrooms: {
+    type: Number,
+    default: 0,
   },
-  password: {
-    type: String,
-    required: true,
-    minlength: 6,
+  parking: {
+    type: Number,
+    default: 0,
   },
-  email_verified: {
+  pool: {
+    type: Number,
+    default: 0,
+  },
+  bathtube: {
+    type: Boolean,
+    default: false,
+  },
+  bidet: {
+    type: Boolean,
+    default: false,
+  },
+  body_soap: {
+    type: Boolean,
+    default: false,
+  },
+  cleaning_products: {
+    type: Boolean,
+    default: false,
+  },
+  hot_water: {
+    type: Boolean,
+    default: false,
+  },
+  bed_linens: {
+    type: Boolean,
+    default: false,
+  },
+  clothing_storage: {
+    type: Boolean,
+    default: false,
+  },
+  drying_rack: {
+    type: Boolean,
+    default: false,
+  },
+  essentials: {
+    type: Boolean,
+    default: false,
+  },
+  extra_pillows: {
+    type: Boolean,
+    default: false,
+  },
+  free_dryer: {
+    type: Boolean,
+    default: false,
+  },
+  free_washer: {
+    type: Boolean,
+    default: false,
+  },
+  hangers: {
+    type: Boolean,
+    default: false,
+  },
+  iron: {
+    type: Boolean,
+    default: false,
+  },
+  darkening_shades: {
+    type: Boolean,
+    default: false,
+  },
+  archade_games: {
+    type: Boolean,
+    default: false,
+  },
+  bluetooth: {
+    type: Boolean,
+    default: false,
+  },
+  reading: {
+    type: Boolean,
+    default: false,
+  },
+  game_console: {
+    type: Boolean,
+    default: false,
+  },
+  ping_pong_table: {
+    type: Boolean,
+    default: false,
+  },
+  pool_table: {
+    type: Boolean,
+    default: false,
+  },
+  tv: {
+    type: Boolean,
+    default: false,
+  },
+  ac: {
+    type: Boolean,
+    default: false,
+  },
+  fans: {
+    type: Boolean,
+    default: false,
+  },
+  monoxide_alarm: {
+    type: Boolean,
+    default: false,
+  },
+  fire_extinguisher: {
+    type: Boolean,
+    default: false,
+  },
+  first_aid_kit: {
+    type: Boolean,
+    default: false,
+  },
+  security_cameras: {
+    type: Boolean,
+    default: false,
+  },
+  smoke_alarm: {
+    type: Boolean,
+    default: false,
+  },
+  dedicated_workspace: {
+    type: Boolean,
+    default: false,
+  },
+  wifi: {
+    type: Boolean,
+    default: false,
+  },
+  bbq_grill: {
+    type: Boolean,
+    default: false,
+  },
+  outdoor_dining: {
+    type: Boolean,
+    default: false,
+  },
+  outdoor_furniture: {
+    type: Boolean,
+    default: false,
+  },
+  patio_balcony: {
+    type: Boolean,
+    default: false,
+  },
+  backyard_fenced: {
+    type: Boolean,
+    default: false,
+  },
+  carpot: {
+    type: Boolean,
+    default: false,
+  },
+  street_parking: {
+    type: Boolean,
+    default: false,
+  },
+  private_pool: {
+    type: Boolean,
+    default: false,
+  },
+  lockbox: {
+    type: Boolean,
+    default: false,
+  },
+  self_checkin: {
     type: Boolean,
     default: false,
   },

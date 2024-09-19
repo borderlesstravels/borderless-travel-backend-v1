@@ -57,7 +57,7 @@ const forgotPassword = async (req, res, next) => {
   }
 
   const checkToken = await ResetPasswordToken.findOne({ owner: admin._id });
-  if (checkToken) return sendError(res, 'You can only request a new token after an hour');
+  if (checkToken) return sendError(res, 'You can only request a new token after 10 minutes');
 
   // Generate token
   const token = await createRandomBytes();
@@ -67,6 +67,7 @@ const forgotPassword = async (req, res, next) => {
   req.body = {
     user: admin,
     token,
+    type: 'admin',
   };
   next();
 };

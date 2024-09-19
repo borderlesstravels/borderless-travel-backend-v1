@@ -155,7 +155,6 @@ exports.validateUserSignupParams = [
     .isLength({ min: 3, max: 20 })
     .withMessage('Last Name must be between 3 and 25 characters'),
   check('email').isEmail().withMessage('Email is invalid'),
-  check('phone').isMobilePhone().withMessage('Phone numbr is invalid'),
   check('password').trim().not().isEmpty().withMessage('Password cannot be empty'),
 ];
 exports.validateUpdateProfileUserParams = [
@@ -239,44 +238,175 @@ exports.validateAddMarkup = [
 
 // Host dashboard
 exports.validateAddPropertyParams = [
-  check('hotel_name').trim().not().isEmpty().withMessage('Kindly provide your hotel name!'),
-  check('country').trim().not().isEmpty().withMessage('Where is your hotel located?'),
-  check('state').trim().not().isEmpty().withMessage('Which state is your hotel located?'),
-  check('city').trim().not().isEmpty().withMessage('In which city is your hotel located?'),
+  check('apartment_name').trim().not().isEmpty().withMessage('Kindly provide the apartment name!'),
+  check('country').trim().not().isEmpty().withMessage('Where is the apartment located?'),
+  check('state').trim().not().isEmpty().withMessage('Which state is the apartment located?'),
   check('lga')
     .trim()
     .not()
     .isEmpty()
-    .withMessage('In which local government area is your hotel located?'),
-  check('postal_code')
+    .withMessage('In which city, lga or province is the apartment located?'),
+  check('address')
     .trim()
     .not()
     .isEmpty()
-    .withMessage('Kindly provide the location postal code?'),
-  check('hotel_address')
+    .withMessage('Kindly provide the full address of the apartment'),
+  check('email').isEmail().withMessage('Contact email address is invalid'),
+  check('phone').trim().not().isEmpty().withMessage('Contact phone number is missing!'),
+  check('single').trim().not().isEmpty().withMessage('How many single rooms are available?'),
+  check('suites').trim().not().isEmpty().withMessage('How many suites rooms are available?'),
+  check('executive').trim().not().isEmpty().withMessage('How many executive rooms are available?'),
+  check('double_chambers')
     .trim()
     .not()
     .isEmpty()
-    .withMessage('Kindly provide the full address of the hotel'),
-  check('hotel_email').isEmail().withMessage('Hotel Email is invalid'),
-  check('hotel_phone').trim().not().isEmpty().withMessage('Hotel Phone Number is missing!'),
-  check('contact_first_name')
+    .withMessage('How many double chambers rooms are available?'),
+  check('description')
     .trim()
     .not()
     .isEmpty()
-    .withMessage('First Name is missing!')
-    .isLength({ min: 3, max: 20 })
-    .withMessage('First Name must be between 3 and 20 characters'),
-  check('contact_last_name')
+    .withMessage('Kindly provide the apartment description'),
+  check('bedrooms').trim().not().isEmpty().withMessage('How many bedrooms are available?'),
+  check('bathrooms').trim().not().isEmpty().withMessage('How many bathrooms are available?'),
+  check('parking').trim().not().isEmpty().withMessage('How many parking spaces are available?'),
+  check('pool').trim().not().isEmpty().withMessage('How many pools are available?'),
+  check('bathtube').trim().not().isEmpty().withMessage('Does this apartment have a bathtube?'),
+  check('bidet').trim().not().isEmpty().withMessage('Does this apartment have bidets?'),
+  check('body_soap').trim().not().isEmpty().withMessage('Does this apartment have body soaps?'),
+  check('cleaning_products')
     .trim()
     .not()
     .isEmpty()
-    .withMessage('Last Name is missing!')
-    .isLength({ min: 3, max: 20 })
-    .withMessage('Last Name must be between 3 and 20 characters'),
-  check('contact_email').isEmail().withMessage('Contact Email is invalid'),
-  check('contact_phone').trim().not().isEmpty().withMessage('Contact Phone Number is missing!'),
-  check('password').trim().not().isEmpty().withMessage('Password cannot be empty'),
+    .withMessage('Does this apartment have cleaning products?'),
+  check('hot_water').trim().not().isEmpty().withMessage('Does this apartment have hot water?'),
+  check('bed_linens').trim().not().isEmpty().withMessage('Does this apartment have bed linens?'),
+  check('clothing_storage')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Does this apartment have a clothing storage?'),
+  check('drying_rack')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Does this apartment have a drying rack?'),
+  check('essentials')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Does this apartment have essentials like towels, sheets, & toilet paper?'),
+  check('extra_pillows')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Does this apartment have a extra pillows & blankets?'),
+  check('free_dryer').trim().not().isEmpty().withMessage('Does this apartment have a free dryer?'),
+  check('free_washer')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Does this apartment have a free washer?'),
+  check('hangers').trim().not().isEmpty().withMessage('Does this apartment have hangers?'),
+  check('iron').trim().not().isEmpty().withMessage('Does this apartment have a pressing iron?'),
+  check('darkening_shades')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Are darkening shades available in this apartment?'),
+  check('archade_games')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Are archade games available in this apartment?'),
+  check('bluetooth')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there a bluetooth sound system in this apartment?'),
+  check('reading').trim().not().isEmpty().withMessage('Is there a reading room in this apartment?'),
+  check('game_console')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there a game console available in this apartment?'),
+  check('ping_pong_table')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Does this apartment have a ping pong table?'),
+  check('pool_table').trim().not().isEmpty().withMessage('Does this apartment have a pool table?'),
+  check('tv').trim().not().isEmpty().withMessage('Is there a tv in the apartment?'),
+  check('ac').trim().not().isEmpty().withMessage('Are there air conditions in the apartment?'),
+  check('fans').trim().not().isEmpty().withMessage('Are there fans in the apartment?'),
+  check('monoxide_alarm')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there a monoxide alarm in the apartment?'),
+  check('fire_extinguisher')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there a fire extinguisher in the apartment?'),
+  check('first_aid_kit')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there a fire first aid kit in the apartment?'),
+  check('security_cameras')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Are there security cameras in the apartment?'),
+  check('smoke_alarm')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there a smoke alarm in the apartment?'),
+  check('dedicated_workspace')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there a dedicated workspace in the apartment?'),
+  check('wifi')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there a wifi connectivity in the apartment?'),
+  check('bbq_grill').trim().not().isEmpty().withMessage('Is there a bbq grill in the apartment?'),
+  check('outdoor_dining')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there an outdoor dining in the apartment?'),
+  check('outdoor_furniture')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there an outdoor furniture in the apartment?'),
+  check('patio_balcony')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there a patio or balcony in the apartment?'),
+  check('backyard_fenced').trim().not().isEmpty().withMessage('Is the backyard fenced?'),
+  check('carpot').trim().not().isEmpty().withMessage('Is there a carpot in the apartment?'),
+  check('street_parking')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there a street parking availability in the apartment?'),
+  check('private_pool')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Is there a private pool in the apartment?'),
+  check('lockbox').trim().not().isEmpty().withMessage('Is there a lockbox in the apartment?'),
+  check('self_checkin')
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Does the apartment have a self checkin feature?'),
 ];
 exports.validateHostUpdateProfileParams = [
   check('first_name')
