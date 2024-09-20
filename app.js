@@ -79,4 +79,7 @@ app.get('/', (req, res) => {
 app.listen(process.env.APP_PORT || 7000, () => {
   connect();
   console.log(`Listening to requests on port ${process.env.APP_PORT}`);
+  setInterval(() => {
+    console.log('Server is live');
+  }, 300000);
 });
