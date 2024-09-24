@@ -4,10 +4,9 @@ const Host = require('../models/host/Host');
 const ResetHostPasswordToken = require('../models/host/ResetHostPasswordToken');
 
 const validateNewHost = async (req, res, next) => {
-  const { first_name, last_name, email, phone, password } = req.body;
+  const { first_name, last_name, email, password } = req.body;
   const refinedEmail = email.toLowerCase();
   let existingEmail;
-  let existingPhone;
 
   try {
     existingEmail = await Host.findOne({ email: refinedEmail });
@@ -20,22 +19,11 @@ const validateNewHost = async (req, res, next) => {
       `Email is already associated with another account. Please login instead.`
     );
   }
-  try {
-    existingPhone = await Host.findOne({ phone: phone });
-  } catch (err) {
-    console.log(err);
-  }
-  if (existingPhone) {
-    return sendError(
-      res,
-      `Phone number is already associated with another account. Please login instead.`
-    );
-  }
+
   req.body = {
     first_name,
     last_name,
     email,
-    phone,
     password,
   };
   next();
