@@ -90,6 +90,7 @@ const verifyHostEmail = async (req, res, next) => {
   }
 
   host.email_verified = true;
+  host.status = 'Active';
 
   await VerificationToken.findByIdAndDelete(vToken._id);
   await host.save();
