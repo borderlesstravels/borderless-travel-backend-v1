@@ -62,8 +62,8 @@ const validateHostLoginType = async (req, res, next) => {
   if (loginId.includes('@')) {
     hostIdentity = loginId.toLowerCase();
     try {
-      host = await Host.findOne({
-        $or: [{ hotel_email: hostIdentity }, { contact_email: hostIdentity }],
+      host = await Host.findOne({email: hostIdentity
+        // $or: [{ email: hostIdentity }, { contact_email: hostIdentity }],
       });
     } catch (err) {
       return sendError(res, err.message, 500);
@@ -73,8 +73,8 @@ const validateHostLoginType = async (req, res, next) => {
     }
   } else if (loginId.charAt(0) === '+') {
     try {
-      host = await Host.findOne({
-        $or: [{ hotel_phone: loginId }, { contact_phone: loginId }],
+      host = await Host.findOne({phone: loginId
+        // $or: [{ hotel_phone: loginId }, { contact_phone: loginId }],
       });
     } catch (err) {
       return sendError(res, err.message, 500);

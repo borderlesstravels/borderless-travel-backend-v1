@@ -7,7 +7,8 @@ const Host = require('../../models/host/Host');
 const ResetHostPasswordToken = require('../../models/host/ResetHostPasswordToken');
 
 const signupHost = async (req, res, next) => {
-  req.body.password = bcrypt.hashSync(req.body.password);
+  const salt = bcrypt.genSaltSync(10)
+  req.body.password = bcrypt.hashSync(req.body.password, salt);
   const host = new Host(req.body);
   try {
     await host.save();
@@ -153,7 +154,8 @@ const resetPasswordHost = async (req, res, next) => {
   if (password.trim().length < 8 || password.trim().length > 20)
     return sendError(res, 'Password must be between 8 and 20 charcaters long');
 
-  const hashedPassword = bcrypt.hashSync(password);
+  const salt = bcrypt.genSaltSync(10)
+  const hashedPassword = bcrypt.hashSync(password, salt);
 
   host.password = hashedPassword;
   await host.save();
@@ -175,7 +177,11 @@ const resetPasswordHost = async (req, res, next) => {
 const loginHost = async (req, res, next) => {
   const { host, password } = req.body;
 
+  console.log('password', password)
+  console.log('host.password', host.password)
+  
   const isPasswordCorrect = bcrypt.compareSync(password, host.password);
+  console.log('isPasswordCorrect', isPasswordCorrect)
   if (!isPasswordCorrect) {
     return sendError(res, 'Invalid login ID or password');
   }

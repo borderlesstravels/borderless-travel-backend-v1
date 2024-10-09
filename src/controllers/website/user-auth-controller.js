@@ -16,8 +16,8 @@ const UserReferral = require('../../models/user/UserReferral');
 
 const signup = async (req, res, next) => {
   const { first_name, last_name, email, password, referred_by } = req.body;
-
-  const hashedPassword = bcrypt.hashSync(password);
+  const salt = bcrypt.genSaltSync(10)
+  const hashedPassword = bcrypt.hashSync(password, salt);
   const user = new User({
     first_name,
     last_name,
@@ -175,7 +175,8 @@ const resetPassword = async (req, res, next) => {
   if (password.trim().length < 8 || password.trim().length > 20)
     return sendError(res, 'Password must be between 8 and 20 charcaters long');
 
-  const hashedPassword = bcrypt.hashSync(password);
+  const salt = bcrypt.genSaltSync(10)
+  const hashedPassword = bcrypt.hashSync(password, salt);
 
   user.password = hashedPassword;
   await user.save();

@@ -72,7 +72,7 @@ const resetPasswordEmail = async (req, res) => {
   const firstName = user.first_name;
   let link;
   if (type === 'user' || type === 'host') {
-    link = `${process.env.USER_APP_URL}/reset-password?token=${token}&id=${user._id}&type=${type}`;
+    link = `${process.env.USER_APP_URL}/update-password?token=${token}&id=${user._id}&type=${type}`;
   } else if (type === 'admin') {
     link = `${process.env.ADMIN_APP_URL}/reset-password?token=${token}&id=${user._id}`;
   }
