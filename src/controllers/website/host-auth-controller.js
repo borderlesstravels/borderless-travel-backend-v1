@@ -195,8 +195,8 @@ const loginHost = async (req, res, next) => {
     path: '/',
     expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5),
     httpOnly: true,
-    sameSite: 'none',
-    secure: true,
+    sameSite: process.env.MODE === 'development' ? 'lax' : 'none',
+    secure: process.env.MODE === 'development' ? false : true,
     // sameSite: 'lax',
   });
   req.body = {
