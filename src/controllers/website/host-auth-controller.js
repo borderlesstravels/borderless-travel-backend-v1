@@ -188,6 +188,7 @@ const loginHost = async (req, res, next) => {
   if (!host.email_verified) {
     return res.status(401).json({
       success: true,
+      loginStatus: 1,
       message: 'Unverified email',
       userId: host._id,
     });
@@ -202,7 +203,7 @@ const loginHost = async (req, res, next) => {
     expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5),
     httpOnly: true,
     sameSite: process.env.MODE === 'development' ? 'lax' : 'none',
-    secure: process.env.MODE === 'development' ? false : true,
+    secure: process.env.MODE === '!development' && true,
     // sameSite: 'lax',
   });
   req.body = {

@@ -215,6 +215,7 @@ const login = async (req, res, next) => {
     httpOnly: true,
     sameSite: process.env.MODE === 'development' ? 'lax' : 'none',
     secure: process.env.MODE === 'development' ? false : true,
+    secure: process.env.MODE === '!development' && true,
     // sameSite: 'none',
     // secure: true,
     // sameSite: 'lax',
