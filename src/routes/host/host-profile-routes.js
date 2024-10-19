@@ -60,14 +60,14 @@ router.post("/logout", logoutHost);
 
 // Shortlet
 router.post(
-  "/add-property",
+  "/add-listing",
   verifyHostLoginToken,
   shortletImageUpload,
   addProperty
 );
-router.get("/properties", verifyHostLoginToken, getHostProperties);
+router.get("/listings", verifyHostLoginToken, getHostProperties);
 router.put(
-  "/update-property/:id",
+  "/update-listing/:id",
   verifyHostLoginToken,
   shortletImageUpload,
   editProperty

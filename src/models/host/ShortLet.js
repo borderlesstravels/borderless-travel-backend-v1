@@ -1,16 +1,16 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
 const shortLetSchema = new Schema({
   owner: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Host',
+    ref: "Host",
     required: true,
   },
   apartment_name: {
     type: String,
-    required: true,
+    required: [true, "Apartment name is missing"],
   },
   country: {
     type: String,
@@ -38,7 +38,6 @@ const shortLetSchema = new Schema({
   },
   website: {
     type: String,
-    required: true,
   },
 
   images: {
@@ -49,16 +48,32 @@ const shortLetSchema = new Schema({
     type: Number,
     default: 0,
   },
+  single_price: {
+    type: String,
+    default: 0,
+  },
   suites: {
     type: Number,
+    default: 0,
+  },
+  suites_price: {
+    type: String,
     default: 0,
   },
   executive: {
     type: Number,
     default: 0,
   },
+  executive_price: {
+    type: String,
+    default: 0,
+  },
   double_chambers: {
     type: Number,
+    default: 0,
+  },
+  double_chambers_price: {
+    type: String,
     default: 0,
   },
   description: {
@@ -251,4 +266,4 @@ const shortLetSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('ShortLet', shortLetSchema);
+module.exports = mongoose.model("ShortLet", shortLetSchema);

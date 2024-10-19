@@ -78,12 +78,12 @@ const addProperty = async (req, res) => {
     await property.save();
     return sendSuccess(
       res,
-      `Successfully added a new property - ${req.body.apartment_name}`,
+      `Successfully added a new listing - ${req.body.apartment_name}`,
       property
     );
   } catch (err) {
-    console.log(err);
-    return sendError(res, "Unable to add a new property");
+    console.log(err.errors.path);
+    return sendError(res, "Unable to add a new listing");
   }
 };
 
@@ -118,12 +118,12 @@ const editProperty = async (req, res) => {
     );
     return sendSuccess(
       res,
-      `Successfully updated the property - ${req.body.apartment_name}`,
+      `Successfully updated the listing - ${req.body.apartment_name}`,
       property
     );
   } catch (err) {
     console.log(err);
-    return sendError(res, "Unable to the property data");
+    return sendError(res, "Unable to update the listing data");
   }
 };
 
@@ -131,19 +131,17 @@ const getHostProperties = async (req, res) => {
   const userId = req.id;
   try {
     const properties = await ShortLet.find();
-    console.log("properties", properties);
     if (!properties.length) {
-      return sendSuccess(res, "No properties record yet");
+      return sendSuccess(res, "No listings record yet");
     }
     const hostProperties = properties.filter((item) => item.owner == userId);
-    console.log("hostProperties", hostProperties);
     if (!hostProperties.length) {
-      return sendSuccess(res, "You have no properties yet");
+      return sendSuccess(res, "You have no listings yet");
     }
     return sendSuccess(res, "Successfully fetched data", hostProperties);
   } catch (err) {
     console.log("err", err);
-    return sendError(res, "Cannot fetch host's properties", 500);
+    return sendError(res, "Cannot fetch host's listings", 500);
   }
 };
 

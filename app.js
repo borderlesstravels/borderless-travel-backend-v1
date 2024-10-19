@@ -18,21 +18,13 @@ const contentManagementRouter = require("./src/routes/admin/admin-content-routes
 const inventoryRouter = require("./src/routes/admin/admin-inventory-routes");
 const appSettingsRouter = require("./src/routes/admin/admin-app-settings-routes");
 
-const flightRouter = require("./src/routes/website/flight-routes");
 const websiteRouter = require("./src/routes/website/general-routes");
+const flightRouter = require("./src/routes/website/flight-routes");
+const shortletRouter = require("./src/routes/website/shortlet-routes");
 
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const { connect } = require("./db");
-
-const origin = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "http://localhost:5500",
-  "http://127.0.0.1:5500",
-  "https://borderless-travel-admin-app.vercel.app",
-  "https://borderless-travels.netlify.app",
-];
 
 const app = express();
 app.use(
@@ -67,8 +59,9 @@ app.use("/api/v1/admin-app/content-management", contentManagementRouter);
 app.use("/api/v1/admin-app/inventory-management", inventoryRouter);
 app.use("/api/v1/admin-app/app-settings", appSettingsRouter);
 
-app.use("/api/v1/flight", flightRouter);
 app.use("/api/v1/website", websiteRouter);
+app.use("/api/v1/flight", flightRouter);
+app.use("/api/v1/shortlet", shortletRouter);
 
 app.get("/", (req, res) => {
   res.send(
