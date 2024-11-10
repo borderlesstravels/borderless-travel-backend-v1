@@ -144,7 +144,7 @@ const forgotPasswordHost = async (req, res, next) => {
     return sendError(res, "You can only request a new token after 10 minutes");
 
   // Generate token
-  const token = await createRandomBytes();
+  const token = await createRandomBytes(30);
   const resetToken = new ResetHostPasswordToken({ owner: host._id, token });
   await resetToken.save();
   req.body = {

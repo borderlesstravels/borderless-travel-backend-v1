@@ -1,9 +1,13 @@
-const bcrypt = require('bcryptjs');
-const { sendError, sendSuccess, badRequestError } = require('../../utils/helpers');
-const { log } = require('console');
-const User = require('../../models/user/User');
-const ShortStayBooking = require('../../models/ShortStayBooking');
-const FlightBooking = require('../../models/general/FlightBooking');
+const bcrypt = require("bcryptjs");
+const {
+  sendError,
+  sendSuccess,
+  badRequestError,
+} = require("../../utils/helpers");
+const { log } = require("console");
+const User = require("../../models/user/User");
+const FlightBooking = require("../../models/general/FlightBooking");
+const ShortletBooking = require("../../models/general/ShortletBooking");
 
 const updateUserProfile = async (req, res) => {
   if (req.body.password) {
@@ -17,12 +21,12 @@ const updateUserProfile = async (req, res) => {
     );
     return res.status(200).json({
       success: true,
-      message: 'Successfully updated the user profile',
+      message: "Successfully updated the user profile",
       data: savedUserProfile,
     });
   } catch (err) {
     log(err);
-    return sendError(res, 'Unable to update the user profile');
+    return sendError(res, "Unable to update the user profile");
   }
 };
 
@@ -30,20 +34,23 @@ const blockUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
-      return badRequestError(res, 'Unable to verify user details');
+      return badRequestError(res, "Unable to verify user details");
     }
-    if (user.status === 'Blocked') {
+    if (user.status === "Blocked") {
       return badRequestError(
         res,
         `${user.first_name} ${user.last_name}'s account is already blocked`
       );
     }
-    user.status = 'Blocked';
+    user.status = "Blocked";
     await user.save();
-    return sendSuccess(res, `User ${user.first_name} ${user.last_name} has been blocked`);
+    return sendSuccess(
+      res,
+      `User ${user.first_name} ${user.last_name} has been blocked`
+    );
   } catch (err) {
     log(err);
-    return sendError(res, 'Unable to block the user account');
+    return sendError(res, "Unable to block the user account");
   }
 };
 
@@ -52,47 +59,60 @@ const unblockUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
-      return badRequestError(res, 'Unable to verify user details');
+      return badRequestError(res, "Unable to verify user details");
     }
-    if (user.status === 'Pending' || user.status === 'Active') {
+    if (user.status === "Pending" || user.status === "Active") {
       return badRequestError(
         res,
         `User ${user.first_name} ${user.last_name}'s account was not blocked`
       );
     }
     if (user.email_verified) {
-      status = 'Active';
+      status = "Active";
     } else {
-      status = 'Pending';
+      status = "Pending";
     }
     user.status = status;
     await user.save();
-    return sendSuccess(res, `User ${user.first_name} ${user.last_name} is now active`);
+    return sendSuccess(
+      res,
+      `User ${user.first_name} ${user.last_name} is now active`
+    );
   } catch (err) {
     log(err);
-    return sendError(res, 'Unable to block the user account');
+    return sendError(res, "Unable to block the user account");
   }
 };
 
 const fetchUserFlightBookings = async (req, res) => {
-  console.log('flightBookings');
+  console.log("flightBookings");
   try {
     const flightBookings = await FlightBooking.find({ owner: req.params.id });
     if (flightBookings.length < 1) {
-      return sendSuccess(res, 'User has no Flight bookings yet', flightBookings);
+      return sendSuccess(
+        res,
+        "User has no Flight bookings yet",
+        flightBookings
+      );
     }
     return sendSuccess(res, null, flightBookings);
   } catch (error) {
     return sendError(res, "Unable to fetch the user's Flight Bookings");
   }
 };
-const fetchUserShortStayBookings = async (req, res) => {
+const fetchUserShortletBooking = async (req, res) => {
   try {
-    const shortStayBookings = await ShortStayBooking.find({ owner: req.params.id });
-    if (shortStayBookings.length < 1) {
-      return sendSuccess(res, 'User has no Short Stay bookings yet', shortStayBookings);
+    const shortletBooking = await ShortletBooking.find({
+      owner: req.params.id,
+    });
+    if (shortletBooking.length < 1) {
+      return sendSuccess(
+        res,
+        "User has no Short Stay bookings yet",
+        shortletBooking
+      );
     }
-    return sendSuccess(res, null, shortStayBookings);
+    return sendSuccess(res, null, shortletBooking);
   } catch (error) {
     return sendError(res, "Unable to fetch the user's Short Stay bookings");
   }
@@ -103,11 +123,11 @@ const deleteUser = async (req, res) => {
     await User.findByIdAndDelete(req.params.id);
     return res.status(200).json({
       success: true,
-      message: 'Successfully deleted the user profile',
+      message: "Successfully deleted the user profile",
     });
   } catch (err) {
     console.log(err);
-    return sendError(res, 'Unable to delete the user profile');
+    return sendError(res, "Unable to delete the user profile");
   }
 };
 
@@ -116,7 +136,7 @@ const fetchAllUsers = async (req, res) => {
     const users = await User.find().limit(req.query.limit);
     return res.status(200).json({ success: true, data: users });
   } catch (error) {
-    return sendError(res, 'Unable to fetch the users data');
+    return sendError(res, "Unable to fetch the users data");
   }
 };
 
@@ -125,11 +145,11 @@ const fetchSingleUser = async (req, res) => {
   try {
     const user = await User.findById(id);
     if (!user) {
-      return sendError(res, 'User profile does not exist');
+      return sendError(res, "User profile does not exist");
     }
     return res.status(200).json({ success: true, data: user });
   } catch (error) {
-    return sendError(res, 'Unable to fetch the user profile data');
+    return sendError(res, "Unable to fetch the user profile data");
   }
 };
 
@@ -139,7 +159,7 @@ module.exports = {
   unblockUser,
   deleteUser,
   fetchUserFlightBookings,
-  fetchUserShortStayBookings,
+  fetchUserShortletBooking,
   fetchAllUsers,
   fetchSingleUser,
 };

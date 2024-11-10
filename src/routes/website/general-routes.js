@@ -1,11 +1,11 @@
-const express = require('express');
-const { contactUsEmail } = require('../../services/emailServices');
+const express = require("express");
+const { contactUsEmail } = require("../../services/emailServices");
 const {
   validateContactUsParams,
   validateSubscriptionParams,
   validate,
   validatePaymentRecord,
-} = require('../../middlewares/validator');
+} = require("../../middlewares/validator");
 const {
   saveSubscriber,
   applyForJob,
@@ -13,18 +13,34 @@ const {
   fetchSingleJobPosting,
   services,
   payForFlight,
-} = require('../../controllers/website/general-controller');
-const { careerAppDocUpload } = require('../../utils/helpers/files');
-const { verifyUserLoginToken } = require('../../controllers/website/user-auth-controller');
+  payForShortlet,
+} = require("../../controllers/website/general-controller");
+const { careerAppDocUpload } = require("../../utils/helpers/files");
+const {
+  verifyUserLoginToken,
+} = require("../../controllers/website/user-auth-controller");
 
 const router = express.Router();
 
-router.get('/services', services);
-router.post('/record-payment', verifyUserLoginToken, validatePaymentRecord, validate, payForFlight);
-router.post('/contact-us', validateContactUsParams, validate, contactUsEmail);
-router.post('/subscribe', validateSubscriptionParams, validate, saveSubscriber);
-router.get('/jobs', fetchJobPostings);
-router.get('/single-job/:id', fetchSingleJobPosting);
-router.post('/apply-for-job', careerAppDocUpload, applyForJob);
+router.get("/services", services);
+router.post(
+  "/record-payment",
+  verifyUserLoginToken,
+  validatePaymentRecord,
+  validate,
+  payForFlight
+);
+router.post(
+  "/record-shortlet-payment",
+  verifyUserLoginToken,
+  validatePaymentRecord,
+  validate,
+  payForShortlet
+);
+router.post("/contact-us", validateContactUsParams, validate, contactUsEmail);
+router.post("/subscribe", validateSubscriptionParams, validate, saveSubscriber);
+router.get("/jobs", fetchJobPostings);
+router.get("/single-job/:id", fetchSingleJobPosting);
+router.post("/apply-for-job", careerAppDocUpload, applyForJob);
 
 module.exports = router;

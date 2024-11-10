@@ -19,6 +19,8 @@ const {
   getHostProperties,
   getHostNotifications,
   editProperty,
+  approveShortletBooking,
+  declineShortletBooking,
 } = require("../../controllers/host/host-profile-controller");
 const {
   validateHostUpdateProfileParams,
@@ -71,6 +73,16 @@ router.put(
   verifyHostLoginToken,
   shortletImageUpload,
   editProperty
+);
+router.put(
+  "/confirm-booking/:booking_reference",
+  verifyHostLoginToken,
+  approveShortletBooking
+);
+router.put(
+  "/decline-booking/:booking_reference",
+  verifyHostLoginToken,
+  declineShortletBooking
 );
 
 module.exports = router;
