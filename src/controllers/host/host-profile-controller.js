@@ -195,6 +195,26 @@ const getHostProperties = async (req, res) => {
   }
 };
 
+const fetchSingleShortlet = async (req, res) => {
+  try {
+    const shortlet = await ShortLet.findById(req.params.id);
+    if (!shortlet) {
+      return sendSuccess(
+        res,
+        "No such shortlet apartment exists or no longer exists"
+      );
+    }
+    return sendSuccess(
+      res,
+      "Successfully fetched the requested shortlet apartment",
+      shortlet
+    );
+  } catch (error) {
+    console.log(error);
+    return sendError(res, "Unable to fetch the requested shortlet apartment");
+  }
+};
+
 const approveShortletBooking = async (req, res) => {
   const { booking_reference } = req.params;
   try {
@@ -425,6 +445,7 @@ module.exports = {
   addProperty,
   editProperty,
   getHostProperties,
+  fetchSingleShortlet,
   approveShortletBooking,
   declineShortletBooking,
 

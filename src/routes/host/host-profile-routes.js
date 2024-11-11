@@ -21,6 +21,7 @@ const {
   editProperty,
   approveShortletBooking,
   declineShortletBooking,
+  fetchSingleShortlet,
 } = require("../../controllers/host/host-profile-controller");
 const {
   validateHostUpdateProfileParams,
@@ -68,6 +69,7 @@ router.post(
   addProperty
 );
 router.get("/listings", verifyHostLoginToken, getHostProperties);
+router.get("/listing/:id", fetchSingleShortlet);
 router.put(
   "/update-listing/:id",
   verifyHostLoginToken,
