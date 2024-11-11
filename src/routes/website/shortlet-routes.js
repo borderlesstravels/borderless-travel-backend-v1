@@ -16,7 +16,7 @@ const router = express.Router();
 
 router.get("/fetch-shortlets", fetchShortlets);
 router.get("/fetch-shortlet/:id", fetchSingleShortlet);
-router.get("/fetch-shortlet-reviews", fetchShortletReviews);
+router.get("/fetch-shortlet-reviews/:product_reviewed", fetchShortletReviews);
 router.post(
   "/book-shortlet-auth/:apartment_id",
   validateShortletParams,

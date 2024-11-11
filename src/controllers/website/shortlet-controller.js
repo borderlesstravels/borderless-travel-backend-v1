@@ -55,7 +55,7 @@ const fetchShortletReviews = async (req, res) => {
       return sendSuccess(res, "No reviews record yet");
     }
     const shortletReviews = reviews.filter(
-      (item) => item.product_reviewed == req.params.id
+      (item) => item.product_reviewed == req.params.product_reviewed
     );
     if (!shortletReviews.length) {
       return sendSuccess(res, "This shortlet apartment has no reviews yet");
@@ -111,7 +111,8 @@ const bookStayAUth = async (req, res, next) => {
       phone: user.phone ? user.phone : "",
       check_in_date,
       check_out_date,
-      check_in_time: req.body?.check_in_time,
+      check_in_time: req.body.check_in_time ? req.body.check_in_time : "",
+      gps_location: req.body.gps_location ? req.body.gps_location : "",
       price,
       booking_reference,
     });
