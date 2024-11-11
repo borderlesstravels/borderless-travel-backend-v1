@@ -8,6 +8,10 @@ const {
 const {
   verifyUserLoginToken,
 } = require("../../controllers/website/user-auth-controller");
+const {
+  validate,
+  validateShortletParams,
+} = require("../../middlewares/validator");
 const router = express.Router();
 
 router.get("/fetch-shortlets", fetchShortlets);
@@ -15,6 +19,8 @@ router.get("/fetch-shortlet/:id", fetchSingleShortlet);
 router.get("/fetch-shortlet-reviews", fetchShortletReviews);
 router.post(
   "/book-shortlet-auth/:apartment_id",
+  validateShortletParams,
+  validate,
   verifyUserLoginToken,
   bookStayAUth
 );

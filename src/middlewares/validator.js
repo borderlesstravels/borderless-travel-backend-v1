@@ -185,6 +185,24 @@ exports.validateFlightBooking = [
     .isEmpty()
     .withMessage("Passenger Phone Number is missing!"),
 ];
+// Shortlet
+exports.validateShortletParams = [
+  check("check_in_date")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Check in date is missing!"),
+  check("check_out_date")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Check out date is missing!"),
+  check("price")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Kindly provide the price!"),
+];
 
 // User
 exports.validateUserSignupParams = [

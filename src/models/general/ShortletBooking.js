@@ -60,11 +60,6 @@ const shortletBookingSchema = new Schema({
   },
   check_in_time: {
     type: String,
-    required: true,
-  },
-  check_out_time: {
-    type: String,
-    required: true,
   },
   price: {
     type: Number,
