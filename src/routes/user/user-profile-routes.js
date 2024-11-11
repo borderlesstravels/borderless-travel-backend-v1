@@ -14,6 +14,7 @@ const {
   createReview,
   updateReview,
   deleteReview,
+  getUserNotifications,
 } = require("../../controllers/user/user-profile-controller");
 const {
   verifyUserLoginToken,
@@ -87,5 +88,7 @@ router.post(
 );
 router.put("/edit-review/:review_id", verifyUserLoginToken, updateReview);
 router.delete("/delete-review/:id", verifyUserLoginToken, deleteReview);
+
+router.get("/notifications", verifyUserLoginToken, getUserNotifications);
 
 module.exports = router;

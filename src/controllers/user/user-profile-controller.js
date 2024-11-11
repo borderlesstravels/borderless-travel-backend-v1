@@ -9,6 +9,7 @@ const bcrypt = require("bcryptjs");
 const FlightBooking = require("../../models/general/FlightBooking");
 const ShortletBooking = require("../../models/general/ShortletBooking");
 const Review = require("../../models/general/Review");
+const Notification = require("../../models/general/Notification");
 
 const getUser = async (req, res) => {
   const userId = req.id;
@@ -253,6 +254,26 @@ const userReviews = async (req, res) => {
   }
 };
 
+const getUserNotifications = async (req, res) => {
+  const userId = req.id;
+  try {
+    const notifications = await Notification.find();
+    if (!notifications.length) {
+      return sendSuccess(res, "No notifications record yet");
+    }
+    const hostNotifications = notifications.filter(
+      (item) => item.owner == userId
+    );
+    if (!hostNotifications.length) {
+      return sendSuccess(res, "You have no notifications at this time");
+    }
+    return sendSuccess(res, "Successfully fetched data", hostNotifications);
+  } catch (err) {
+    console.log("err", err);
+    return sendError(res, "Cannot fetch host's notifications", 500);
+  }
+};
+
 module.exports = {
   getUser,
   updateUserProfile,
@@ -272,4 +293,5 @@ module.exports = {
   updateReview,
   deleteReview,
   userReviews,
+  getUserNotifications,
 };

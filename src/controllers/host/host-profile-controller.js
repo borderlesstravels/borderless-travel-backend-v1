@@ -36,7 +36,7 @@ const getHostNotifications = async (req, res) => {
       return sendSuccess(res, "No notifications record yet");
     }
     const hostNotifications = notifications.filter(
-      (item) => item.property_owner == userId
+      (item) => item.owner == userId
     );
     if (!hostNotifications.length) {
       return sendSuccess(res, "You have no notifications at this time");
