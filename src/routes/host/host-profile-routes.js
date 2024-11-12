@@ -43,7 +43,7 @@ router.get("/reviews", verifyHostLoginToken, getHostReviews);
 router.get("/notifications", verifyHostLoginToken, getHostNotifications);
 router.put("/update-profile", verifyHostLoginToken, updateHostProfile);
 router.put(
-  "/update-profile-avatar/:id",
+  "/update-profile-avatar",
   verifyHostLoginToken,
   hostImageUpload,
   setHostProfileAvatar
