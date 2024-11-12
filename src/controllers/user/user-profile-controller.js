@@ -45,6 +45,7 @@ const updateUserProfile = async (req, res) => {
 };
 
 const setUserProfileAvatar = async (req, res) => {
+  const userId = req.id;
   const rawImagesArray = req.files["avatar"];
   if (!rawImagesArray) {
     return badRequestError(res, "Please add the image avatar to be uploaded");
@@ -56,7 +57,7 @@ const setUserProfileAvatar = async (req, res) => {
   console.log("avatar: ", avatar);
 
   try {
-    const savedProfile = await User.findByIdAndUpdate(req.params.id, {
+    const savedProfile = await User.findByIdAndUpdate(userId, {
       avatar: avatar,
     });
     return sendSuccess(

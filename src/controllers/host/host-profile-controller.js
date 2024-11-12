@@ -366,6 +366,7 @@ const updateHostPassword = async (req, res, next) => {
   }
 };
 const setHostProfileAvatar = async (req, res) => {
+  const userId = req.id;
   const rawImagesArray = req.files["avatar"];
   if (!rawImagesArray) {
     return badRequestError(res, "Please add the image avatar to be uploaded");
@@ -377,7 +378,8 @@ const setHostProfileAvatar = async (req, res) => {
   console.log("avatar: ", avatar);
 
   try {
-    const savedHostProfile = await Host.findByIdAndUpdate(req.params.id, {
+    // const host = await Host.findById()
+    const savedHostProfile = await Host.findByIdAndUpdate(userId, {
       avatar: avatar,
     });
     return sendSuccess(
