@@ -148,6 +148,7 @@ const payForShortlet = async (req, res) => {
         transaction_time: time,
       });
       booking.payment_status = "paid";
+      booking.status = "paid";
       await booking.save();
       await newPayment.save();
       return sendSuccess(

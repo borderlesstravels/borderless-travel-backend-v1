@@ -19,6 +19,12 @@ const notificationSchema = new Schema({
     type: String,
     required: true,
   },
+  apartment_id: {
+    type: String,
+  },
+  booking_id: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

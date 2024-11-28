@@ -80,7 +80,7 @@ const bookStayAUth = async (req, res, next) => {
   let userBookings = user.bookings;
   userBookings = userBookings + 1;
 
-  const apartment = await ShortLet.findOne({ id: apartment_id });
+  const apartment = await ShortLet.findById(apartment_id);
   if (!apartment) sendError(res, "Apartment does not or no longer exists");
 
   const token = generateString(15);
@@ -124,98 +124,16 @@ const bookStayAUth = async (req, res, next) => {
       `Your reservation for a shortlet apartment; ${apartment.apartment_name} in ${apartment.address}, ${apartment.lga} has been successfully created. Get ready to pay soon`,
       user
     );
-
+    const booking_id = newBooking._id;
     if (notifyUser) {
       const notifyHost = await saveNotification(
         apartment.owner,
         "booking",
         `Someone requested reservation for ${apartment.apartment_name}`,
-        `Your apartment, ${apartment.apartment_name} located in ${apartment.address}, ${apartment.lga} has been requested for reservation. <a href="${process.env.USER_APP_URL}/booking-requests/${booking_reference}">Take action action here</a>`,
-        host
-      );
-      if (notifyHost) {
-        req.body -
-          {
-            newBooking,
-            host,
-            user,
-          };
-        return sendSuccess(
-          res,
-          newBooking,
-          "Successfully created your shortlet booking. Please wait for feedback"
-        );
-      }
-    }
-  } catch (error) {
-    console.log(error);
-    return sendError(
-      res,
-      "Unable to complete your booking. Something went wrong"
-    );
-  }
-};
-
-const bookStayNoAUth = async (req, res, next) => {
-  const { apartment_id } = req.params;
-  const userId = req.id;
-
-  const user = await User.findById(userId, "-password");
-  if (!user) return sendError(res, "Sorry, please login first");
-  let userBookings = user.bookings;
-  userBookings = userBookings + 1;
-
-  const apartment = await ShortLet.findOne({ id: apartment_id });
-  if (!apartment) sendError(res, "Apartment does not or no longer exists");
-
-  const token = generateString(15);
-  const booking_reference = `BT-${token}`;
-
-  const host = await Host.findOne({ id: apartment.owner });
-  if (!host) sendError(res, "Apartment does not belong to anyone");
-
-  let check_in_date = new Date(req.body.check_in_date);
-  let check_out_date = new Date(req.body.check_out_date);
-  let difference_in_time = check_out_date.getTime() - check_in_date.getTime();
-  let difference_in_days = Math.round(difference_in_time / (1000 * 3600 * 24));
-  let price = Number(req.body.price) * Number(difference_in_days);
-
-  try {
-    const newBooking = new ShortletBooking({
-      owner: userId,
-      apartment_id,
-      apartment_name: apartment.apartment_name,
-      apartment_address: apartment.address,
-      apartment_city: apartment.lga,
-      apartment_state: apartment.state,
-      apartment_country: apartment.country,
-      apartment_img: apartment.images.split(", ")[0].toString(),
-      apartment_owner: apartment.owner,
-      name: `${user.first_name} ${user.last_name}`,
-      email: user.email,
-      phone: user.phone ? user.phone : "",
-      check_in_date,
-      check_out_date,
-      check_in_time: req.body?.check_in_time,
-      price,
-      booking_reference,
-    });
-    await newBooking.save();
-    const notifyUser = await saveNotification(
-      userId,
-      "booking",
-      `Your reservation for ${apartment.apartment_name} has been created`,
-      `Your reservation for a shortlet apartment; ${apartment.apartment_name} in ${apartment.address}, ${apartment.lga} has been successfully created. Get ready to pay soon`,
-      user
-    );
-
-    if (notifyUser) {
-      const notifyHost = await saveNotification(
-        apartment.owner,
-        "booking",
-        `Someone requested reservation for ${apartment.apartment_name}`,
-        `Your apartment, ${apartment.apartment_name} located in ${apartment.address}, ${apartment.lga} has been requested for reservation. <a href="${process.env.USER_APP_URL}/booking-requests/${booking_reference}">Take action action here</a>`,
-        host
+        `Your apartment, ${apartment.apartment_name} located in ${apartment.address}, ${apartment.lga} has been requested for reservation. <a href="${process.env.USER_APP_URL}/stay-booking-detail/${apartment_id}">Take action action here</a>`,
+        host,
+        apartment_id,
+        booking_id
       );
       if (notifyHost) {
         req.body -

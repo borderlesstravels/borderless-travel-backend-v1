@@ -22,6 +22,8 @@ const {
   approveShortletBooking,
   declineShortletBooking,
   fetchSingleShortlet,
+  fetchShortletBookings,
+  fetchSingleShortletBooking,
 } = require("../../controllers/host/host-profile-controller");
 const {
   validateHostUpdateProfileParams,
@@ -86,5 +88,8 @@ router.put(
   verifyHostLoginToken,
   declineShortletBooking
 );
+
+router.get("/shortlet-bookings", verifyHostLoginToken, fetchShortletBookings);
+router.get("/single-shortlet-booking/:id", fetchSingleShortletBooking);
 
 module.exports = router;

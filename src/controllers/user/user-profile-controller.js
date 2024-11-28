@@ -262,16 +262,16 @@ const getUserNotifications = async (req, res) => {
     if (!notifications.length) {
       return sendSuccess(res, "No notifications record yet");
     }
-    const hostNotifications = notifications.filter(
+    const userNotifications = notifications.filter(
       (item) => item.owner == userId
     );
-    if (!hostNotifications.length) {
+    if (!userNotifications.length) {
       return sendSuccess(res, "You have no notifications at this time");
     }
-    return sendSuccess(res, "Successfully fetched data", hostNotifications);
+    return sendSuccess(res, "Successfully fetched data", userNotifications);
   } catch (err) {
     console.log("err", err);
-    return sendError(res, "Cannot fetch host's notifications", 500);
+    return sendError(res, "Cannot fetch user's notifications", 500);
   }
 };
 

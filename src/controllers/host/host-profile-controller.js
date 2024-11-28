@@ -306,6 +306,52 @@ const declineShortletBooking = async (req, res) => {
   }
 };
 
+// fetchShortletBookings
+const fetchShortletBookings = async (req, res) => {
+  const userId = req.id;
+  try {
+    let bookings = await ShortletBooking.find();
+    bookings = bookings.filter((book) => book.apartment_owner == userId);
+
+    const pendingBookings = bookings.filter(
+      (book) => book.status === "pending"
+    );
+    const declinedBookings = bookings.filter(
+      (book) => book.status === "declined"
+    );
+    const confirmedBookings = bookings.filter(
+      (book) => book.status === "confirmed"
+    );
+    const completedBookings = bookings.filter((book) => book.status === "paid");
+    return sendSuccess(
+      res,
+      "Successfully fetched the requested shortlet apartment",
+      {
+        bookings,
+        pendingBookings,
+        declinedBookings,
+        confirmedBookings,
+        completedBookings,
+      }
+    );
+  } catch (error) {
+    console.log(error);
+    return sendError(res, "Unable to fetch the requested shortlet apartment");
+  }
+};
+
+const fetchSingleShortletBooking = async (req, res) => {
+  try {
+    const shortletBooking = await ShortletBooking.findById(req.params.id);
+    if (!shortletBooking) {
+      return sendSuccess(res, "No shortlet booking record found");
+    }
+    return sendSuccess(res, "Successfully fetched booking", shortletBooking);
+  } catch (error) {
+    return sendError(res, "Cannot fetch shortlet booking");
+  }
+};
+
 // **
 // **
 // Profile Update
@@ -448,6 +494,10 @@ module.exports = {
   editProperty,
   getHostProperties,
   fetchSingleShortlet,
+
+  fetchShortletBookings,
+  fetchSingleShortletBooking,
+
   approveShortletBooking,
   declineShortletBooking,
 

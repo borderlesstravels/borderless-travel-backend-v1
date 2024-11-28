@@ -78,13 +78,23 @@ exports.generateSlug = (title) => {
   return slug;
 };
 
-exports.saveNotification = async (owner, type, title, description, user) => {
+exports.saveNotification = async (
+  owner,
+  type,
+  title,
+  description,
+  user,
+  apartment_id = null,
+  booking_id = null
+) => {
   try {
     const newNot = new Notification({
       owner,
       type,
       title,
       description,
+      apartment_id,
+      booking_id,
     });
     const notificationSent = await newNot.save();
     if (notificationSent) {
