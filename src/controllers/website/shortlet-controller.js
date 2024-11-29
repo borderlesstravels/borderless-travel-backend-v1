@@ -86,7 +86,7 @@ const bookStayAUth = async (req, res, next) => {
   const token = generateString(15);
   const booking_reference = `BT-${token}`;
 
-  const host = await Host.findOne({ id: apartment.owner });
+  const host = await Host.findById(apartment.owner);
   if (!host) sendError(res, "Apartment does not belong to anyone");
 
   let check_in_date = new Date(req.body.check_in_date);
@@ -130,7 +130,7 @@ const bookStayAUth = async (req, res, next) => {
         apartment.owner,
         "booking",
         `Someone requested reservation for ${apartment.apartment_name}`,
-        `Your apartment, ${apartment.apartment_name} located in ${apartment.address}, ${apartment.lga} has been requested for reservation. <a href="${process.env.USER_APP_URL}/stay-booking-detail/${apartment_id}">Take action action here</a>`,
+        `Your apartment, ${apartment.apartment_name} located in ${apartment.address}, ${apartment.lga} has been requested for reservation. <a href="${process.env.USER_APP_URL}/stay-booking-detail/${booking_id}">Take action action here</a>`,
         host,
         apartment_id,
         booking_id

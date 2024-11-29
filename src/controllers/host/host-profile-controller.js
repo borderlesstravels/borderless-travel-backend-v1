@@ -79,25 +79,32 @@ const addProperty = async (req, res) => {
   req.body.owner = req.id;
   console.log("req body", req.body);
   console.log("images", images);
-  let commission_amount = 0;
+  // let commission_amount = 0;
 
   try {
     const markup = await Markup.findOne({ service_name: "stay" });
     if (markup) {
       const commission_percent = markup.commission;
-      commission_amount = (commission_percent / 100) * amount;
-    }
-    if (Number(req.body.single_price) > 0) {
-      req.body.single_price = Number(req.body.single_price) + commission_amount;
-    }
-    if (Number(req.body.suites_price) > 0) {
-      req.body.suites_price = Number(req.body.suites_price) + commission_amount;
-    }
-    if (Number(req.body.executive_price) > 0) {
-      req.body.executive_price =
-        Number(req.body.executive_price) + commission_amount;
-    }
 
+      if (Number(req.body.single_price) > 0) {
+        const price = req.body.single_price;
+        const commission_amount =
+          (Number(commission_percent) / 100) * Number(price);
+        req.body.single_price = Number(price) + Number(commission_amount);
+      }
+      if (Number(req.body.suites_price) > 0) {
+        const price = req.body.suites_price;
+        const commission_amount =
+          (Number(commission_percent) / 100) * Number(price);
+        req.body.suites_price = Number(price) + Number(commission_amount);
+      }
+      if (Number(req.body.executive_price) > 0) {
+        const price = req.body.executive_price;
+        const commission_amount =
+          (Number(commission_percent) / 100) * Number(price);
+        req.body.executive_price = Number(price) + Number(commission_amount);
+      }
+    }
     const property = new ShortLet(req.body);
     await property.save();
     return sendSuccess(
@@ -106,7 +113,7 @@ const addProperty = async (req, res) => {
       property
     );
   } catch (err) {
-    console.log(err.errors.path);
+    console.log(err);
     return sendError(res, "Unable to add a new listing");
   }
 };
