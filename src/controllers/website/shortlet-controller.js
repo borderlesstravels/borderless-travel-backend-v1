@@ -29,43 +29,6 @@ const fetchShortlets = async (req, res) => {
 
 const fetchShortletsMinified = async (req, res) => {
   try {
-    // const shortlets = await ShortLet.find().select([
-    //   "-owner",
-    //   "-email",
-    //   "-phone",
-    //   "-website",
-    //   "-images",
-    //   "-single",
-    //   "-single_price",
-    //   "-suites",
-    //   "-suites_price",
-    //   "-executive",
-    //   "-executive_price",
-    //   "-double_chambers",
-    //   "-double_chambers_price",
-    //   "-description",
-    //   "-bedrooms",
-    //   "-bathrooms",
-    //   "-parking",
-    //   "-pool",
-    //   "-bathtube",
-    //   "-bidet",
-    //   "-body_soap",
-    //   "-cleaning_products",
-    //   "-hot_water",
-    //   "-bed_linens",
-    //   "-clothing_storage",
-    //   "-drying_rack",
-    //   "-drying_rack",
-    //   "-drying_rack",
-    //   "-drying_rack",
-    //   "-drying_rack",
-    //   "-drying_rack",
-    //   "-drying_rack",
-    //   "-drying_rack",
-    //   "-created_at",
-    //   "-__v",
-    // ]);
     const stlt = await ShortLet.find();
     const shortlets = stlt.map((ele) => ({
       _id: ele._id,
@@ -75,9 +38,6 @@ const fetchShortletsMinified = async (req, res) => {
       lga: ele.lga,
       address: ele.address,
     }));
-
-    console.log("stlt", stlt);
-    console.log("shortlets", shortlets);
 
     if (!shortlets.length) {
       return sendSuccess(res, "No shortlet apartments record yet");

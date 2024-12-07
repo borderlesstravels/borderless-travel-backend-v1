@@ -79,12 +79,12 @@ router.put(
   editProperty
 );
 router.put(
-  "/confirm-booking/:booking_reference",
+  "/confirm-booking/:id",
   verifyHostLoginToken,
   approveShortletBooking
 );
 router.put(
-  "/decline-booking/:booking_reference",
+  "/decline-booking/:id",
   verifyHostLoginToken,
   declineShortletBooking
 );

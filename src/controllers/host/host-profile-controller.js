@@ -223,11 +223,8 @@ const fetchSingleShortlet = async (req, res) => {
 };
 
 const approveShortletBooking = async (req, res) => {
-  const { booking_reference } = req.params;
   try {
-    const apartmentBooking = await ShortletBooking.findOne({
-      booking_reference,
-    });
+    const apartmentBooking = await ShortletBooking.findById(req.params.id);
     if (apartmentBooking.apartment_owner !== req.id)
       return sendError(res, "Apartment is not owned by you!");
     if (apartmentBooking.status === "confirmed")
@@ -264,11 +261,8 @@ const approveShortletBooking = async (req, res) => {
 };
 
 const declineShortletBooking = async (req, res) => {
-  const { booking_reference } = req.params;
   try {
-    const apartmentBooking = await ShortletBooking.findOne({
-      booking_reference,
-    });
+    const apartmentBooking = await ShortletBooking.findById(req.params.id);
     if (apartmentBooking.apartment_owner !== req.id)
       return sendError(res, "Apartment is not owned by you!");
     if (apartmentBooking.status === "declined")
