@@ -168,17 +168,19 @@ const bookFlightAuth = async (req, res) => {
       } else {
         return sendError(res, "Unable to save booking to the database.");
       }
-    } else if (response?.status === 400) {
-      return sendError(
-        res,
-        "Please check the traveller's document(s) you provided. It might contain an expired document.",
-        response?.status
-      );
-    } else if (response?.status === 403) {
-      return sendError(res, response.data.Message, response?.status);
-    } else if (response?.status === 404) {
-      return sendError(res, response.data.message, response?.status);
+      // } else if (response?.status === 400) {
+      //   console.log(response);
+      //   return sendError(
+      //     res,
+      //     "Please check the traveller's document(s) you provided. It might contain an expired document.",
+      //     response?.status
+      //   );
+      // } else if (response?.status === 403) {
+      //   return sendError(res, response.data.Message, response?.status);
+      // } else if (response?.status === 404) {
+      //   return sendError(res, response.data.message, response?.status);
     } else {
+      console.log({ response: response.data });
       return sendError(res, response?.statusText, response?.status);
     }
   } catch (error) {
@@ -300,16 +302,17 @@ const bookFlightNoAuth = async (req, res) => {
       } else {
         return sendError(res, "Unable to save booking to the database.");
       }
-    } else if (response?.status === 400) {
-      return sendError(
-        res,
-        "Please check the traveller's document(s) you provided. It might contain an expired document.",
-        response?.status
-      );
-    } else if (response?.status === 403) {
-      return sendError(res, response.data.Message, response?.status);
-    } else if (response?.status === 404) {
-      return sendError(res, response.data.message, response?.status);
+      // } else if (response?.status === 400) {
+      //   console.log("response", response);
+      //   return sendError(
+      //     res,
+      //     "Please check the traveller's document(s) you provided. It might contain an expired document.",
+      //     response?.status
+      //   );
+      // } else if (response?.status === 403) {
+      //   return sendError(res, response.data.Message, response?.status);
+      // } else if (response?.status === 404) {
+      //   return sendError(res, response.data.message, response?.status);
     } else {
       return sendError(res, response?.statusText, response?.status);
     }

@@ -10,6 +10,7 @@ const FlightBooking = require("../../models/general/FlightBooking");
 const ShortletBooking = require("../../models/general/ShortletBooking");
 const Review = require("../../models/general/Review");
 const Notification = require("../../models/general/Notification");
+const ShortLet = require("../../models/host/ShortLet");
 
 const getUser = async (req, res) => {
   const userId = req.id;
@@ -201,12 +202,24 @@ const userSingleShortletBooking = async (req, res) => {
 const createReview = async (req, res) => {
   const user = await User.findById(req.id, "-password");
   if (!user) return sendError(res, "Sorry, please login first");
+  const { product_reviewed } = req.params;
+  const { product_type, review, rating } = req.body;
+  let property_owner;
+  if (product_type === "shortlet") {
+    const productRev = await ShortLet.findById(product_reviewed);
+    if (productRev) {
+      property_owner = productRev.owner;
+    }
+  } else {
+    property_owner = "";
+  }
   const newReview = new Review({
     reviewer_id: req.id,
     reviewer_name: `${user.first_name} ${user.last_name}`,
-    product_reviewed: req.params.product_reviewed,
-    review: req.body.review,
-    rating: req.body.rating,
+    product_reviewed: product_reviewed,
+    property_owner: property_owner,
+    review: review,
+    rating: rating,
   });
   try {
     await newReview.save();

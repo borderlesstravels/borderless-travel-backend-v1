@@ -55,6 +55,7 @@ const getHostReviews = async (req, res) => {
     if (!reviews.length) {
       return sendSuccess(res, "No reviews record yet");
     }
+    console.log({ reviews });
     const hostReviews = reviews.filter((item) => item.property_owner == userId);
     if (!hostReviews.length) {
       return sendSuccess(res, "You have no reviews yet");
