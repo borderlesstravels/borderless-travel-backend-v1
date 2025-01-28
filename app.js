@@ -37,6 +37,7 @@ app.use(
       "http://127.0.0.1:5500",
       "https://borderless-travel-admin-app.vercel.app",
       "https://borderless-travels.netlify.app",
+      "https://borderless-website.onrender.com",
     ],
   })
 );
@@ -65,7 +66,7 @@ app.use("/api/v1/shortlet", shortletRouter);
 
 app.get("/", (req, res) => {
   res.send(
-    "Hello, welcome to Borderless Travels app. Server is running with latest update in November 2024\n - Flight module completed"
+    "Hello, welcome to Borderless Travels app. Server is running with latest update in January 2025"
   );
 });
 
