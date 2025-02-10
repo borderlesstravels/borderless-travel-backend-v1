@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
 const sendEmail = (subject, message, send_to) => {
   const transporter = nodemailer.createTransport({
@@ -23,8 +23,8 @@ const sendEmail = (subject, message, send_to) => {
 
   transporter.sendMail(options, function (err, result) {
     if (err) {
-      console.log('Error! - ', err);
-      throw new Error(err);
+      console.log("Error! - ", err);
+      // throw new Error(err);
     }
     if (result) {
       console.log(`Successfully sent email. Email ID - ${result.messageId}`);

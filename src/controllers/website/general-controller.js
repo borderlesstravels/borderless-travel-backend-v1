@@ -223,41 +223,55 @@ const fetchJobPostings = async (req, res, next) => {
 const fetchSingleJobPosting = async (req, res, next) => {
   try {
     const job = await Job.findById(req.params.id);
-    res.status(200).json({
-      success: true,
-      message: "Successfully fetched the job posting",
-      data: job,
-    });
+    if (!job) {
+      return sendError(res, "The selected job does not exist");
+    }
+    return sendSuccess(res, "Successfully fetched the job posting", job);
   } catch (error) {
     return sendError(res, "Could not find the job posting.", 500);
   }
 };
 const applyForJob = async (req, res, next) => {
-  const rawImagesArray = req.files["documents"];
-  if (!rawImagesArray) {
-    return sendError(res, "Please add the required documents");
-  }
-  const namedImage = rawImagesArray.map((a) => a.filename);
-  const stringnifiedImages = JSON.stringify(namedImage);
-  const formmatedImages = stringnifiedImages.replace(/[^a-zA-Z0-9_.,]/g, "");
-  const documents = formmatedImages.replace(/[,]/g, ", ");
-  const { first_name, last_name, email } = req.body;
-  console.log("documents: ", documents);
-  const newApplication = new JobApplication({
-    first_name,
-    last_name,
-    email,
-    documents,
-  });
+  const jobId = req.params.id;
   try {
-    await newApplication.save();
-    res.status(200).json({
-      success: true,
-      message:
-        "We have received your job application. We will reach out to you soon.",
-    });
+    const job = await Job.findById(req.params.id);
+    if (!job) {
+      return sendError(res, "The selected job does not exist");
+    }
+    req.body.jobId = jobId;
+    const rawResumeArray = req.files["resume"];
+    const rawCoverArray = req.files["cover"];
+    if (!rawResumeArray) {
+      return badRequestError(res, "Please add your resume");
+    }
+    if (rawCoverArray) {
+      const namedCover = rawCoverArray.map((a) => a.filename);
+      const stringnifiedCover = JSON.stringify(namedCover);
+      const formmatedCover = stringnifiedCover.replace(/[^a-zA-Z0-9_.,]/g, "");
+      const cover = formmatedCover.replace(/[,]/g, ", ");
+      console.log("cover: ", cover);
+      req.body.cover = cover;
+    }
+    const namedResume = rawResumeArray.map((a) => a.filename);
+    const stringnifiedResume = JSON.stringify(namedResume);
+    const formmatedResume = stringnifiedResume.replace(/[^a-zA-Z0-9_.,]/g, "");
+    const resume = formmatedResume.replace(/[,]/g, ", ");
+    console.log("resume: ", resume);
+    req.body.resume = resume;
+
+    const newApplication = new JobApplication(req.body);
+    try {
+      await newApplication.save();
+      res.status(200).json({
+        success: true,
+        message:
+          "We have received your job application. We will reach out to you soon.",
+      });
+    } catch (error) {
+      return sendError(res, "Unable to submit your job application", 500);
+    }
   } catch (error) {
-    return sendError(res, "Unable to submit your job application", 500);
+    return sendError(res, "Could not locate the job posting. Try again");
   }
 };
 

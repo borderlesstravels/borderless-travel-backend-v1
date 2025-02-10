@@ -378,6 +378,10 @@ exports.validateAddMarkup = [
     .withMessage("Provide the Service Region!"),
 ];
 
+exports.validateAddAPIKey = [
+  check("firm").trim().not().isEmpty().withMessage("Firm Name is missing!"),
+];
+
 // Host dashboard
 exports.validateAddPropertyParams = [
   check("apartment_name")

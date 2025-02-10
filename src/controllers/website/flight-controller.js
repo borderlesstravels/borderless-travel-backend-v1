@@ -42,6 +42,9 @@ const fetchAirlines = async (req, res) => {
 
 const flightOfferSearch = async (req, res, next) => {
   const response = await fetcher_tiqwa("/flight/search", req.body);
+  const source = req.rawHeaders[0];
+  console.log({ source });
+  console.log({ req });
   if (!response) {
     return sendError(
       res,
