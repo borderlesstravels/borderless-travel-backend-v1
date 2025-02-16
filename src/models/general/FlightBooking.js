@@ -1,11 +1,19 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
 const flightBookingSchema = new Schema({
-  owner: {
+  firm: {
     type: String,
     required: true,
+  },
+  api_key: {
+    type: String,
+    required: true,
+  },
+  owner: {
+    type: String,
+    // required: true,
   },
   client_name: {
     type: String,
@@ -92,4 +100,4 @@ const flightBookingSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('FlightBooking', flightBookingSchema);
+module.exports = mongoose.model("FlightBooking", flightBookingSchema);
