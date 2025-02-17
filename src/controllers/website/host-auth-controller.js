@@ -259,10 +259,11 @@ const verifyHostLoginToken = (req, res, next) => {
   jwt.verify(String(token), process.env.JWT_HOST_SECRET_KEY, (err, host) => {
     if (err) {
       return sendError(res, "Invalid authorisation token", 401);
+    } else {
+      req.id = host.id;
+      next();
     }
-    req.id = host.id;
   });
-  next();
 };
 
 module.exports = {

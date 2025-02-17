@@ -114,3 +114,19 @@ exports.saveNotification = async (
     return false;
   }
 };
+
+exports.verifyAPIToken = async (firm, api_key) => {
+  if (!firm || !api_key)
+    return sendError(
+      res,
+      "Credentials missing! You are not authorised to perform this request"
+    );
+  const validateAPIKey = await APIToken.findOne({ firm });
+  if (!validateAPIKey)
+    return sendError(res, "Credential does not exist! Not authorised");
+  if (validateAPIKey.api_key !== api_key)
+    return sendError(
+      res,
+      "Invalid credentials! You are not authorised to perform this request"
+    );
+};

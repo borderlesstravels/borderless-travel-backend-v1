@@ -261,10 +261,11 @@ const verifyUserLoginToken = (req, res, next) => {
   jwt.verify(String(token), process.env.JWT_USER_SECRET_KEY, (err, user) => {
     if (err) {
       return sendError(res, "Invalid Token", 404);
+    } else {
+      req.id = user.id;
+      next();
     }
-    req.id = user.id;
   });
-  next();
 };
 
 const logout = (req, res, next) => {

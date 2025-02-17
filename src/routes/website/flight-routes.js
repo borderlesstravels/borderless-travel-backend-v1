@@ -54,4 +54,10 @@ router.get(
   fetchFlightTicketDetails
 );
 
+// manilla
+router.get(
+  "/flight-ticket-details/:booking_reference",
+  fetchFlightTicketDetails
+);
+
 module.exports = router;

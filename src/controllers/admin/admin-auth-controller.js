@@ -241,10 +241,11 @@ const verifyAdminLoginToken = (req, res, next) => {
   jwt.verify(String(token), process.env.JWT_ADMIN_SECRET_KEY, (err, admin) => {
     if (err) {
       return sendError(res, "Invalid authorisation token", 404);
+    } else {
+      req.id = admin.id;
+      next();
     }
-    req.id = admin.id;
   });
-  next();
 };
 
 const getAdmin = async (req, res) => {
