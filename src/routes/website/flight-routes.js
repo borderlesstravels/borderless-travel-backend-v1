@@ -43,7 +43,7 @@ router.post(
   bookFlightAuth
 );
 router.post(
-  "/book-flight-borderless/:flight_id",
+  "/book-flight-tp/:flight_id",
   validateFlightBooking,
   validate,
   bookFlightBorderless

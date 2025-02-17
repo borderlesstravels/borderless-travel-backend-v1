@@ -3,28 +3,14 @@ const { log } = require("console");
 const { fetcher_tiqwa } = require("../../api/fetcher");
 const { sender_tiqwa } = require("../../api/sender");
 const FlightBooking = require("../../models/general/FlightBooking");
-const { sendError } = require("../../utils/helpers");
+const { sendError, verifyAPIToken } = require("../../utils/helpers");
 const User = require("../../models/user/User");
 const APIToken = require("../../models/app-core/APIToken");
 
 const fetchAirports = async (req, res) => {
   const { firm, api_key } = req.headers;
-  if (!firm || !api_key)
-    return sendError(
-      res,
-      "Credentials missing! You are not authorised to perform this request"
-    );
-  const validateAPIKey = await APIToken.findOne({ firm });
-  if (!validateAPIKey)
-    return sendError(res, "Credential does not exist! Not authorised");
-  if (validateAPIKey.api_key !== api_key)
-    return sendError(
-      res,
-      "Invalid credentials! You are not authorised to perform this request"
-    );
+  await verifyAPIToken(firm, api_key);
 
-  console.log({ firm });
-  console.log({ api_key });
   const response = await fetcher_tiqwa("/airports");
   if (!response) {
     return sendError(
@@ -43,19 +29,7 @@ const fetchAirports = async (req, res) => {
 
 const fetchAirlines = async (req, res) => {
   const { firm, api_key } = req.headers;
-  if (!firm || !api_key)
-    return sendError(
-      res,
-      "Credentials missing! You are not authorised to perform this request"
-    );
-  const validateAPIKey = await APIToken.findOne({ firm });
-  if (!validateAPIKey)
-    return sendError(res, "Credential does not exist! Not authorised");
-  if (validateAPIKey.api_key !== api_key)
-    return sendError(
-      res,
-      "Invalid credentials! You are not authorised to perform this request"
-    );
+  await verifyAPIToken(firm, api_key);
 
   console.log({ firm });
   console.log({ api_key });
@@ -77,19 +51,7 @@ const fetchAirlines = async (req, res) => {
 
 const flightOfferSearch = async (req, res, next) => {
   const { firm, api_key } = req.headers;
-  if (!firm || !api_key)
-    return sendError(
-      res,
-      "Credentials missing! You are not authorised to perform this request"
-    );
-  const validateAPIKey = await APIToken.findOne({ firm });
-  if (!validateAPIKey)
-    return sendError(res, "Credential does not exist! Not authorised");
-  if (validateAPIKey.api_key !== api_key)
-    return sendError(
-      res,
-      "Invalid credentials! You are not authorised to perform this request"
-    );
+  await verifyAPIToken(firm, api_key);
 
   console.log({ firm });
   console.log({ api_key });
@@ -111,22 +73,8 @@ const flightOfferSearch = async (req, res, next) => {
 
 const confirmFlightPrice = async (req, res) => {
   const { firm, api_key } = req.headers;
-  if (!firm || !api_key)
-    return sendError(
-      res,
-      "Credentials missing! You are not authorised to perform this request"
-    );
-  const validateAPIKey = await APIToken.findOne({ firm });
-  if (!validateAPIKey)
-    return sendError(res, "Credential does not exist! Not authorised");
-  if (validateAPIKey.api_key !== api_key)
-    return sendError(
-      res,
-      "Invalid credentials! You are not authorised to perform this request"
-    );
+  await verifyAPIToken(firm, api_key);
 
-  console.log({ firm });
-  console.log({ api_key });
   const { flight_id } = req.params;
   const response = await fetcher_tiqwa(`/flight/confirm_price/${flight_id}`);
   if (!response) {
@@ -145,6 +93,9 @@ const confirmFlightPrice = async (req, res) => {
 };
 
 const bookFlightAuth = async (req, res) => {
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(firm, api_key);
+
   const { flight_id } = req.params;
   const userId = req.id;
   const { contact_details, passenger_details } = req.body;
@@ -208,6 +159,8 @@ const bookFlightAuth = async (req, res) => {
 
         const contactDetails = new FlightBooking({
           owner: user._id,
+          firm: firm,
+          api_key: api_key,
           flight_id: flight_id,
           client_name: `${client.first_name} ${client.last_name}`,
           client_phone: client.phone_number,
@@ -261,6 +214,9 @@ const bookFlightAuth = async (req, res) => {
 };
 
 const bookFlightNoAuth = async (req, res) => {
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(firm, api_key);
+
   const { flight_id } = req.params;
   const { contact_details, passenger_details } = req.body;
   const client = passenger_details[0];
@@ -337,6 +293,8 @@ const bookFlightNoAuth = async (req, res) => {
           const savedUser = await user.save();
           const contactDetails = new FlightBooking({
             owner: savedUser._id,
+            firm: firm,
+            api_key: api_key,
             flight_id: flight_id,
             client_name: `${client.first_name} ${client.last_name}`,
             client_phone: client.phone_number,
@@ -395,19 +353,7 @@ const bookFlightNoAuth = async (req, res) => {
 
 const bookFlightBorderless = async (req, res) => {
   const { firm, api_key } = req.headers;
-  if (!firm || !api_key)
-    return sendError(
-      res,
-      "Credentials missing! You are not authorised to perform this request"
-    );
-  const validateAPIKey = await APIToken.findOne({ firm });
-  if (!validateAPIKey)
-    return sendError(res, "Credential does not exist! Not authorised");
-  if (validateAPIKey.api_key !== api_key)
-    return sendError(
-      res,
-      "Invalid credentials! You are not authorised to perform this request"
-    );
+  await verifyAPIToken(firm, api_key);
 
   const { flight_id } = req.params;
   const { contact_details, passenger_details } = req.body;
@@ -518,19 +464,8 @@ const bookFlightBorderless = async (req, res) => {
 
 const fetchFlightTicketDetails = async (req, res) => {
   const { firm, api_key } = req.headers;
-  if (!firm || !api_key)
-    return sendError(
-      res,
-      "Credentials missing! You are not authorised to perform this request"
-    );
-  const validateAPIKey = await APIToken.findOne({ firm });
-  if (!validateAPIKey)
-    return sendError(res, "Credential does not exist! Not authorised");
-  if (validateAPIKey.api_key !== api_key)
-    return sendError(
-      res,
-      "Invalid credentials! You are not authorised to perform this request"
-    );
+  await verifyAPIToken(firm, api_key);
+
   const { booking_reference } = req.params;
   const response = await fetcher_tiqwa(`/flight/${booking_reference}`);
   log("response", response.data);

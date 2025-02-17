@@ -8,9 +8,12 @@ const {
   sendSuccess,
   saveNotification,
   generateString,
+  verifyAPIToken,
 } = require("../../utils/helpers");
 
 const fetchShortlets = async (req, res) => {
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(firm, api_key);
   try {
     const shortlets = await ShortLet.find().limit(req.query.limit);
     if (!shortlets.length) {
@@ -28,6 +31,8 @@ const fetchShortlets = async (req, res) => {
 };
 
 const fetchShortletsMinified = async (req, res) => {
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(firm, api_key);
   try {
     const stlt = await ShortLet.find();
     const shortlets = stlt.map((ele) => ({
@@ -54,6 +59,8 @@ const fetchShortletsMinified = async (req, res) => {
 };
 
 const fetchSingleShortlet = async (req, res) => {
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(firm, api_key);
   try {
     const shortlet = await ShortLet.findById(req.params.id);
     // console.log("shortlet", shortlet);
@@ -170,8 +177,81 @@ const bookStayAUth = async (req, res, next) => {
           };
         return sendSuccess(
           res,
-          newBooking,
-          "Successfully created your shortlet booking. Please wait for feedback"
+          "Successfully created your shortlet booking. Please wait for feedback",
+          newBooking
+        );
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    return sendError(
+      res,
+      "Unable to complete your booking. Something went wrong"
+    );
+  }
+};
+
+const bookStayThirdParty = async (req, res, next) => {
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(firm, api_key);
+
+  const { apartment_id } = req.params;
+
+  const apartment = await ShortLet.findById(apartment_id);
+  if (!apartment) sendError(res, "Apartment does not or no longer exists");
+
+  const token = generateString(15);
+  const booking_reference = `TP-${token}`;
+
+  const host = await Host.findById(apartment.owner);
+  if (!host) sendError(res, "Apartment does not belong to anyone");
+
+  let check_in_date = new Date(req.body.check_in_date);
+  let check_out_date = new Date(req.body.check_out_date);
+  let difference_in_time = check_out_date.getTime() - check_in_date.getTime();
+  let difference_in_days = Math.round(difference_in_time / (1000 * 3600 * 24));
+  let price = Number(req.body.price) * Number(difference_in_days);
+
+  try {
+    const newBooking = new ShortletBooking({
+      owner: api_key,
+      firm: firm,
+      api_key: api_key,
+      apartment_id,
+      apartment_name: apartment.apartment_name,
+      apartment_address: apartment.address,
+      apartment_city: apartment.lga,
+      apartment_state: apartment.state,
+      apartment_country: apartment.country,
+      apartment_img: apartment.images.split(", ")[0].toString(),
+      apartment_owner: apartment.owner,
+      name: `${req.body.first_name} ${req.body.last_name}`,
+      email: req.body.email,
+      phone: req.body.phone ? req.body.phone : "",
+      check_in_date,
+      check_out_date,
+      check_in_time: req.body.check_in_time ? req.body.check_in_time : "",
+      gps_location: req.body.gps_location ? req.body.gps_location : "",
+      price,
+      booking_reference,
+    });
+    await newBooking.save();
+    const booking_id = newBooking._id;
+    if (booking_id) {
+      const notifyHost = await saveNotification(
+        apartment.owner,
+        "booking",
+        `Someone requested reservation for ${apartment.apartment_name}`,
+        `Your apartment, ${apartment.apartment_name} located in ${apartment.address}, ${apartment.lga} has been requested for reservation. <a href="${process.env.USER_APP_URL}/stay-booking-detail/${booking_id}">Take action action here</a>`,
+        host,
+        apartment_id,
+        booking_id
+      );
+      if (notifyHost) {
+        return sendSuccess(
+          res,
+          "Successfully created your shortlet booking. Please wait for feedback",
+          newBooking
         );
       }
     }
@@ -191,4 +271,5 @@ module.exports = {
   fetchShortletReviews,
 
   bookStayAUth,
+  bookStayThirdParty,
 };

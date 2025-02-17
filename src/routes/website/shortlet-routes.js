@@ -5,6 +5,7 @@ const {
   fetchShortletReviews,
   bookStayAUth,
   fetchShortletsMinified,
+  bookStayThirdParty,
 } = require("../../controllers/website/shortlet-controller");
 const {
   verifyUserLoginToken,
@@ -25,6 +26,12 @@ router.post(
   validate,
   verifyUserLoginToken,
   bookStayAUth
+);
+router.post(
+  "/book-shortlet-tp/:apartment_id",
+  validateShortletParams,
+  validate,
+  bookStayThirdParty
 );
 
 module.exports = router;

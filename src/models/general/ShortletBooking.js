@@ -3,9 +3,17 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const shortletBookingSchema = new Schema({
-  owner: {
+  firm: {
     type: String,
     required: true,
+  },
+  api_key: {
+    type: String,
+    required: true,
+  },
+  owner: {
+    type: String,
+    // required: true,
   },
   apartment_id: {
     type: String,
