@@ -5,18 +5,19 @@ const {
   notificationTemp,
 } = require("../../../public/email-templates/profile/notification.temp");
 const sendEmail = require("../email/sendEmail.util");
+const APIToken = require("../../models/app-core/APIToken");
 
 exports.sendError = (res, error, status = 401) => {
-  res.status(status).json({ success: false, error });
+  return res.status(status).json({ success: false, error });
 };
 exports.badRequestError = (res, error, status = 400) => {
-  res.status(status).json({ success: false, error });
+  return res.status(status).json({ success: false, error });
 };
 exports.sendLoginError = (res, error, loginStatus = 0, status = 401) => {
-  res.status(status).json({ success: false, loginStatus, error });
+  return res.status(status).json({ success: false, loginStatus, error });
 };
 exports.sendSuccess = (res, message, data = null, status = 200) => {
-  res.status(status).json({ success: true, message, data });
+  return res.status(status).json({ success: true, message, data });
 };
 
 exports.createRandomBytes = (num) =>
@@ -116,17 +117,25 @@ exports.saveNotification = async (
 };
 
 exports.verifyAPIToken = async (firm, api_key) => {
-  if (!firm || !api_key)
-    return sendError(
-      res,
-      "Credentials missing! You are not authorised to perform this request"
-    );
+  if (!firm || !api_key) {
+    return res.status(401).json({
+      success: false,
+      error:
+        "Credentials missing! You are not authorised to perform this request",
+    });
+  }
   const validateAPIKey = await APIToken.findOne({ firm });
-  if (!validateAPIKey)
-    return sendError(res, "Credential does not exist! Not authorised");
-  if (validateAPIKey.api_key !== api_key)
-    return sendError(
-      res,
-      "Invalid credentials! You are not authorised to perform this request"
-    );
+  if (!validateAPIKey) {
+    return res.status(401).json({
+      success: false,
+      error: "Credential does not exist! Not authorised",
+    });
+  }
+  if (validateAPIKey.api_key !== api_key) {
+    return res.status(401).json({
+      success: false,
+      error:
+        "Invalid credentials! You are not authorised to perform this request",
+    });
+  }
 };

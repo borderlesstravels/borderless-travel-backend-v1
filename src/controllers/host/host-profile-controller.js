@@ -22,8 +22,8 @@ const getHost = async (req, res) => {
       return sendError(res, "Profile not found");
     }
     return sendSuccess(res, "Successfully fetched data", host);
-  } catch (err) {
-    console.log("err", err);
+  } catch (error) {
+    console.log("error", error);
     return sendError(res, "Cannot fetch host profile", 500);
   }
 };
@@ -42,8 +42,8 @@ const getHostNotifications = async (req, res) => {
       return sendSuccess(res, "You have no notifications at this time");
     }
     return sendSuccess(res, "Successfully fetched data", hostNotifications);
-  } catch (err) {
-    console.log("err", err);
+  } catch (error) {
+    console.log("error", error);
     return sendError(res, "Cannot fetch host's notifications", 500);
   }
 };
@@ -61,8 +61,8 @@ const getHostReviews = async (req, res) => {
       return sendSuccess(res, "You have no reviews yet");
     }
     return sendSuccess(res, "Successfully fetched data", hostReviews);
-  } catch (err) {
-    console.log("err", err);
+  } catch (error) {
+    console.log("error", error);
     return sendError(res, "Cannot fetch host's reviews", 500);
   }
 };
@@ -113,8 +113,8 @@ const addProperty = async (req, res) => {
       `Successfully added a new listing - ${req.body.apartment_name}`,
       property
     );
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
     return sendError(res, "Unable to add a new listing");
   }
 };
@@ -179,8 +179,8 @@ const editProperty = async (req, res) => {
       `Successfully updated the listing - ${req.body.apartment_name}`,
       property
     );
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
     return sendError(res, "Unable to update the listing data");
   }
 };
@@ -197,8 +197,8 @@ const getHostProperties = async (req, res) => {
       return sendSuccess(res, "You have no listings yet");
     }
     return sendSuccess(res, "Successfully fetched data", hostProperties);
-  } catch (err) {
-    console.log("err", err);
+  } catch (error) {
+    console.log("error", error);
     return sendError(res, "Cannot fetch host's listings", 500);
   }
 };
@@ -226,19 +226,24 @@ const fetchSingleShortlet = async (req, res) => {
 const approveShortletBooking = async (req, res) => {
   try {
     const apartmentBooking = await ShortletBooking.findById(req.params.id);
-    if (apartmentBooking.apartment_owner !== req.id)
+    if (apartmentBooking.apartment_owner !== req.id) {
       return sendError(res, "Apartment is not owned by you!");
-    if (apartmentBooking.status === "confirmed")
+    }
+    if (apartmentBooking.status === "confirmed") {
       return sendError(
         res,
         "Apartment's availability had already been confirmed!"
       );
-    if (!apartmentBooking)
+    }
+    if (!apartmentBooking) {
       return sendError(res, "Such apartment post cannot be found!");
-    apartmentBooking.status = "confirmed";
+      apartmentBooking.status = "confirmed";
+    }
 
     const user = await User.findById(apartmentBooking.owner, "-password");
-    if (!user) return sendError(res, "Sorry, booking request owner not found");
+    if (!user) {
+      return sendError(res, "Sorry, booking request owner not found");
+    }
 
     await apartmentBooking.save();
 
@@ -253,7 +258,7 @@ const approveShortletBooking = async (req, res) => {
       return sendSuccess(res, "Successfully verified apartment's availability");
     }
   } catch (error) {
-    console.log(err);
+    console.log(error);
     return sendError(
       res,
       "Unable to complete your request. Something went wrong"
@@ -266,23 +271,28 @@ const declineShortletBooking = async (req, res) => {
     const apartmentBooking = await ShortletBooking.findById(req.params.id);
     if (apartmentBooking.apartment_owner !== req.id)
       return sendError(res, "Apartment is not owned by you!");
-    if (apartmentBooking.status === "declined")
+    if (apartmentBooking.status === "declined") {
       return sendError(
         res,
         "Apartment's unavailability had already been confirmed!"
       );
-    if (apartmentBooking.status === "confirmed")
+    }
+    if (apartmentBooking.status === "confirmed") {
       return sendError(
         res,
         "Apartment already confirmed to be available. Contact support for action."
       );
-    if (!apartmentBooking)
+    }
+    if (!apartmentBooking) {
       return sendError(res, "Such apartment post cannot be found!");
+    }
 
     apartmentBooking.status = "declined";
 
     const user = await User.findById(apartmentBooking.owner, "-password");
-    if (!user) return sendError(res, "Sorry, booking request owner not found");
+    if (!user) {
+      return sendError(res, "Sorry, booking request owner not found");
+    }
 
     await apartmentBooking.save();
 
@@ -300,7 +310,7 @@ const declineShortletBooking = async (req, res) => {
       );
     }
   } catch (error) {
-    console.log(err);
+    console.log(error);
     return sendError(
       res,
       "Unable to complete your request. Something went wrong"
@@ -370,32 +380,37 @@ const updateHostProfile = async (req, res) => {
       "Your profile data has been successfully updated",
       host
     );
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
     return sendError(res, "Unable to update your profile data");
   }
 };
+
 const updateHostPassword = async (req, res, next) => {
   const userId = req.id;
   const { oldPassword, newPassword } = req.body;
 
   const host = await Host.findById(userId);
-  if (!host) return sendError(res, "Invalid host profile");
+  if (!host) {
+    return sendError(res, "Invalid host profile");
+  }
 
   const isCurrentPasswordCorrect = bcrypt.compareSync(
     oldPassword,
     host.password
   );
-  if (!isCurrentPasswordCorrect)
+  if (!isCurrentPasswordCorrect) {
     return sendError(res, "Incorrect current password provided", 204);
+  }
 
   const isPasswordSame = bcrypt.compareSync(newPassword, host.password);
-  if (isPasswordSame)
+  if (isPasswordSame) {
     return sendError(
       res,
       "New password must be different from the old password",
       205
     );
+  }
 
   const hashedPassword = bcrypt.hashSync(newPassword);
   host.password = hashedPassword;
@@ -413,6 +428,7 @@ const updateHostPassword = async (req, res, next) => {
     return sendError(res, "Cannot update your password");
   }
 };
+
 const setHostProfileAvatar = async (req, res) => {
   const userId = req.id;
   const rawImagesArray = req.files["avatar"];
@@ -435,8 +451,8 @@ const setHostProfileAvatar = async (req, res) => {
       "Successfully updated the profile avatar",
       savedHostProfile
     );
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
     return sendError(res, "Unable to update the admin profile");
   }
 };
@@ -478,12 +494,13 @@ const logoutHost = (req, res, next) => {
   jwt.verify(String(token), process.env.JWT_HOST_SECRET_KEY, (err, host) => {
     if (err) {
       return sendError(res, "Invalid Token.", 401);
+    } else {
+      res.clearCookie(`${host.id}`);
+      req.cookies[`${host.id}`] = "";
+      return res
+        .status(200)
+        .json({ success: true, message: "Successfully logged out" });
     }
-    res.clearCookie(`${host.id}`);
-    req.cookies[`${host.id}`] = "";
-    return res
-      .status(200)
-      .json({ success: true, message: "Successfully logged out" });
   });
 };
 

@@ -40,7 +40,7 @@ const updateUserProfile = async (req, res) => {
       user
     );
   } catch (error) {
-    console.log(err);
+    console.log(error);
     return sendError(res, "Unable to update your profile data");
   }
 };
@@ -66,8 +66,8 @@ const setUserProfileAvatar = async (req, res) => {
       "Successfully updated the profile avatar",
       savedProfile
     );
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
     return sendError(res, "Unable to update the admin profile");
   }
 };
@@ -77,21 +77,25 @@ const updateUserPassword = async (req, res, next) => {
   const { oldPassword, newPassword } = req.body;
 
   const user = await User.findById(userId);
-  if (!user) return sendError(res, "Invalid user profile");
+  if (!user) {
+    return sendError(res, "Invalid user profile");
+  }
 
   const isCurrentPasswordCorrect = bcrypt.compareSync(
     oldPassword,
     user.password
   );
-  if (!isCurrentPasswordCorrect)
+  if (!isCurrentPasswordCorrect) {
     return sendError(res, "Incorrect current password provided");
+  }
 
   const isPasswordSame = bcrypt.compareSync(newPassword, user.password);
-  if (isPasswordSame)
+  if (isPasswordSame) {
     return sendError(
       res,
       "New password must be different from the old password"
     );
+  }
 
   const hashedPassword = bcrypt.hashSync(newPassword);
   user.password = hashedPassword;
@@ -103,8 +107,8 @@ const updateUserPassword = async (req, res, next) => {
     };
     next();
   } catch (error) {
-    console.log(err);
-    return sendError(res, err);
+    console.log(error);
+    return sendError(res, error);
   }
 };
 
@@ -114,7 +118,7 @@ const updateUserEmailAlert = async (req, res) => {
     const user = await User.findByIdAndUpdate(userId, { $set: req.body });
     return sendSuccess(res, "You have updated your alert settings", user);
   } catch (error) {
-    console.log(err);
+    console.log(error);
     return sendError(res, "Unable to update your alert settings");
   }
 };
@@ -124,13 +128,13 @@ const getReferralProfile = async (req, res) => {
   let userReferrals;
   try {
     userReferrals = await UserReferral.findOne({ userId });
-  } catch (err) {
-    return sendError(res, err.message);
+    if (!userReferrals) {
+      return sendError(res, "User not found");
+    }
+    return sendSuccess(res, "Successfully fetched data", userReferrals);
+  } catch (error) {
+    return sendError(res, error.message);
   }
-  if (!userReferrals) {
-    return sendError(res, "User not found");
-  }
-  return sendSuccess(res, null, userReferrals);
 };
 
 const userFlightBookings = async (req, res) => {
@@ -201,7 +205,9 @@ const userSingleShortletBooking = async (req, res) => {
 
 const createReview = async (req, res) => {
   const user = await User.findById(req.id, "-password");
-  if (!user) return sendError(res, "Sorry, please login first");
+  if (!user) {
+    return sendError(res, "Sorry, please login first");
+  }
   const { product_reviewed } = req.params;
   const { product_type, review, rating } = req.body;
   let property_owner;
@@ -238,7 +244,7 @@ const updateReview = async (req, res) => {
     );
     return sendSuccess(res, "Your review has been successfully updated", user);
   } catch (error) {
-    console.log(err);
+    console.log(error);
     return sendError(res, "Unable to update your review");
   }
 };
@@ -247,8 +253,8 @@ const deleteReview = async (req, res) => {
   try {
     await Review.findByIdAndDelete(req.params.id);
     return sendSuccess(res, "Successfully deleted a review record");
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
     return sendError(res, "Unable to delete the user profile");
   }
 };
@@ -282,8 +288,8 @@ const getUserNotifications = async (req, res) => {
       return sendSuccess(res, "You have no notifications at this time");
     }
     return sendSuccess(res, "Successfully fetched data", userNotifications);
-  } catch (err) {
-    console.log("err", err);
+  } catch (error) {
+    console.log("error", error);
     return sendError(res, "Cannot fetch user's notifications", 500);
   }
 };
