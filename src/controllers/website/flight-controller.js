@@ -71,6 +71,29 @@ const flightOfferSearch = async (req, res, next) => {
   }
 };
 
+const flightOfferSearchMultiCity = async (req, res, next) => {
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(firm, api_key);
+  console.log("req.body", req.body.destinations[0]);
+
+  const response = await sender_tiqwa(`/flight/multi_city/search`, req.body);
+  if (!response) {
+    return sendError(
+      res,
+      "Unable to complete this request at this time. Please try again."
+    );
+  }
+  console.log({ response });
+
+  if (response?.status === 200) {
+    return res
+      .status(response.status)
+      .json({ success: true, data: response.data });
+  } else {
+    return sendError(res, response?.data.Message, response?.status);
+  }
+};
+
 const confirmFlightPrice = async (req, res) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(firm, api_key);
@@ -482,6 +505,7 @@ module.exports = {
   fetchAirports,
   fetchAirlines,
   flightOfferSearch,
+  flightOfferSearchMultiCity,
   confirmFlightPrice,
   bookFlightAuth,
   bookFlightNoAuth,

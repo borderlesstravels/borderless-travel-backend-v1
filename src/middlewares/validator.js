@@ -40,6 +40,34 @@ exports.validateFlightOfferSearch = [
     .isEmpty()
     .withMessage("Select flight class. E.g: economy"),
 ];
+
+exports.validateMultiCityFlightOfferSearch = [
+  check("destinations")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Origins or destinations missing!"),
+  check("adults")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("How many adults are flying?"),
+  check("children")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("How many children are flying?"),
+  check("infants")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("How many infants are flying?"),
+  check("cabin")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Select flight class. E.g: economy"),
+];
 exports.validatePaymentRecord = [
   check("service_name")
     .trim()

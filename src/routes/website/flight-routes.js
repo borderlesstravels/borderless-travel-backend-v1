@@ -8,11 +8,13 @@ const {
   bookFlightAuth,
   bookFlightNoAuth,
   bookFlightBorderless,
+  flightOfferSearchMultiCity,
 } = require("../../controllers/website/flight-controller");
 const {
   validateFlightOfferSearch,
   validateFlightBooking,
   validate,
+  validateMultiCityFlightOfferSearch,
 } = require("../../middlewares/validator");
 const {
   verifyUserLoginToken,
@@ -27,6 +29,12 @@ router.post(
   validateFlightOfferSearch,
   validate,
   flightOfferSearch
+);
+router.post(
+  "/multi-city-flight-offer-search",
+  validateMultiCityFlightOfferSearch,
+  validate,
+  flightOfferSearchMultiCity
 );
 router.get("/confirm-price/:flight_id", confirmFlightPrice);
 router.post(
