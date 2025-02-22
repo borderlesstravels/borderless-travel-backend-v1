@@ -163,8 +163,8 @@ const generateAdminLoginToken = async (req, res, next) => {
       otp,
     };
     next();
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
     return sendError(res, "Unable to send OTP");
   }
 };

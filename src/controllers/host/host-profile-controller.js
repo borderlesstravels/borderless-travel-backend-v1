@@ -226,6 +226,12 @@ const fetchSingleShortlet = async (req, res) => {
 const approveShortletBooking = async (req, res) => {
   try {
     const apartmentBooking = await ShortletBooking.findById(req.params.id);
+    console.log({ apartmentBooking });
+
+    if (!apartmentBooking) {
+      return sendError(res, "Such apartment post cannot be found!");
+    }
+
     if (apartmentBooking.apartment_owner !== req.id) {
       return sendError(res, "Apartment is not owned by you!");
     }
@@ -235,10 +241,8 @@ const approveShortletBooking = async (req, res) => {
         "Apartment's availability had already been confirmed!"
       );
     }
-    if (!apartmentBooking) {
-      return sendError(res, "Such apartment post cannot be found!");
-      apartmentBooking.status = "confirmed";
-    }
+
+    apartmentBooking.status = "confirmed";
 
     const user = await User.findById(apartmentBooking.owner, "-password");
     if (!user) {

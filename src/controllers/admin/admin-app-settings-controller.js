@@ -79,8 +79,8 @@ const deleteMarkup = async (req, res) => {
   try {
     await Markup.findByIdAndDelete(req.params.id);
     return sendSuccess(res, "Successfully deleted the markup data");
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
     return sendError(res, "Unable to delete the markup data");
   }
 };
@@ -153,10 +153,10 @@ const addAPIToken = async (req, res) => {
         `Successfully generated a new API Key for ${firm}`,
         newAppToken
       );
-    } catch (error) {
+    } catch (err) {
       return sendError(
         res,
-        `Unable to add new API Key to the database - ${error}`
+        `Unable to add new API Key to the database - ${err}`
       );
     }
   } catch (error) {

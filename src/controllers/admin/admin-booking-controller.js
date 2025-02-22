@@ -15,7 +15,7 @@ const APIToken = require("../../models/app-core/APIToken");
 //
 const allFlightBookings = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
   try {
     const flightBookings = await FlightBooking.find({ firm }).limit(
       req.query.limit
@@ -32,7 +32,7 @@ const allFlightBookings = async (req, res) => {
 
 const singleFlightBooking = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
   try {
     const flightBooking = await FlightBooking.findById(req.params.id);
     if (!flightBooking) {
@@ -52,7 +52,7 @@ const singleFlightBooking = async (req, res) => {
 const fetchTicketDetails = async (req, res) => {
   const { booking_reference } = req.params;
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
 
   const booking = await FlightBooking.findOne({ booking_reference });
   if (!booking)
@@ -88,7 +88,7 @@ const issueFlightTicket = async (req, res) => {
   const { booking_reference } = req.params;
 
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
   const booking = await FlightBooking.findOne({ booking_reference });
   if (!booking)
     return sendError(
@@ -137,7 +137,7 @@ const cancelFlightTicket = async (req, res) => {
   const adminId = req.id;
 
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
   const booking = await FlightBooking.findOne({ booking_reference });
   if (!booking)
     return sendError(

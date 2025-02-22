@@ -116,7 +116,7 @@ exports.saveNotification = async (
   }
 };
 
-exports.verifyAPIToken = async (firm, api_key) => {
+exports.verifyAPIToken = async (res, firm, api_key) => {
   if (!firm || !api_key) {
     return res.status(401).json({
       success: false,

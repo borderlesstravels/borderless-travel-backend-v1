@@ -9,7 +9,7 @@ const APIToken = require("../../models/app-core/APIToken");
 
 const fetchAirports = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
 
   const response = await fetcher_tiqwa("/airports");
   if (!response) {
@@ -29,7 +29,7 @@ const fetchAirports = async (req, res) => {
 
 const fetchAirlines = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
 
   console.log({ firm });
   console.log({ api_key });
@@ -51,7 +51,7 @@ const fetchAirlines = async (req, res) => {
 
 const flightOfferSearch = async (req, res, next) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
 
   console.log({ firm });
   console.log({ api_key });
@@ -73,7 +73,7 @@ const flightOfferSearch = async (req, res, next) => {
 
 const flightOfferSearchMultiCity = async (req, res, next) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
   console.log("req.body", req.body.destinations[0]);
 
   const response = await sender_tiqwa(`/flight/multi_city/search`, req.body);
@@ -96,7 +96,7 @@ const flightOfferSearchMultiCity = async (req, res, next) => {
 
 const confirmFlightPrice = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
 
   const { flight_id } = req.params;
   const response = await fetcher_tiqwa(`/flight/confirm_price/${flight_id}`);
@@ -117,7 +117,7 @@ const confirmFlightPrice = async (req, res) => {
 
 const bookFlightAuth = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
 
   const { flight_id } = req.params;
   const userId = req.id;
@@ -238,7 +238,7 @@ const bookFlightAuth = async (req, res) => {
 
 const bookFlightNoAuth = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
 
   const { flight_id } = req.params;
   const { contact_details, passenger_details } = req.body;
@@ -248,8 +248,8 @@ const bookFlightNoAuth = async (req, res) => {
 
   try {
     existingUser = await User.findOne({ email: contact_details.c_email });
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
     return sendError(
       res,
       "Unable to verify that you do not have an account yet."
@@ -376,7 +376,7 @@ const bookFlightNoAuth = async (req, res) => {
 
 const bookFlightBorderless = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
 
   const { flight_id } = req.params;
   const { contact_details, passenger_details } = req.body;
@@ -465,7 +465,7 @@ const bookFlightBorderless = async (req, res) => {
           return res
             .status(response.status)
             .json({ success: true, data: response.data });
-        } catch (error) {
+        } catch (err) {
           return sendError(
             res,
             "Ticket booked, but we are unable to save your data on our database. Kindly get in touch with us soon."
@@ -487,7 +487,7 @@ const bookFlightBorderless = async (req, res) => {
 
 const fetchFlightTicketDetails = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
 
   const { booking_reference } = req.params;
   const response = await fetcher_tiqwa(`/flight/${booking_reference}`);

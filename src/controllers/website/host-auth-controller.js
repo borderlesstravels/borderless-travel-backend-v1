@@ -21,9 +21,9 @@ const signupHost = async (req, res, next) => {
       userId: host._id,
     };
     next();
-  } catch (err) {
-    console.log(err);
-    return sendError(res, `Unable to sign up. Error - ${err}`);
+  } catch (error) {
+    console.log(error);
+    return sendError(res, `Unable to sign up. Error - ${error}`);
   }
 };
 
@@ -67,8 +67,8 @@ const generateHostEmailVerificationToken = async (req, res, next) => {
       otp,
     };
     next();
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
     return sendError(res, "Unable to generate email verification OTP");
   }
 };

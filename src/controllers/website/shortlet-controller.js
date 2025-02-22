@@ -13,7 +13,7 @@ const {
 
 const fetchShortlets = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
   try {
     const shortlets = await ShortLet.find().limit(req.query.limit);
     if (!shortlets.length) {
@@ -32,7 +32,7 @@ const fetchShortlets = async (req, res) => {
 
 const fetchShortletsMinified = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
   try {
     const stlt = await ShortLet.find();
     const shortlets = stlt.map((ele) => ({
@@ -60,7 +60,7 @@ const fetchShortletsMinified = async (req, res) => {
 
 const fetchSingleShortlet = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
   try {
     const shortlet = await ShortLet.findById(req.params.id);
     // console.log("shortlet", shortlet);
@@ -193,7 +193,7 @@ const bookStayAUth = async (req, res, next) => {
 
 const bookStayThirdParty = async (req, res, next) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(firm, api_key);
+  await verifyAPIToken(res, firm, api_key);
 
   const { apartment_id } = req.params;
 
