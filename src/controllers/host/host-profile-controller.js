@@ -255,7 +255,7 @@ const approveShortletBooking = async (req, res) => {
       apartmentBooking.owner,
       "booking",
       `Reservation for ${apartmentBooking.apartment_name} confirmed`,
-      `Your reservation for a shortlet apartment; ${apartmentBooking.apartment_name} in ${apartmentBooking.address}, ${apartmentBooking.lga} has been successfully confirmed. Property is verified to be available. Please <a href="${process.env.USER_APP_URL}/stay-booking/${booking_reference}"> proceed to make payment</a>`,
+      `Your reservation for a shortlet apartment; ${apartmentBooking.apartment_name} in ${apartmentBooking.address}, ${apartmentBooking.lga} has been successfully confirmed. Property is verified to be available. Please <a href="${process.env.USER_APP_URL}/stay-booking/${apartmentBooking.booking_reference}"> proceed to make payment</a>`,
       user
     );
     if (notifyUser) {

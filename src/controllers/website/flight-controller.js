@@ -374,7 +374,7 @@ const bookFlightNoAuth = async (req, res) => {
   }
 };
 
-const bookFlightBorderless = async (req, res) => {
+const bookFlightThirdParty = async (req, res) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
 
@@ -509,6 +509,6 @@ module.exports = {
   confirmFlightPrice,
   bookFlightAuth,
   bookFlightNoAuth,
-  bookFlightBorderless,
+  bookFlightThirdParty,
   fetchFlightTicketDetails,
 };

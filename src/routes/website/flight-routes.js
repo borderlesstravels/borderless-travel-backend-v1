@@ -7,8 +7,8 @@ const {
   fetchFlightTicketDetails,
   bookFlightAuth,
   bookFlightNoAuth,
-  bookFlightBorderless,
   flightOfferSearchMultiCity,
+  bookFlightThirdParty,
 } = require("../../controllers/website/flight-controller");
 const {
   validateFlightOfferSearch,
@@ -54,7 +54,7 @@ router.post(
   "/book-flight-tp/:flight_id",
   validateFlightBooking,
   validate,
-  bookFlightBorderless
+  bookFlightThirdParty
 );
 router.get(
   "/flight-booking-details/:booking_reference",

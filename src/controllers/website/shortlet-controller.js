@@ -106,6 +106,7 @@ const fetchShortletReviews = async (req, res) => {
 
 const bookStayAUth = async (req, res, next) => {
   const { apartment_id } = req.params;
+  const { firm, api_key } = req.headers;
   const userId = req.id;
 
   const user = await User.findById(userId, "-password");
@@ -131,6 +132,8 @@ const bookStayAUth = async (req, res, next) => {
   try {
     const newBooking = new ShortletBooking({
       owner: userId,
+      firm,
+      api_key,
       apartment_id,
       apartment_name: apartment.apartment_name,
       apartment_address: apartment.address,

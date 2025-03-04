@@ -66,7 +66,7 @@ app.use("/api/v1/shortlet", shortletRouter);
 
 app.get("/", (req, res) => {
   res.send(
-    "Hello, welcome to Borderless Travels app. Server is running with latest update in January 2025"
+    "Hello, welcome to Borderless Travels app. Server is running with latest update in March 2025"
   );
 });
 
