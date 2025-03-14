@@ -3,9 +3,28 @@ const { log } = require("console");
 const { fetcher_tiqwa } = require("../../api/fetcher");
 const { sender_tiqwa } = require("../../api/sender");
 const FlightBooking = require("../../models/general/FlightBooking");
-const { sendError, verifyAPIToken } = require("../../utils/helpers");
+const {
+  sendError,
+  verifyAPIToken,
+  sendSuccess,
+} = require("../../utils/helpers");
 const User = require("../../models/user/User");
 const APIToken = require("../../models/app-core/APIToken");
+const BookingRequest = require("../../models/general/BookingRequest");
+
+const travelBookingRequest = async (req, res) => {
+  const newBookingRequest = new BookingRequest(req.body);
+  try {
+    await newBookingRequest.save();
+    return sendSuccess(
+      res,
+      "Your request has been successfully received. We will reach out to you soon.",
+      newBookingRequest
+    );
+  } catch (error) {
+    sendError(res, `Could not complete your requested. Error - ${error}`);
+  }
+};
 
 const fetchAirports = async (req, res) => {
   const { firm, api_key } = req.headers;
@@ -502,6 +521,7 @@ const fetchFlightTicketDetails = async (req, res) => {
 };
 
 module.exports = {
+  travelBookingRequest,
   fetchAirports,
   fetchAirlines,
   flightOfferSearch,

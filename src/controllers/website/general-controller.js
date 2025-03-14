@@ -1,4 +1,5 @@
 const Markup = require("../../models/app-core/Markup");
+const BookingRequest = require("../../models/general/BookingRequest");
 const FlightBooking = require("../../models/general/FlightBooking");
 const Job = require("../../models/general/Job");
 const JobApplication = require("../../models/general/JobApplication");
@@ -177,22 +178,25 @@ const saveSubscriber = async (req, res) => {
         "You have already joined our list using this email address."
       );
     }
+    const newSubscriber = new Subscriber(req.body);
+    try {
+      await newSubscriber.save();
+      return sendSuccess(
+        res,
+        "You have successfully subscribed to our mailing list. Watch our for future updates",
+        newSubscriber
+      );
+    } catch (err) {
+      sendError(
+        res,
+        `Could not save your details to our subscription list. Eror - ${err}`
+      );
+    }
   } catch (error) {
     return sendError(
       res,
-      "Could not verify that you are not an existing contact"
+      `Could not verify that you are not an existing contact. Error - ${error}`
     );
-  }
-  const newSubscriber = new Subscriber(req.body);
-  try {
-    await newSubscriber.save();
-    return sendSuccess(
-      res,
-      "You have successfully subscribed to our mailing list. Watch our for future updates",
-      newSubscriber
-    );
-  } catch (error) {
-    sendError(res, "Could not save your details to our subscription list");
   }
 };
 
@@ -239,25 +243,18 @@ const applyForJob = async (req, res, next) => {
       return sendError(res, "The selected job does not exist");
     }
     req.body.jobId = jobId;
-    const rawResumeArray = req.files["resume"];
-    const rawCoverArray = req.files["cover"];
-    if (!rawResumeArray) {
-      return badRequestError(res, "Please add your resume");
+    const rawFileArray = req.files["files"];
+
+    if (!rawFileArray) {
+      return badRequestError(res, "Resume missing!");
     }
-    if (rawCoverArray) {
-      const namedCover = rawCoverArray.map((a) => a.filename);
-      const stringnifiedCover = JSON.stringify(namedCover);
-      const formmatedCover = stringnifiedCover.replace(/[^a-zA-Z0-9_.,]/g, "");
-      const cover = formmatedCover.replace(/[,]/g, ", ");
-      console.log("cover: ", cover);
-      req.body.cover = cover;
-    }
-    const namedResume = rawResumeArray.map((a) => a.filename);
-    const stringnifiedResume = JSON.stringify(namedResume);
-    const formmatedResume = stringnifiedResume.replace(/[^a-zA-Z0-9_.,]/g, "");
-    const resume = formmatedResume.replace(/[,]/g, ", ");
-    console.log("resume: ", resume);
-    req.body.resume = resume;
+
+    const namedFiles = rawFileArray.map((a) => a.filename);
+    const stringnifiedFiles = JSON.stringify(namedFiles);
+    const formmatedFiles = stringnifiedFiles.replace(/[^a-zA-Z0-9_.,]/g, "");
+    const files = formmatedFiles.replace(/[,]/g, ", ");
+    console.log("files: ", files);
+    req.body.files = files;
 
     const newApplication = new JobApplication(req.body);
     try {

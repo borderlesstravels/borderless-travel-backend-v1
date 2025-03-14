@@ -122,14 +122,38 @@ exports.validateContactUsParams = [
     .withMessage("Message content is missing."),
 ];
 
-exports.validateSubscriptionParams = [
-  check("name")
+exports.validateBookingRequestParams = [
+  check("company_name")
     .trim()
     .not()
     .isEmpty()
-    .withMessage("Name is missing!")
-    .isLength({ min: 3, max: 30 })
-    .withMessage("Valid name can only be between 3 and 30 characters long"),
+    .withMessage("Company Name is missing!"),
+  check("email")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Company email address is missing!")
+    .isEmail()
+    .withMessage("Invalid email address provided"),
+  check("phone").trim().not().isEmpty().withMessage("Phone Number is missing!"),
+  check("contact_person")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Contact Person Name is missing!"),
+  check("business_reg_number")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Business Registration Number is missing!"),
+  check("business_address")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Kindly provide Business Address"),
+];
+
+exports.validateSubscriptionParams = [
   check("email")
     .trim()
     .not()
@@ -137,8 +161,6 @@ exports.validateSubscriptionParams = [
     .withMessage("Your email address is missing!")
     .isEmail()
     .withMessage("Invalid email address provided"),
-  check("phone").trim().not().isEmpty().withMessage("Phone number is missing."),
-  check("country").trim().not().isEmpty().withMessage("Where are you from?"),
 ];
 
 // Flight

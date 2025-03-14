@@ -3,7 +3,6 @@ const {
   sendSuccess,
   badRequestError,
 } = require("../../utils/helpers");
-const Subscriber = require("../../models/general/Subscriber");
 const { log } = require("console");
 const Job = require("../../models/general/Job");
 const JobApplication = require("../../models/general/JobApplication");

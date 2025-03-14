@@ -19,12 +19,9 @@ const jobApplicationSchema = new Schema({
     type: String,
     required: true,
   },
-  resume: {
+  files: {
     type: String,
     required: true,
-  },
-  cover: {
-    type: String,
   },
   created_at: {
     type: Date,

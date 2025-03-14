@@ -16,10 +16,7 @@ const careerStorage = multer.diskStorage({
   },
 });
 const carUpload = multer({ storage: careerStorage });
-const careerAppDocUpload = carUpload.fields([
-  { name: "resume", maxCount: 1 },
-  { name: "cover", maxCount: 1 },
-]);
+const careerAppDocUpload = carUpload.fields([{ name: "files", maxCount: 5 }]);
 
 const jobPostStorage = multer.diskStorage({
   destination: (req, file, cb) => {

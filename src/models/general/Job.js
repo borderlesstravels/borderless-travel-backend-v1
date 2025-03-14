@@ -27,6 +27,10 @@ const jobSchema = new Schema({
     type: Array,
     required: true,
   },
+  experience: {
+    type: String,
+    default: true,
+  },
   salary: {
     type: String,
   },

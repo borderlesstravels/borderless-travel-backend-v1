@@ -48,6 +48,25 @@ const getHostNotifications = async (req, res) => {
   }
 };
 
+const openNotification = async (req, res) => {
+  try {
+    const notification = await Notification.findById(req.params.id);
+    if (!notification) {
+      return sendSuccess(res, "Invalid notification id supplied");
+    }
+    notification.status = "opened";
+    await notification.save();
+    return sendSuccess(res, "Notificationed attended to", notification);
+  } catch (error) {
+    console.log("error", error);
+    return sendError(
+      res,
+      `Cannot fetch host's notifications. Error - ${error}`,
+      500
+    );
+  }
+};
+
 const getHostReviews = async (req, res) => {
   const userId = req.id;
   try {
@@ -511,6 +530,7 @@ const logoutHost = (req, res, next) => {
 module.exports = {
   getHost,
   getHostNotifications,
+  openNotification,
   getHostReviews,
 
   addProperty,

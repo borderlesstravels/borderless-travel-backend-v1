@@ -1,24 +1,12 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
 const subscriberSchema = new Schema({
-  name: {
-    type: String,
-    required: true,
-  },
   email: {
     type: String,
     required: true,
-    unique: [true, 'You have already subscribed t5o our list with this email'],
-  },
-  phone: {
-    type: String,
-    required: true,
-  },
-  country: {
-    type: String,
-    required: true,
+    unique: [true, "You have already subscribed to our list with this email"],
   },
   created_at: {
     type: Date,
@@ -26,4 +14,4 @@ const subscriberSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('Subscriber', subscriberSchema);
+module.exports = mongoose.model("Subscriber", subscriberSchema);

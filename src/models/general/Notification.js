@@ -25,6 +25,10 @@ const notificationSchema = new Schema({
   booking_id: {
     type: String,
   },
+  status: {
+    type: String,
+    default: "pending",
+  },
   createdAt: {
     type: Date,
     default: Date.now,

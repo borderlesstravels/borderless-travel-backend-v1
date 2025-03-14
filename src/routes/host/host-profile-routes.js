@@ -24,6 +24,7 @@ const {
   fetchSingleShortlet,
   fetchShortletBookings,
   fetchSingleShortletBooking,
+  openNotification,
 } = require("../../controllers/host/host-profile-controller");
 const {
   validateHostUpdateProfileParams,
@@ -43,6 +44,7 @@ router.get("/profile", verifyHostLoginToken, getHost);
 router.get("/reviews", verifyHostLoginToken, getHostReviews);
 
 router.get("/notifications", verifyHostLoginToken, getHostNotifications);
+router.put("/open-notification/:id", verifyHostLoginToken, openNotification);
 router.put("/update-profile", verifyHostLoginToken, updateHostProfile);
 router.put(
   "/update-profile-avatar",

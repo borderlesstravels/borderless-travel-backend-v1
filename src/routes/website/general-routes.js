@@ -39,6 +39,7 @@ router.post(
 );
 router.post("/contact-us", validateContactUsParams, validate, contactUsEmail);
 router.post("/subscribe", validateSubscriptionParams, validate, saveSubscriber);
+
 router.get("/jobs", fetchJobPostings);
 router.get("/single-job/:id", fetchSingleJobPosting);
 router.post("/apply-for-job/:id", careerAppDocUpload, applyForJob);

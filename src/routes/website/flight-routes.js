@@ -9,12 +9,14 @@ const {
   bookFlightNoAuth,
   flightOfferSearchMultiCity,
   bookFlightThirdParty,
+  travelBookingRequest,
 } = require("../../controllers/website/flight-controller");
 const {
   validateFlightOfferSearch,
   validateFlightBooking,
   validate,
   validateMultiCityFlightOfferSearch,
+  validateBookingRequestParams,
 } = require("../../middlewares/validator");
 const {
   verifyUserLoginToken,
@@ -22,6 +24,12 @@ const {
 
 const router = express.Router();
 
+router.post(
+  "/travel-booking-request",
+  validateBookingRequestParams,
+  validate,
+  travelBookingRequest
+);
 router.get("/fetch-airports", fetchAirports);
 router.get("/fetch-airlines", fetchAirlines);
 router.post(
