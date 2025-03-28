@@ -6,6 +6,7 @@ const JobApplication = require("../../models/general/JobApplication");
 const Payment = require("../../models/general/Payment");
 const ShortletBooking = require("../../models/general/ShortletBooking");
 const Subscriber = require("../../models/general/Subscriber");
+const Waitlist = require("../../models/general/Waitlist");
 const User = require("../../models/user/User");
 const {
   sendError,
@@ -175,7 +176,7 @@ const saveSubscriber = async (req, res) => {
     if (existingContact) {
       return sendError(
         res,
-        "You have already joined our list using this email address."
+        "You have already subscribed using this email address."
       );
     }
     const newSubscriber = new Subscriber(req.body);
@@ -196,6 +197,38 @@ const saveSubscriber = async (req, res) => {
     return sendError(
       res,
       `Could not verify that you are not an existing contact. Error - ${error}`
+    );
+  }
+};
+
+const saveWaitlist = async (req, res) => {
+  let existingContact;
+  try {
+    existingContact = await Waitlist.findOne({ email: req.body.email });
+    if (existingContact) {
+      return sendError(
+        res,
+        "You have already joined our list using this email address."
+      );
+    }
+    const newSubscriber = new Waitlist(req.body);
+    try {
+      await newSubscriber.save();
+      return sendSuccess(
+        res,
+        "You have successfully joined our wait list. Watch our for future updates",
+        newSubscriber
+      );
+    } catch (err) {
+      sendError(
+        res,
+        `Could not save your details to our subscription list. Eror - ${err}`
+      );
+    }
+  } catch (error) {
+    return sendError(
+      res,
+      `Could not verify that you are not an existing subscriber. Error - ${error}`
     );
   }
 };
@@ -277,6 +310,7 @@ module.exports = {
   payForFlight,
   payForShortlet,
   saveSubscriber,
+  saveWaitlist,
   fetchJobPostings,
   fetchSingleJobPosting,
   applyForJob,

@@ -21,6 +21,7 @@ const {
 const {
   verifyUserLoginToken,
 } = require("../../controllers/website/user-auth-controller");
+const { verificationEmailAutoSignup } = require("../../services/emailServices");
 
 const router = express.Router();
 
@@ -49,7 +50,8 @@ router.post(
   "/book-flight-no-auth/:flight_id",
   validateFlightBooking,
   validate,
-  bookFlightNoAuth
+  bookFlightNoAuth,
+  verificationEmailAutoSignup
 );
 router.post(
   "/book-flight-auth/:flight_id",

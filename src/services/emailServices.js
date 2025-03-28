@@ -1,34 +1,40 @@
-require('dotenv').config();
-const sendEmail = require('../utils/email/sendEmail.util');
+require("dotenv").config();
+const sendEmail = require("../utils/email/sendEmail.util");
 const {
   emailVerifiedTemp,
-} = require('../../public/email-templates/auth/signup/emailVerified.template');
+} = require("../../public/email-templates/auth/signup/emailVerified.template");
 const {
   passwordUpdatedTemp,
-} = require('../../public/email-templates/auth/password/passwordUpdated.template');
+} = require("../../public/email-templates/auth/password/passwordUpdated.template");
 const {
   resetPasswordTemp,
-} = require('../../public/email-templates/auth/password/resetPassword.template');
+} = require("../../public/email-templates/auth/password/resetPassword.template");
 const {
   verifyEmailCodeTemp,
-} = require('../../public/email-templates/auth/signup/verifyEmailCode.template');
+} = require("../../public/email-templates/auth/signup/verifyEmailCode.template");
 const {
   verifyLoginCodeTemp,
-} = require('../../public/email-templates/auth/login/verifyLoginCode.template');
+} = require("../../public/email-templates/auth/login/verifyLoginCode.template");
 const {
   loginVerifiedTemp,
-} = require('../../public/email-templates/auth/login/loginVerified.template');
+} = require("../../public/email-templates/auth/login/loginVerified.template");
 const {
   profileUpdatedTemp,
-} = require('../../public/email-templates/profile/profileUpdated.template');
-const { contactUsEmailTemp } = require('../../public/email-templates/website/contactUsEmailTemp');
+} = require("../../public/email-templates/profile/profileUpdated.template");
+const {
+  contactUsEmailTemp,
+} = require("../../public/email-templates/website/contactUsEmailTemp");
+const {
+  accountAutoCreatedTemp,
+} = require("../../public/email-templates/auth/signup/accountAutoCreated.template");
+const { sendSuccess, sendError } = require("../utils/helpers");
 
 // General
 const verificationEmail = async (req, res) => {
   const { user, otp } = req.body;
   const email = user.email;
   const first_name = user.first_name;
-  const subject = 'Verify Your Email';
+  const subject = "Verify Your Email";
   const email_body = verifyEmailCodeTemp(first_name, otp);
   try {
     sendEmail(subject, email_body, email);
@@ -41,6 +47,28 @@ const verificationEmail = async (req, res) => {
     userId: user._id,
   });
 };
+const verificationEmailAutoSignup = async (req, res) => {
+  const { savedUser, bookingResponse } = req.body;
+  const email = savedUser.email;
+  const first_name = savedUser.first_name;
+  const subject = "Welcome to Boardless Travels!";
+  const email_body = accountAutoCreatedTemp(first_name);
+  try {
+    sendEmail(subject, email_body, email);
+  } catch (error) {
+    // res.status(500).json(error.message);
+    return sendError(
+      res,
+      "Request completed. Unable to send sign up email",
+      500
+    );
+  }
+  return sendSuccess(res, "Request successfully completed!", {
+    userData: savedUser,
+    bookingResponse,
+  });
+};
+
 const emailVerifiedEmail = async (req, res) => {
   const { user } = req.body;
   const email = user.email;
@@ -51,12 +79,13 @@ const emailVerifiedEmail = async (req, res) => {
   try {
     sendEmail(subject, email_body, send_to);
   } catch (error) {
-    res.status(500).json(error.message);
+    return res.status(500).json(error.message);
   }
   return res.status(200).json({
     success: true,
     loginStatus: 2,
-    message: 'Your email has been successfully verified, and you are noe logged in',
+    message:
+      "Your email has been successfully verified, and you are noe logged in",
     user: {
       first_name: user.first_name,
       last_name: user.last_name,
@@ -71,9 +100,9 @@ const resetPasswordEmail = async (req, res) => {
   const email = user.email;
   const firstName = user.first_name;
   let link;
-  if (type === 'user' || type === 'host') {
+  if (type === "user" || type === "host") {
     link = `${process.env.USER_APP_URL}/update-password?token=${token}&id=${user._id}&type=${type}`;
-  } else if (type === 'admin') {
+  } else if (type === "admin") {
     link = `${process.env.ADMIN_APP_URL}/reset-password?token=${token}&id=${user._id}`;
   }
 
@@ -106,7 +135,7 @@ const passwordUpdatedEmail = async (req, res) => {
   }
   return res.status(200).json({
     success: true,
-    message: 'Your password has been successfully updated',
+    message: "Your password has been successfully updated",
   });
 };
 
@@ -119,14 +148,14 @@ const loginVerificationEmail = async (req, res) => {
   const email_body = verifyLoginCodeTemp(fName, otp);
   try {
     sendEmail(subject, email_body, email);
+    return res.status(200).json({
+      success: true,
+      message: `Login verification code sent to your email - ${email}`,
+      adminId: user._id,
+    });
   } catch (error) {
     res.status(500).json(error.message);
   }
-  return res.status(200).json({
-    success: true,
-    message: `Login verification code sent to your email - ${email}`,
-    adminId: user._id,
-  });
 };
 const loginSuccessfulEmail = async (req, res) => {
   const { user, token } = req.body;
@@ -136,22 +165,22 @@ const loginSuccessfulEmail = async (req, res) => {
   const email_body = loginVerifiedTemp(firstName);
   try {
     sendEmail(subject, email_body, email);
+    return res.status(200).json({
+      success: true,
+      loginStatus: 2,
+      message: "Successfully logged in",
+      user: {
+        first_name: firstName,
+        last_name: user.last_name,
+        email,
+        id: user._id,
+        email_verified: user.email_verified,
+      },
+      token,
+    });
   } catch (error) {
     res.status(500).json(error.message);
   }
-  return res.status(200).json({
-    success: true,
-    loginStatus: 2,
-    message: 'Successfully logged in',
-    user: {
-      first_name: firstName,
-      last_name: user.last_name,
-      email,
-      id: user._id,
-      email_verified: user.email_verified,
-    },
-    token,
-  });
 };
 
 // Website
@@ -163,13 +192,13 @@ const contactUsEmail = async (req, res) => {
   const email_body = contactUsEmailTemp(name, email, subj, company, message);
   try {
     sendEmail(subject, email_body, send_to);
+    return sendSuccess(
+      res,
+      "Your message has been successfully received. We shall revert shortly."
+    );
   } catch (error) {
-    res.status(500).json(error.message);
+    return res.status(500).json(error.message);
   }
-  return res.status(200).json({
-    success: true,
-    message: 'Your message has been successfully received. We shall revert shortly.',
-  });
 };
 
 // **
@@ -181,23 +210,25 @@ const profileUpdatedEmail = async (req, res) => {
   const { user } = req.body;
   const email = user.email;
   const name = user.name;
-  const fName = name.split(' ')[0];
-  const subject = 'Your Profile Has Been Updated - Prodox Exchange';
+  const fName = name.split(" ")[0];
+  const subject = "Your Profile Has Been Updated - Prodox Exchange";
   const email_body = profileUpdatedTemp(fName);
   try {
     sendEmail(subject, email_body, email);
     return res.status(200).json({
       success: true,
-      message: 'Your password has been successfully updated',
+      message: "Your password has been successfully updated",
     });
   } catch (error) {
-    res.status(500).json(error.message);
+    return res.status(500).json(error.message);
   }
 };
 
 module.exports = {
   verificationEmail,
   emailVerifiedEmail,
+  verificationEmailAutoSignup,
+
   resetPasswordEmail,
   passwordUpdatedEmail,
   loginVerificationEmail,

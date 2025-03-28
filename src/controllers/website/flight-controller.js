@@ -11,6 +11,7 @@ const {
 const User = require("../../models/user/User");
 const APIToken = require("../../models/app-core/APIToken");
 const BookingRequest = require("../../models/general/BookingRequest");
+const jwt = require("jsonwebtoken");
 
 const travelBookingRequest = async (req, res) => {
   const newBookingRequest = new BookingRequest(req.body);
@@ -42,6 +43,7 @@ const fetchAirports = async (req, res) => {
       .status(response.status)
       .json({ success: true, data: response.data });
   } else {
+    console.log({ response });
     return sendError(res, response?.data.Message, response?.status);
   }
 };
@@ -255,7 +257,7 @@ const bookFlightAuth = async (req, res) => {
   }
 };
 
-const bookFlightNoAuth = async (req, res) => {
+const bookFlightNoAuth = async (req, res, next) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
 
@@ -299,7 +301,7 @@ const bookFlightNoAuth = async (req, res) => {
         "Unable to complete this request at this time. Please try again."
       );
     }
-    console.log("response", response);
+    // console.log("response", response);
     if (response?.status === 200) {
       const outboundData = response.data.outbound;
       const destPicker = Number(outboundData.length - 1);
@@ -359,10 +361,30 @@ const bookFlightNoAuth = async (req, res) => {
             booking_reference: response?.data.reference,
           });
           await contactDetails.save();
-          return res
-            .status(response.status)
-            .json({ success: true, data: response.data });
+          const loginTtoken = jwt.sign(
+            { id: savedUser._id },
+            process.env.JWT_USER_SECRET_KEY,
+            {
+              expiresIn: "10d",
+            }
+          );
+          res.cookie(String(savedUser._id), loginTtoken, {
+            path: "/",
+            expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
+            httpOnly: true,
+            sameSite: "lax",
+          });
+          req.body = {
+            savedUser,
+            bookingResponse: response.data,
+            userId: savedUser._id,
+          };
+          next();
+          // return res
+          //   .status(response.status)
+          //   .json({ success: true, data: response.data });
         } catch (error) {
+          console.log({ error });
           return sendError(
             res,
             "Ticket booked, but we are unable to save your data on our database. Kindly get in touch with us soon."
