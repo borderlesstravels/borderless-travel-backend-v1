@@ -38,6 +38,7 @@ app.use(
       "https://borderless-travel-admin-app.vercel.app",
       "https://borderless-travels.netlify.app",
       "https://borderless-website.onrender.com",
+      "https://borderless-waitlist.onrender.com",
     ],
   })
 );
@@ -66,7 +67,7 @@ app.use("/api/v1/shortlet", shortletRouter);
 
 app.get("/", (req, res) => {
   res.send(
-    "Hello, welcome to Borderless Travels app. Server is running with latest update in March 2025"
+    "Hello, welcome to Borderless Travels app. Server is running with latest update in April 2025"
   );
 });
 
