@@ -39,6 +39,7 @@ app.use(
       "https://borderless-travels.netlify.app",
       "https://borderless-website.onrender.com",
       "https://borderless-waitlist.onrender.com",
+      "https://borderless.travel",
     ],
   })
 );
