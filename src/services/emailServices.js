@@ -28,6 +28,40 @@ const {
   accountAutoCreatedTemp,
 } = require("../../public/email-templates/auth/signup/accountAutoCreated.template");
 const { sendSuccess, sendError } = require("../utils/helpers");
+const {
+  waitlistSubscribedTemp,
+} = require("../../public/email-templates/website/waitlistSubscribed.template");
+
+// Waitlist email
+const waitlistSubscribedEMail = async (req, res) => {
+  const { subscriber } = req.body;
+  const email = subscriber.email;
+  const first_name = subscriber.first_name;
+  const subject = "Welcome to Borderless";
+  const email_body = waitlistSubscribedTemp(first_name);
+  let emailSent;
+  const notitle = true;
+  try {
+    emailSent = await sendEmail(subject, email_body, email, notitle);
+  } catch (error) {
+    console.log({ emailError: error });
+    return res.status(500).json({
+      success: true,
+      message:
+        "You have successfully joined our wait list. But we are unable to send a feedback at this time.",
+    });
+  }
+  // if (emailSent) {
+  return res.status(200).json({
+    success: true,
+    message:
+      "You have successfully joined our wait list. Kindly check your email as have something important for you",
+    subscriber,
+  });
+  // } else {
+  //   console.log("something went wrong");
+  // }
+};
 
 // General
 const verificationEmail = async (req, res) => {
@@ -38,15 +72,16 @@ const verificationEmail = async (req, res) => {
   const email_body = verifyEmailCodeTemp(first_name, otp);
   try {
     sendEmail(subject, email_body, email);
+    return res.status(200).json({
+      success: true,
+      message: `Successfully signed up. Verification code has been sent to your submitted email - ${email}`,
+      userId: user._id,
+    });
   } catch (error) {
-    res.status(500).json(error.message);
+    return res.status(500).json(error.message);
   }
-  return res.status(200).json({
-    success: true,
-    message: `Successfully signed up. Verification code has been sent to your submitted email - ${email}`,
-    userId: user._id,
-  });
 };
+
 const verificationEmailAutoSignup = async (req, res) => {
   const { savedUser, bookingResponse } = req.body;
   const email = savedUser.email;
@@ -225,6 +260,8 @@ const profileUpdatedEmail = async (req, res) => {
 };
 
 module.exports = {
+  waitlistSubscribedEMail,
+
   verificationEmail,
   emailVerifiedEmail,
   verificationEmailAutoSignup,

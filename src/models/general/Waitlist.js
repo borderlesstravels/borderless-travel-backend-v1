@@ -17,6 +17,10 @@ const waitlistSchema = new Schema({
   phone: {
     type: String,
   },
+  type: {
+    type: String,
+    default: "general",
+  },
   created_at: {
     type: Date,
     default: Date.now,

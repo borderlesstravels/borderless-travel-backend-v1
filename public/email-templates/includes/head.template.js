@@ -149,7 +149,7 @@ const emailHead = () => {
 <tbody>
 <tr>
 	<td>
-		<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; color: #000; background-color: #efeef4; border: 0 solid #efeef4; width: 700px; margin: 0 auto;" width="700">
+		<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; color: #000; background-color: #660476; width: 700px; margin: 0 auto;" width="700">
 			<tbody>
 				<tr>
 					<td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; text-align: left; font-weight: 400; padding-bottom: 15px; padding-left: 25px; padding-right: 25px; padding-top: 20px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">

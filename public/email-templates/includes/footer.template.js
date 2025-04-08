@@ -5,7 +5,7 @@ const emailFooter = () => {
 <tbody>
 <tr>
 <td>
-	<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; color: #000; background-color: #201f42; background-size: auto; border: 7px solid #0000; border-radius: 0; width: 700px; margin: 0 auto;" width="700">
+	<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; color: #000; background-color: #660476; background-size: auto; border: 7px solid #0000; border-radius: 0; width: 700px; margin: 0 auto;" width="700">
 		<tbody>
 			<tr>
 				<td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; text-align: left; font-weight: 400; padding-bottom: 20px; padding-left: 30px; padding-right: 10px; padding-top: 20px; vertical-align: middle; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
@@ -13,7 +13,7 @@ const emailFooter = () => {
 						<tr>
 							<td class="pad">
 								<div style="color:#ffffff;direction:ltr;font-family:Inter, sans-serif;font-size:13px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:15.6px;">
-									<p style="margin: 0;"><em>If you didn’t register on ${process.env.APP_NAME} with this email, kindly ignore this email.</em></p>
+									<p style="margin: 0;"><em>If you didn't register on ${process.env.APP_NAME} with this email, kindly ignore this email.</em></p>
 								</div>
 							</td>
 						</tr>

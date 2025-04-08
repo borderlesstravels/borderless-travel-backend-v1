@@ -1,7 +1,13 @@
-const { emailFooter } = require('../includes/footer.template');
-const { emailHead } = require('../includes/head.template');
+const { emailFooter } = require("../includes/footer.template");
+const { emailHead } = require("../includes/head.template");
 
-const transferSuccessfulReceiverTemp = (r_fName, amount, ticker, sender, t_id) => {
+const transferSuccessfulReceiverTemp = (
+  r_fName,
+  amount,
+  ticker,
+  sender,
+  t_id
+) => {
   const head = emailHead();
   const footer = emailFooter();
 
@@ -18,7 +24,7 @@ const transferSuccessfulReceiverTemp = (r_fName, amount, ticker, sender, t_id) =
                     <table class="heading_block block-1" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
                       <tr>
                         <td class="pad" style="padding-bottom:20px;padding-top:10px;text-align:center;width:100%;">
-                          <h2 style="margin: 0; color: #148674; direction: ltr; font-family: Inter, sans-serif; font-size: 15px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0;"><span class="tinyMce-placeholder">Dear ${r_fName},&nbsp;</span></h2>
+                          <h2 style="margin: 0; color: #660476; direction: ltr; font-family: Inter, sans-serif; font-size: 15px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0;"><span class="tinyMce-placeholder">Dear ${r_fName},&nbsp;</span></h2>
                         </td>
                       </tr>
                     </table>

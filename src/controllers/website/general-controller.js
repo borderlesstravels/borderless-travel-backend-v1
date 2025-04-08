@@ -201,7 +201,7 @@ const saveSubscriber = async (req, res) => {
   }
 };
 
-const saveWaitlist = async (req, res) => {
+const saveWaitlist = async (req, res, next) => {
   let existingContact;
   try {
     existingContact = await Waitlist.findOne({ email: req.body.email });
@@ -214,11 +214,10 @@ const saveWaitlist = async (req, res) => {
     const newSubscriber = new Waitlist(req.body);
     try {
       await newSubscriber.save();
-      return sendSuccess(
-        res,
-        "You have successfully joined our wait list. Watch our for future updates",
-        newSubscriber
-      );
+      req.body = {
+        subscriber: newSubscriber,
+      };
+      next();
     } catch (err) {
       sendError(
         res,

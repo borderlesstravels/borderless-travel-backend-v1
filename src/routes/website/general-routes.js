@@ -1,5 +1,8 @@
 const express = require("express");
-const { contactUsEmail } = require("../../services/emailServices");
+const {
+  contactUsEmail,
+  waitlistSubscribedEMail,
+} = require("../../services/emailServices");
 const {
   validateContactUsParams,
   validateSubscriptionParams,
@@ -40,7 +43,13 @@ router.post(
 );
 router.post("/contact-us", validateContactUsParams, validate, contactUsEmail);
 router.post("/subscribe", validateSubscriptionParams, validate, saveSubscriber);
-router.post("/waitlist", validateSubscriptionParams, validate, saveWaitlist);
+router.post(
+  "/waitlist",
+  validateSubscriptionParams,
+  validate,
+  saveWaitlist,
+  waitlistSubscribedEMail
+);
 
 router.get("/jobs", fetchJobPostings);
 router.get("/single-job/:id", fetchSingleJobPosting);
