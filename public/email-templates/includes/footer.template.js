@@ -1,60 +1,162 @@
 const emailFooter = () => {
   const footer = `
 
-<table class="row row-5" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-size: auto;">
-<tbody>
-<tr>
-<td>
-	<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; color: #000; background-color: #660476; background-size: auto; border: 7px solid #0000; border-radius: 0; width: 700px; margin: 0 auto;" width="700">
-		<tbody>
-			<tr>
-				<td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; text-align: left; font-weight: 400; padding-bottom: 20px; padding-left: 30px; padding-right: 10px; padding-top: 20px; vertical-align: middle; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
-					<table class="paragraph_block block-1" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
-						<tr>
-							<td class="pad">
-								<div style="color:#ffffff;direction:ltr;font-family:Inter, sans-serif;font-size:13px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:15.6px;">
-									<p style="margin: 0;"><em>If you didn't register on ${process.env.APP_NAME} with this email, kindly ignore this email.</em></p>
-								</div>
-							</td>
-						</tr>
-					</table>
-					<table class="divider_block block-2" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-						<tr>
-							<td class="pad">
-								<div class="alignment" align="center">
-									<table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-										<tr>
-											<td class="divider_inner" style="font-size: 1px; line-height: 1px; border-top: 1px solid #dddddd;"><span>&#8202;</span></td>
-										</tr>
-									</table>
-								</div>
-							</td>
-						</tr>
-					</table>
-					<table class="paragraph_block block-3" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
-						<tr>
-							<td class="pad">
-								<div style="color:#ffffff;direction:ltr;font-family:Inter, sans-serif;font-size:12px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:14.399999999999999px;">
-									<p style="margin: 0;"><em>Copyright © 2023 ${process.env.APP_NAME}, All rights reserved.</em></p>
-								</div>
-							</td>
-						</tr>
-					</table>
-				</td>
-			</tr>
-		</tbody>
-	</table>
-</td>
-</tr>
-</tbody>
-</table>
-</td>
-</tr>
-</tbody>
-</table><!-- End -->
-</body>
+	<!-- Footer -->
+                        <div style="padding: 20px; background-color: #660476">
+                          <!-- Put the image absolute here -->
+                          <table
+                            role="presentation"
+                            border="0"
+                            cellpadding="0"
+                            cellspacing="0"
+                            width="100%"
+                          >
+                            <tr>
+                              <td style="margin-bottom: 10px">
+                                <div
+                                  style="margin-left: auto; max-width: 250px"
+                                >
+                                  <p
+                                    style="
+                                      color: #ffffff;
+                                      font-size: 14px;
+                                      text-align: right;
+                                      margin-bottom: 10px;
+                                    "
+                                  >
+                                    If you didn't register with Borderless
+                                    Travels with this email, kindly ignore this
+                                    email.
+                                  </p>
+                                  <p
+                                    style="
+                                      font-style: italic;
+                                      color: #ffffff;
+                                      font-size: 10px;
+                                      text-align: right;
+                                      margin-bottom: 10px;
+                                    "
+                                  >
+                                    Copyright &copy; 2025 Borderless Travels.
+                                    All rights reserved.
+                                  </p>
+                                  <div
+                                    style="
+                                      margin-left: auto;
+                                      max-width: 200px;
+                                      text-align: right;
+                                    "
+                                  >
+                                    <a
+                                      target="_blank"
+                                      href="https://facebook.com/hqborderless"
+                                      style="
+                                        display: inline-block;
+                                        margin: 0 10px;
+                                        text-decoration: none;
+                                        width: 32px;
+                                        height: 32px;
+                                        background-color: #f5f6f6;
+                                        position: relative;
+                                        border-radius: 50%;
+                                      "
+                                    >
+                                      <img
+                                        src=""
+                                        alt="Facebook"
+                                        style="
+                                          position: absolute;
+                                          width: 18px;
+                                          height: 18px;
+                                          top: 50%;
+                                          left: 50%;
+                                          transform: translate(-50%, -50%);
+                                        "
+                                      />
+                                    </a>
+                                    <a
+                                      target="_blank"
+                                      href="https://instagram.com/borderless_hq"
+                                      style="
+                                        display: inline-block;
+                                        margin: 0 10px;
+                                        text-decoration: none;
+                                        width: 32px;
+                                        height: 32px;
+                                        background-color: #f5f6f6;
+                                        position: relative;
+                                        border-radius: 50%;
+                                      "
+                                    >
+                                      <img
+                                        src=""
+                                        alt="Instagram"
+                                        style="
+                                          position: absolute;
+                                          width: 18px;
+                                          height: 18px;
+                                          top: 50%;
+                                          left: 50%;
+                                          transform: translate(-50%, -50%);
+                                        "
+                                      />
+                                    </a>
+                                    <a
+                                      target="_blank"
+                                      href="https://x.com/borderless_hq"
+                                      style="
+                                        display: inline-block;
+                                        margin: 0 10px;
+                                        text-decoration: none;
+                                        width: 32px;
+                                        height: 32px;
+                                        background-color: #f5f6f6;
+                                        position: relative;
+                                        border-radius: 50%;
+                                      "
+                                    >
+                                      <img
+                                        src=""
+                                        alt="Twitter"
+                                        style="
+                                          position: absolute;
+                                          width: 18px;
+                                          height: 18px;
+                                          top: 50%;
+                                          left: 50%;
+                                          transform: translate(-50%, -50%);
+                                        "
+                                      />
+                                    </a>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
 
+                        <!--[if (!mso)&(!IE)]><!-->
+                      </div>
+                      <!--<![endif]-->
+                    </div>
+                  </div>
+                  <!--[if (mso)|(IE)]></td><![endif]-->
+                  <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
+                </div>
+              </div>
+            </div>
+
+            <!--[if (mso)|(IE)]></td></tr></table><![endif]-->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--[if mso]></div><![endif]-->
+    <!--[if IE]></div><![endif]-->
+  </body>
 </html>
+
+
 `;
   return footer;
 };
