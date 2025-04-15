@@ -270,8 +270,7 @@ const waitlistSubscribedTemp = (firstName) => {
                 color: #101828d5;
               "
             >
-              Trips so smooth, you'll forget what stress
-              even feels like
+              Curated experiences
             </p>
           </div>
         </td>
