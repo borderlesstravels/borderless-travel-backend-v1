@@ -15,7 +15,7 @@ const sendEmail = (subject, message, send_to, notitle = false) => {
   });
 
   const options = {
-    from: process.env.APP_EMAIL,
+    from: `${process.env.APP_NAME} <${process.env.APP_EMAIL}>`,
     to: send_to,
     replyTo: process.env.APP_EMAIL,
     subject: notitle ? subject : `${subject} - ${process.env.APP_NAME}`,
