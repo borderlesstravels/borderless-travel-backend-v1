@@ -114,7 +114,7 @@ const waitlistSubscribedTemp = (firstName) => {
                 >
                   You didn't just join another waitlist.
                   You've entered the world of
-                  <strong> Travels</strong> - your ultimate
+                  <strong>Borderless Travels</strong> - your ultimate
                   travel companion, offering affordable
                   flights, curated stays, hassle-free
                   airport transfers, and seamless travel

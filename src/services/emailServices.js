@@ -36,7 +36,7 @@ const {
 const waitlistSubscribedEMail = async (req, res) => {
   const { subscriber } = req.body;
   const email = subscriber.email;
-  const first_name = subscriber.first_name;
+  const first_name = subscriber.first_name.split(" ")[0];
   const subject = "Welcome to Borderless";
   const email_body = waitlistSubscribedTemp(first_name);
   let emailSent;
