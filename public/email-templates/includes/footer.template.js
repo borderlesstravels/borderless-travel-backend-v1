@@ -1,7 +1,7 @@
 const emailFooter = () => {
   const footer = `
 
-	<!-- Footer -->
+                        <!-- Footer -->
                         <div style="padding: 20px; background-color: #660476">
                           <!-- Put the image absolute here -->
                           <table
@@ -11,8 +11,28 @@ const emailFooter = () => {
                             cellspacing="0"
                             width="100%"
                           >
-                            <tr>
-                              <td style="margin-bottom: 10px">
+                            <tr
+                              style="
+                                background-image: url(https://demo.stripocdn.email/content/guids/dca23089-f417-4ff2-af78-eb488068b965/images/emailbanner1.png);
+                                background-position: left;
+                              "
+                            >
+                              <td
+                                align="left"
+                                width="30%"
+                                style="margin-bottom: 10px"
+                              >
+                                <img
+                                  src="https://demo.stripocdn.email/content/guids/dca23089-f417-4ff2-af78-eb488068b965/images/borderless2_0Ux.png"
+                                  alt="Logo"
+                                  style="width: 50px; height: 50px"
+                                />
+                              </td>
+                              <td
+                                align="right"
+                                width="70%"
+                                style="margin-bottom: 10px"
+                              >
                                 <div
                                   style="margin-left: auto; max-width: 250px"
                                 >
@@ -54,24 +74,12 @@ const emailFooter = () => {
                                         display: inline-block;
                                         margin: 0 10px;
                                         text-decoration: none;
-                                        width: 32px;
-                                        height: 32px;
-                                        background-color: #f5f6f6;
-                                        position: relative;
-                                        border-radius: 50%;
                                       "
                                     >
                                       <img
-                                        src=""
+                                        src=" https://demo.stripocdn.email/content/guids/dca23089-f417-4ff2-af78-eb488068b965/images/facebook.png"
                                         alt="Facebook"
-                                        style="
-                                          position: absolute;
-                                          width: 18px;
-                                          height: 18px;
-                                          top: 50%;
-                                          left: 50%;
-                                          transform: translate(-50%, -50%);
-                                        "
+                                        style="width: 30px; height: 30px"
                                       />
                                     </a>
                                     <a
@@ -81,24 +89,12 @@ const emailFooter = () => {
                                         display: inline-block;
                                         margin: 0 10px;
                                         text-decoration: none;
-                                        width: 32px;
-                                        height: 32px;
-                                        background-color: #f5f6f6;
-                                        position: relative;
-                                        border-radius: 50%;
                                       "
                                     >
                                       <img
-                                        src=""
+                                        src="https://demo.stripocdn.email/content/guids/dca23089-f417-4ff2-af78-eb488068b965/images/instagram.png"
                                         alt="Instagram"
-                                        style="
-                                          position: absolute;
-                                          width: 18px;
-                                          height: 18px;
-                                          top: 50%;
-                                          left: 50%;
-                                          transform: translate(-50%, -50%);
-                                        "
+                                        style="width: 30px; height: 30px"
                                       />
                                     </a>
                                     <a
@@ -108,24 +104,12 @@ const emailFooter = () => {
                                         display: inline-block;
                                         margin: 0 10px;
                                         text-decoration: none;
-                                        width: 32px;
-                                        height: 32px;
-                                        background-color: #f5f6f6;
-                                        position: relative;
-                                        border-radius: 50%;
                                       "
                                     >
                                       <img
-                                        src=""
+                                        src="https://demo.stripocdn.email/content/guids/dca23089-f417-4ff2-af78-eb488068b965/images/x.png"
                                         alt="Twitter"
-                                        style="
-                                          position: absolute;
-                                          width: 18px;
-                                          height: 18px;
-                                          top: 50%;
-                                          left: 50%;
-                                          transform: translate(-50%, -50%);
-                                        "
+                                        style="width: 30px; height: 30px"
                                       />
                                     </a>
                                   </div>

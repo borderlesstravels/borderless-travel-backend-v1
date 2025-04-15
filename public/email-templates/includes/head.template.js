@@ -272,7 +272,7 @@ const emailHead = () => {
                                           clear: both;
                                           display: inline-block !important;
                                           border: none;
-                                          height: 150px;
+                                          height: 120px;
                                           float: none;
                                           width: 100%;
                                           object-fit: cover;
