@@ -41,6 +41,7 @@ app.use(
       "https://borderless-website.onrender.com",
       "https://borderless-waitlist.onrender.com",
       "https://borderless.travel",
+      "https://borderless-waitlist-admin-frontend.onrender.com",
     ],
   })
 );
