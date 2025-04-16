@@ -18,6 +18,7 @@ const {
   payForFlight,
   payForShortlet,
   saveWaitlist,
+  fetchWaitlists,
 } = require("../../controllers/website/general-controller");
 const { careerAppDocUpload } = require("../../utils/helpers/files");
 const {
@@ -43,6 +44,7 @@ router.post(
 );
 router.post("/contact-us", validateContactUsParams, validate, contactUsEmail);
 router.post("/subscribe", validateSubscriptionParams, validate, saveSubscriber);
+
 router.post(
   "/waitlist",
   validateSubscriptionParams,
@@ -50,6 +52,7 @@ router.post(
   saveWaitlist,
   waitlistSubscribedEMail
 );
+router.get("/fetch-waitlists", fetchWaitlists);
 
 router.get("/jobs", fetchJobPostings);
 router.get("/single-job/:id", fetchSingleJobPosting);

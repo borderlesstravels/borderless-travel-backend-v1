@@ -14,6 +14,12 @@ const waitlistSchema = new Schema({
   last_name: {
     type: String,
   },
+  city: {
+    type: String,
+  },
+  country: {
+    type: String,
+  },
   phone: {
     type: String,
   },

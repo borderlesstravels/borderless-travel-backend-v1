@@ -1,6 +1,7 @@
 require("dotenv").config();
 require("./db");
 const express = require("express");
+const requestIp = require("request-ip");
 const userAuthRouter = require("./src/routes/website/user-auth-routes");
 const hostAuthRouter = require("./src/routes/website/host-auth-routes");
 
@@ -43,6 +44,7 @@ app.use(
     ],
   })
 );
+app.use(requestIp.mw());
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.static("public"));

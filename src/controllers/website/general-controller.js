@@ -1,3 +1,4 @@
+const { fetcher_ip_details } = require("../../api/fetcher");
 const Markup = require("../../models/app-core/Markup");
 const BookingRequest = require("../../models/general/BookingRequest");
 const FlightBooking = require("../../models/general/FlightBooking");
@@ -204,6 +205,12 @@ const saveSubscriber = async (req, res) => {
 const saveWaitlist = async (req, res, next) => {
   let existingContact;
   try {
+    const ip_data = await fetcher_ip_details();
+    if (ip_data.status == 200) {
+      req.body.country = ip_data.data.country_name;
+      req.body.city = ip_data.data.city;
+    }
+    console.log("ip_data", ip_data.data);
     existingContact = await Waitlist.findOne({ email: req.body.email });
     if (existingContact) {
       return sendError(
@@ -231,18 +238,30 @@ const saveWaitlist = async (req, res, next) => {
     );
   }
 };
+const fetchWaitlists = async (req, res) => {
+  try {
+    const waitlists = await Waitlist.find().limit(req.query.limit);
+    return sendSuccess(res, "Successfully fetched Waitlist data", waitlists);
+  } catch (error) {
+    return sendError(
+      res,
+      "Something went wrong. Could not fetch available waitlists.",
+      500
+    );
+  }
+};
 
 // Career
 const fetchJobPostings = async (req, res, next) => {
   try {
     const jobs = await Job.find().limit(req.query.limit);
     if (jobs.length < 1) {
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: "No job offer available at the moment",
       });
     } else {
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: "Successfully fetched job postings",
         data: jobs,
@@ -310,6 +329,8 @@ module.exports = {
   payForShortlet,
   saveSubscriber,
   saveWaitlist,
+  fetchWaitlists,
+
   fetchJobPostings,
   fetchSingleJobPosting,
   applyForJob,
