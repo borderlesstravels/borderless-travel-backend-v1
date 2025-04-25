@@ -8,10 +8,10 @@ const {
   sendSuccess,
 } = require("../../utils/helpers");
 const { isValidObjectId } = require("mongoose");
-const ResetPasswordToken = require("../../models/user/ResetPasswordToken");
 const Admin = require("../../models/admin/Admin");
 const AdminLoginToken = require("../../models/admin/AdminLoginToken");
 const { log } = require("console");
+const ResetAdminPasswordToken = require("../../models/admin/ResetAdminPasswordToken");
 
 const verifyEmail = async (req, res, next) => {
   const { userId, otp } = req.body;
@@ -67,14 +67,16 @@ const forgotPassword = async (req, res, next) => {
     });
   }
 
-  const checkToken = await ResetPasswordToken.findOne({ owner: admin._id });
+  const checkToken = await ResetAdminPasswordToken.findOne({
+    owner: admin._id,
+  });
   if (checkToken)
     return sendError(res, "You can only request a new token after 10 minutes");
 
   // Generate token
   const token = await createRandomBytes(30);
 
-  const resetToken = new ResetPasswordToken({ owner: admin._id, token });
+  const resetToken = new ResetAdminPasswordToken({ owner: admin._id, token });
   await resetToken.save();
   req.body = {
     user: admin,
@@ -99,7 +101,7 @@ const resetPassword = async (req, res, next) => {
 
   admin.password = hashedPassword;
   await admin.save();
-  await ResetPasswordToken.findOneAndDelete({ owner: admin._id });
+  await ResetAdminPasswordToken.findOneAndDelete({ owner: admin._id });
 
   req.body = {
     user: admin,
