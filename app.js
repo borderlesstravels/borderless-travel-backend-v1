@@ -37,13 +37,12 @@ app.use(
       "http://localhost:5174",
       "http://localhost:3001",
       "http://localhost:5500",
-      "http://127.0.0.1:5500",
       "https://borderless-travel-admin-app.vercel.app",
-      "https://borderless-travels.netlify.app",
       "https://borderless-website.onrender.com",
       "https://borderless-waitlist.onrender.com",
       "https://borderless.travel",
       "https://borderless-waitlist-admin-frontend.onrender.com",
+      "https://borderless-admin.onrender.com",
     ],
   })
 );
