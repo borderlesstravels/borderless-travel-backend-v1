@@ -13,7 +13,7 @@ const AdminRole = require("../../models/app-core/AdminRole");
 const addAdmin = async (req, res, next) => {
   const { first_name, last_name, email, phone, role, username } = req.body;
 
-  const password = process.env.ADMIN_PASSWORD;
+  const password = `${first_name.toString()}pass`;
   log("password:", password);
 
   const hashedPassword = bcrypt.hashSync(password);
