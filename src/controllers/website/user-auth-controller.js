@@ -231,9 +231,9 @@ const login = async (req, res, next) => {
     httpOnly: true,
     // sameSite: process.env.MODE === 'development' ? 'lax' : 'none',
     // secure: process.env.MODE === '!development' && true,
-    // sameSite: "lax",
-    sameSite: "none",
-    secure: true,
+    sameSite: "lax",
+    // sameSite: "none",
+    // secure: true,
   });
   req.body = { user, token };
   next();
