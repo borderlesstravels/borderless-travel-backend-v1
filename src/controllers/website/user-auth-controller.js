@@ -245,7 +245,7 @@ const login = async (req, res, next) => {
   res.cookie(
     String(user._id),
     token,
-    origin.includes("localhost") ? localSession : liveSession
+    origin.includes("localhost") ? liveSession : localSession
   );
   req.body = { user, token };
   next();
@@ -294,8 +294,9 @@ const logout = (req, res, next) => {
     );
   }
   const token = cookies.split("=")[1];
-
   console.info("token:", token);
+  // const token2 = cookies.split(";")[0];
+  // console.info("token2:", token2);
 
   if (!token) {
     return sendError(
@@ -306,12 +307,15 @@ const logout = (req, res, next) => {
   }
   jwt.verify(String(token), process.env.JWT_USER_SECRET_KEY, (err, user) => {
     if (err) {
+      console.log("err", err);
       return sendError(res, `Invalid Token - ${err}`, 400);
     }
-    res.clearCookie(`${user.id}`);
-    req.cookies[`${user.id}`] = "";
-    return sendSuccess(res, "Successfully logged out");
-    // return res.status(200).json({ success: true, message: 'Successfully logged out' });
+    if (user) {
+      console.log("user", user);
+      // res.clearCookie(`${user.id}`);
+      // req.cookies[`${user.id}`] = "";
+      // return sendSuccess(res, "Successfully logged out");
+    }
   });
 };
 
