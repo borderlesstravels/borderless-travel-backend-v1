@@ -314,8 +314,11 @@ const logout = (req, res, next) => {
       console.log("user", user);
       console.log("req.cookies", req.cookies);
       console.log("req.cookies[`${user.id}`]", req.cookies[`${user.id}`]);
-      res.clearCookie(`${user.id}`, session);
-      req.cookies[`${user.id}`] = "";
+
+      res.cookie(String(user.id), token, session);
+
+      // res.clearCookie(`${user.id}`, session);
+      // req.cookies[`${user.id}`] = "";
       setTimeout(() => {
         return sendSuccess(res, "Successfully logged out");
       }, 200);
