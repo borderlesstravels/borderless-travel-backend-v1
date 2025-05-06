@@ -157,14 +157,14 @@ exports.localSession = {
 
 exports.liveSessionLogout = {
   path: "/",
-  maxAge: 1,
+  expires: Date.now(),
   httpOnly: true,
   sameSite: "none",
   secure: true,
 };
 exports.localSessionLogout = {
   path: "/",
-  maxAge: 1,
+  expires: Date.now(),
   httpOnly: true,
   sameSite: "lax",
 };
