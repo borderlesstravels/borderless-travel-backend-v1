@@ -312,9 +312,11 @@ const logout = (req, res, next) => {
     }
     if (user) {
       console.log("user", user);
-      // res.clearCookie(`${user.id}`);
-      // req.cookies[`${user.id}`] = "";
-      // return sendSuccess(res, "Successfully logged out");
+      res.clearCookie(`${user.id}`);
+      req.cookies[`${user.id}`] = "";
+      setTimeout(() => {
+        return sendSuccess(res, "Successfully logged out");
+      }, 200);
     }
   });
 };
