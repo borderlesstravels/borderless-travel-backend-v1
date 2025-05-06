@@ -11,6 +11,8 @@ const {
   sendSuccess,
   localSession,
   liveSession,
+  localSessionLogout,
+  liveSessionLogout,
 } = require("../../utils/helpers");
 const { isValidObjectId } = require("mongoose");
 const ResetPasswordToken = require("../../models/user/ResetPasswordToken");
@@ -270,7 +272,8 @@ const verifyUserLoginToken = (req, res, next) => {
 };
 
 const logout = (req, res, next) => {
-  console.log("Logout api called");
+  const origin = req.get("host");
+  console.log("origin", origin);
   const cookies = req.headers.cookie;
   console.log("cookies: ", cookies);
   if (!cookies) {
@@ -284,6 +287,16 @@ const logout = (req, res, next) => {
   console.info("token:", token);
   // const token2 = cookies.split(";")[0];
   // console.info("token2:", token2);
+
+  let session;
+
+  if (origin.includes("localhost")) {
+    session = { ...localSessionLogout, domain: origin };
+  } else {
+    session = { ...liveSessionLogout, domain: origin };
+  }
+
+  console.log("session", session);
 
   if (!token) {
     return sendError(
@@ -299,12 +312,7 @@ const logout = (req, res, next) => {
     }
     if (user) {
       console.log("user", user);
-      res.clearCookie(`${user.id}`, {
-        maxAge: 1,
-        path: "/",
-        httpOnly: true,
-        value: "token",
-      });
+      res.clearCookie(`${user.id}`, session);
       req.cookies[`${user.id}`] = "";
       setTimeout(() => {
         return sendSuccess(res, "Successfully logged out");

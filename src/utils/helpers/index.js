@@ -154,3 +154,17 @@ exports.localSession = {
   httpOnly: true,
   sameSite: "lax",
 };
+
+exports.liveSessionLogout = {
+  path: "/",
+  maxAge: 1,
+  httpOnly: true,
+  sameSite: "none",
+  secure: true,
+};
+exports.localSessionLogout = {
+  path: "/",
+  maxAge: 1,
+  httpOnly: true,
+  sameSite: "lax",
+};
