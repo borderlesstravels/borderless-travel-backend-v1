@@ -299,7 +299,10 @@ const logout = (req, res, next) => {
     }
     if (user) {
       console.log("user", user);
-      res.clearCookie(`${user.id}`);
+      res.clearCookie(`${user.id}`, {
+        path: "/",
+        httpOnly: true,
+      });
       req.cookies[`${user.id}`] = "";
       setTimeout(() => {
         return sendSuccess(res, "Successfully logged out");
