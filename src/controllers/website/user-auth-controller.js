@@ -208,6 +208,9 @@ const resetPassword = async (req, res, next) => {
 const login = async (req, res, next) => {
   const { user, password } = req.body;
 
+  const origin = req.get("host");
+  console.log("origin", origin);
+
   const isPasswordCorrect = bcrypt.compareSync(password, user.password);
   if (!isPasswordCorrect) {
     return sendLoginError(res, "Invalid login ID or password", 0);
@@ -220,21 +223,30 @@ const login = async (req, res, next) => {
       userId: user._id,
     });
   }
-  console.log("Login phase 1 checked");
+
+  const localSession = {
+    path: "/",
+    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
+    httpOnly: true,
+    sameSite: "none",
+    secure: true,
+  };
+
+  const liveSession = {
+    path: "/",
+    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
+    httpOnly: true,
+    sameSite: "lax",
+  };
 
   const token = jwt.sign({ id: user._id }, process.env.JWT_USER_SECRET_KEY, {
     expiresIn: "10d",
   });
-  res.cookie(String(user._id), token, {
-    path: "/",
-    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
-    httpOnly: true,
-    // sameSite: process.env.MODE === 'development' ? 'lax' : 'none',
-    // secure: process.env.MODE === '!development' && true,
-    sameSite: "lax",
-    // sameSite: "none",
-    // secure: true,
-  });
+  res.cookie(
+    String(user._id),
+    token,
+    origin.includes("localhost") ? localSession : liveSession
+  );
   req.body = { user, token };
   next();
 };

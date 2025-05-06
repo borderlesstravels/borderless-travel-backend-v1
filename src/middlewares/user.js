@@ -1,7 +1,7 @@
-const { isValidObjectId } = require('mongoose');
-const { sendError, sendLoginError } = require('../utils/helpers');
-const User = require('../models/user/User');
-const ResetPasswordToken = require('../models/user/ResetPasswordToken');
+const { isValidObjectId } = require("mongoose");
+const { sendError, sendLoginError } = require("../utils/helpers");
+const User = require("../models/user/User");
+const ResetPasswordToken = require("../models/user/ResetPasswordToken");
 
 const validateNewUser = async (req, res, next) => {
   const { first_name, last_name, email, password, referred_by } = req.body;
@@ -14,7 +14,7 @@ const validateNewUser = async (req, res, next) => {
     console.log(err);
   }
   if (existingUser) {
-    return sendError(res, 'Email already exists. Please login instead.');
+    return sendError(res, "Email already exists. Please login instead.");
   }
   req.body = {
     first_name,
@@ -29,21 +29,21 @@ const validateNewUser = async (req, res, next) => {
 const isPasswordResetTokenValid = async (req, res, next) => {
   const { token, id } = req.query;
 
-  if (!token || !id) return sendError(res, 'Invalid request');
+  if (!token || !id) return sendError(res, "Invalid request");
 
-  if (!isValidObjectId(id)) return sendError(res, 'Invalid user');
+  if (!isValidObjectId(id)) return sendError(res, "Invalid user");
 
   const user = await User.findById(id);
 
-  if (!user) return sendError(res, 'User not found');
+  if (!user) return sendError(res, "User not found");
 
   const resToken = await ResetPasswordToken.findOne({ owner: user._id });
-  if (!resToken) return sendError(res, 'Reset token not found');
+  if (!resToken) return sendError(res, "Reset token not found");
 
   const resetToken = resToken.token;
 
   if (token !== resetToken) {
-    return sendError(res, 'Reset token is invalid');
+    return sendError(res, "Reset token is invalid");
   }
 
   req.body.user = user;
@@ -57,10 +57,10 @@ const validateLoginType = async (req, res, next) => {
   let userIdentity;
 
   if (!loginId) {
-    return sendLoginError(res, 'loginId is missing', 1);
+    return sendLoginError(res, "loginId is missing", 1);
   }
 
-  if (loginId.includes('@')) {
+  if (loginId.includes("@")) {
     userIdentity = loginId.toLowerCase();
     try {
       user = await User.findOne({ email: userIdentity });
@@ -68,16 +68,20 @@ const validateLoginType = async (req, res, next) => {
       return sendLoginError(res, err.message, 1, 500);
     }
     if (!user) {
-      return sendLoginError(res, 'Email not registered. Signup instead.', 1);
+      return sendLoginError(res, "Email not registered. Signup instead.", 1);
     }
-  } else if (loginId.charAt(0) === '+') {
+  } else if (loginId.charAt(0) === "+") {
     try {
       user = await User.findOne({ phone: loginId });
     } catch (err) {
       return sendLoginError(res, err.message, 1, 500);
     }
     if (!user) {
-      return sendLoginError(res, 'Phone number not registered. Signup instead.', 0);
+      return sendLoginError(
+        res,
+        "Phone number not registered. Signup instead.",
+        0
+      );
     }
   } else {
     userIdentity = loginId.toLowerCase();
@@ -87,7 +91,7 @@ const validateLoginType = async (req, res, next) => {
       return sendLoginError(res, err.message, 1, 500);
     }
     if (!user) {
-      return sendLoginError(res, 'Username not registered. Signup instead.', 0);
+      return sendLoginError(res, "Username not registered. Signup instead.", 0);
     }
   }
 
