@@ -315,7 +315,11 @@ const logout = (req, res, next) => {
       console.log("req.cookies", req.cookies);
       console.log("req.cookies[`${user.id}`]", req.cookies[`${user.id}`]);
 
-      res.cookie(String(user.id), token, session);
+      res.cookie(
+        String(user.id),
+        token,
+        origin.includes("localhost") ? localSessionLogout : liveSessionLogout
+      );
 
       // res.clearCookie(`${user.id}`, session);
       // req.cookies[`${user.id}`] = "";
