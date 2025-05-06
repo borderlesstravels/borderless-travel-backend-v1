@@ -300,8 +300,10 @@ const logout = (req, res, next) => {
     if (user) {
       console.log("user", user);
       res.clearCookie(`${user.id}`, {
+        maxAge: 1,
         path: "/",
         httpOnly: true,
+        value: "token",
       });
       req.cookies[`${user.id}`] = "";
       setTimeout(() => {
