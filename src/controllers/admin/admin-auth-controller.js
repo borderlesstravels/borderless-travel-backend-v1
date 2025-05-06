@@ -6,6 +6,8 @@ const {
   createRandomBytes,
   generateOTP,
   sendSuccess,
+  localSession,
+  liveSession,
 } = require("../../utils/helpers");
 const { isValidObjectId } = require("mongoose");
 const Admin = require("../../models/admin/Admin");
@@ -201,23 +203,8 @@ const logAdminIn = async (req, res, next) => {
   const origin = req.get("host");
   console.log("origin", origin);
 
-  const localSession = {
-    path: "/",
-    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5),
-    httpOnly: true,
-    sameSite: "none",
-    secure: true,
-  };
-
-  const liveSession = {
-    path: "/",
-    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5),
-    httpOnly: true,
-    sameSite: "lax",
-  };
-
   const token = jwt.sign({ id: admin._id }, process.env.JWT_ADMIN_SECRET_KEY, {
-    expiresIn: "5d",
+    expiresIn: "1d",
   });
   res.cookie(
     String(admin._id),

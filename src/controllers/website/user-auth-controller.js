@@ -9,6 +9,8 @@ const {
   sendLoginError,
   checkUserEmailReg,
   sendSuccess,
+  localSession,
+  liveSession,
 } = require("../../utils/helpers");
 const { isValidObjectId } = require("mongoose");
 const ResetPasswordToken = require("../../models/user/ResetPasswordToken");
@@ -224,28 +226,13 @@ const login = async (req, res, next) => {
     });
   }
 
-  const localSession = {
-    path: "/",
-    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
-    httpOnly: true,
-    sameSite: "none",
-    secure: true,
-  };
-
-  const liveSession = {
-    path: "/",
-    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
-    httpOnly: true,
-    sameSite: "lax",
-  };
-
   const token = jwt.sign({ id: user._id }, process.env.JWT_USER_SECRET_KEY, {
-    expiresIn: "10d",
+    expiresIn: "1d",
   });
   res.cookie(
     String(user._id),
     token,
-    origin.includes("localhost") ? liveSession : localSession
+    origin.includes("localhost") ? localSession : liveSession
   );
   req.body = { user, token };
   next();

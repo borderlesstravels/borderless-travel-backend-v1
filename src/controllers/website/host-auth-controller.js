@@ -5,6 +5,8 @@ const {
   sendError,
   createRandomBytes,
   generateOTP,
+  localSession,
+  liveSession,
 } = require("../../utils/helpers");
 const { isValidObjectId } = require("mongoose");
 const Host = require("../../models/host/Host");
@@ -195,8 +197,8 @@ const resetPasswordHost = async (req, res, next) => {
 const loginHost = async (req, res, next) => {
   const { host, password } = req.body;
 
-  console.log("password", password);
-  console.log("host.password", host.password);
+  const origin = req.get("host");
+  console.log("origin", origin);
 
   const isPasswordCorrect = bcrypt.compareSync(password, host.password);
   console.log("isPasswordCorrect", isPasswordCorrect);
@@ -211,21 +213,15 @@ const loginHost = async (req, res, next) => {
       userId: host._id,
     });
   }
-  console.log("Login phase 1 checked");
 
   const token = jwt.sign({ id: host._id }, process.env.JWT_HOST_SECRET_KEY, {
-    expiresIn: "5d",
+    expiresIn: "1d",
   });
-  res.cookie(String(host._id), token, {
-    path: "/",
-    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5),
-    httpOnly: true,
-    // sameSite: process.env.MODE === 'development' ? 'lax' : 'none',
-    // secure: process.env.MODE === '!development' && true,
-    // sameSite: "lax",
-    sameSite: "none",
-    secure: true,
-  });
+  res.cookie(
+    String(host._id),
+    token,
+    origin.includes("localhost") ? localSession : liveSession
+  );
   req.body = {
     user: {
       _id: host._id,
