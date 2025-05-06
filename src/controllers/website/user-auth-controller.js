@@ -311,24 +311,24 @@ const logout = (req, res, next) => {
       return sendError(res, `Invalid Token - ${err}`, 400);
     }
     if (user) {
-      console.log("user", user);
-      console.log("req.cookies", req.cookies);
-      console.log("req.cookies[`${user.id}`]", req.cookies[`${user.id}`]);
+      // console.log("user", user);
+      // console.log("req.cookies", req.cookies);
+      // console.log("req.cookies[`${user.id}`]", req.cookies[`${user.id}`]);
 
-      res.cookie(
-        String(user.id),
-        token,
-        origin.includes("localhost") ? localSessionLogout : liveSessionLogout
-      );
+      // res.cookie(
+      //   String(user.id),
+      //   token,
+      //   origin.includes("localhost") ? localSessionLogout : liveSessionLogout
+      // );
 
-      // res.clearCookie(`${user.id}`, session);
-      // req.cookies[`${user.id}`] = "";
+      res.clearCookie(`${user.id}`);
+      req.cookies[`${user.id}`] = "";
       setTimeout(() => {
         return sendSuccess(res, "Successfully logged out");
       }, 200);
 
-      console.log("req.cookies 2", req.cookies);
-      console.log("req.cookies[`${user.id}`] 2", req.cookies[`${user.id}`]);
+      // console.log("req.cookies 2", req.cookies);
+      // console.log("req.cookies[`${user.id}`] 2", req.cookies[`${user.id}`]);
     }
   });
 };
