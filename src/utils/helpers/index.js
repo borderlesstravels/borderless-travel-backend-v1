@@ -157,14 +157,12 @@ exports.localSession = {
 
 exports.liveSessionLogout = {
   path: "/",
-  expires: Date.now(),
   httpOnly: true,
   sameSite: "none",
   secure: true,
 };
 exports.localSessionLogout = {
   path: "/",
-  expires: Date.now(),
   httpOnly: true,
   sameSite: "lax",
 };
