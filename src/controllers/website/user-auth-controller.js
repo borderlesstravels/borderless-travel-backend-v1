@@ -319,6 +319,9 @@ const logout = (req, res, next) => {
       setTimeout(() => {
         return sendSuccess(res, "Successfully logged out");
       }, 200);
+
+      console.log("req.cookies 2", req.cookies);
+      console.log("req.cookies[`${user.id}`] 2", req.cookies[`${user.id}`]);
     }
   });
 };
