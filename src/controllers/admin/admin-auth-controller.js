@@ -209,9 +209,15 @@ const logAdminIn = async (req, res, next) => {
   res.cookie(
     String(admin._id),
     token,
-    origin.includes("localhost") ? localSession : liveSession
+    {
+      path: "/",
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    }
+    // origin.includes("localhost") ? localSession : liveSession
   );
-
   req.body = { user: admin, token };
   next();
 };
