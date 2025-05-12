@@ -2,6 +2,9 @@ const bcrypt = require("bcryptjs");
 const { sendError, sendSuccess } = require("../../utils/helpers");
 const { log } = require("console");
 const Host = require("../../models/host/Host");
+const ShortLet = require("../../models/host/ShortLet");
+const Review = require("../../models/general/Review");
+const ShortletBooking = require("../../models/general/ShortletBooking");
 
 const updateHostProfile = async (req, res) => {
   if (req.body.password) {
@@ -113,6 +116,50 @@ const fetchSingleHost = async (req, res, next) => {
   }
 };
 
+const getHostProperties = async (req, res) => {
+  try {
+    const hostProperties = await ShortLet.find({ owner: req.params.id });
+    return sendSuccess(
+      res,
+      "Successfully fetched host's properties",
+      hostProperties
+    );
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch host's listings", 500);
+  }
+};
+
+const getHostReviewsForAProperty = async (req, res) => {
+  try {
+    const hostReviewws = await Review.find({ product_reviewed: req.params.id });
+    return sendSuccess(
+      res,
+      "Successfully fetched host's property's reviews",
+      hostReviewws
+    );
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch host's property's reviews", 500);
+  }
+};
+
+const getHostBookingsForAProperty = async (req, res) => {
+  try {
+    const hostPropertyBookings = await ShortletBooking.find({
+      apartment_id: req.params.id,
+    });
+    return sendSuccess(
+      res,
+      "Successfully fetched host's property's bookings",
+      hostPropertyBookings
+    );
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch host's property's bookings", 500);
+  }
+};
+
 module.exports = {
   updateHostProfile,
   blockHost,
@@ -120,4 +167,8 @@ module.exports = {
   deleteHost,
   fetchAllHosts,
   fetchSingleHost,
+
+  getHostProperties,
+  getHostReviewsForAProperty,
+  getHostBookingsForAProperty,
 };

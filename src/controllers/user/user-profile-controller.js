@@ -11,6 +11,7 @@ const ShortletBooking = require("../../models/general/ShortletBooking");
 const Review = require("../../models/general/Review");
 const Notification = require("../../models/general/Notification");
 const ShortLet = require("../../models/host/ShortLet");
+const Payment = require("../../models/general/Payment");
 
 const getUser = async (req, res) => {
   const userId = req.id;
@@ -191,6 +192,23 @@ const userShortletBookings = async (req, res) => {
   }
 };
 
+const userPaymentHistory = async (req, res) => {
+  const userId = req.id;
+  try {
+    const userPayments = await Payment.find({
+      owner: userId,
+    }).limit(req.query.limit);
+    console.log(userPayments);
+    return sendSuccess(
+      res,
+      "Successfully fetched your payment history",
+      userPayments
+    );
+  } catch (error) {
+    return sendError(res, "Cannot fetch payment history");
+  }
+};
+
 const userSingleShortletBooking = async (req, res) => {
   try {
     const shortletBooking = await ShortletBooking.findById(req.params.id);
@@ -305,6 +323,7 @@ module.exports = {
 
   userFlightBookings,
   userSingleFlightBooking,
+  userPaymentHistory,
 
   userShortletBookings,
   userSingleShortletBooking,

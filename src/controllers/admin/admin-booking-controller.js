@@ -9,6 +9,7 @@ const FlightBooking = require("../../models/general/FlightBooking");
 const { fetcher_tiqwa } = require("../../api/fetcher");
 const Payment = require("../../models/general/Payment");
 const APIToken = require("../../models/app-core/APIToken");
+const ShortletBooking = require("../../models/general/ShortletBooking");
 
 //
 // Flight
@@ -206,6 +207,41 @@ const fetchBookingPayemnt = async (req, res) => {
 //
 // Stays
 //
+const allShortletBookings = async (req, res) => {
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(res, firm, api_key);
+  try {
+    const shortletBookings = await ShortletBooking.find({ firm }).limit(
+      req.query.limit
+    );
+    return sendSuccess(
+      res,
+      "Successfully fetched all shortlet bookings",
+      shortletBookings
+    );
+  } catch (error) {
+    return sendError(res, "Cannot fetch shortlet bookings");
+  }
+};
+
+const singleShortletBooking = async (req, res) => {
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(res, firm, api_key);
+  try {
+    const shortletBooking = await ShortletBooking.findById(req.params.id);
+    if (!shortletBooking) {
+      return sendSuccess(res, "No shortlet booking record found");
+    }
+    if (shortletBooking.api_key !== api_key)
+      return sendError(
+        res,
+        "Unauthorised! You are not authorised to perform this request"
+      );
+    return sendSuccess(res, "Successfully fetched booking", shortletBooking);
+  } catch (error) {
+    return sendError(res, "Cannot fetch shortlet bookings");
+  }
+};
 
 module.exports = {
   allFlightBookings,
@@ -214,4 +250,7 @@ module.exports = {
   issueFlightTicket,
   cancelFlightTicket,
   fetchBookingPayemnt,
+
+  allShortletBookings,
+  singleShortletBooking,
 };

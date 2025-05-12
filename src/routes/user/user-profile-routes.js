@@ -15,6 +15,7 @@ const {
   updateReview,
   deleteReview,
   getUserNotifications,
+  userPaymentHistory,
 } = require("../../controllers/user/user-profile-controller");
 const {
   verifyUserLoginToken,
@@ -73,6 +74,7 @@ router.get(
   userSingleFlightBooking
 );
 router.get("/shortlet-bookings", verifyUserLoginToken, userShortletBookings);
+router.get("/payment-history", verifyUserLoginToken, userPaymentHistory);
 router.get(
   "/single-shortlet-booking/:id",
   verifyUserLoginToken,

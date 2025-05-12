@@ -10,6 +10,8 @@ const {
   singleFlightBooking,
   fetchTicketDetails,
   fetchBookingPayemnt,
+  allShortletBookings,
+  singleShortletBooking,
 } = require("../../controllers/admin/admin-booking-controller");
 
 const router = express.Router();
@@ -51,5 +53,19 @@ router.get(
 );
 router.post("/flight-tp/issue-ticket/:booking_reference", issueFlightTicket);
 router.post("/flight-tp/cancel-ticket/:booking_reference", cancelFlightTicket);
+
+//
+// Shortlet bookings
+//
+router.get(
+  "/shortlet/all-bookings",
+  verifyAdminLoginToken,
+  allShortletBookings
+);
+router.get(
+  "/shortlet/single-booking/:id",
+  verifyAdminLoginToken,
+  singleShortletBooking
+);
 
 module.exports = router;
