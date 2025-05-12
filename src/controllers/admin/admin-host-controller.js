@@ -1,7 +1,7 @@
-const bcrypt = require('bcryptjs');
-const { sendError } = require('../../utils/helpers');
-const { log } = require('console');
-const Host = require('../../models/host/Host');
+const bcrypt = require("bcryptjs");
+const { sendError, sendSuccess } = require("../../utils/helpers");
+const { log } = require("console");
+const Host = require("../../models/host/Host");
 
 const updateHostProfile = async (req, res) => {
   if (req.body.password) {
@@ -13,14 +13,14 @@ const updateHostProfile = async (req, res) => {
       { $set: req.body },
       { new: true }
     );
-    return res.status(200).json({
-      success: true,
-      message: 'Successfully updated the host profile',
-      data: savedHostProfile,
-    });
+    return sendSuccess(
+      res,
+      "Successfully updated the host profile",
+      savedHostProfile
+    );
   } catch (err) {
-    log(err);
-    return sendError(res, 'Unable to update the host profile');
+    console.log(err);
+    return sendError(res, "Unable to update the host profile");
   }
 };
 
@@ -28,20 +28,23 @@ const blockHost = async (req, res) => {
   try {
     const host = await Host.findById(req.params.id);
     if (!host) {
-      return badRequestError(res, 'Unable to verify host details');
+      return badRequestError(res, "Unable to verify host details");
     }
-    if (host.status === 'Blocked') {
+    if (host.status === "Blocked") {
       return badRequestError(
         res,
         `${host.first_name} ${host.last_name}'s account is already blocked`
       );
     }
-    host.status = 'Blocked';
+    host.status = "Blocked";
     await host.save();
-    return sendSuccess(res, `Host ${host.first_name} ${host.last_name} has been blocked`);
+    return sendSuccess(
+      res,
+      `Host ${host.first_name} ${host.last_name} has been blocked`
+    );
   } catch (err) {
     log(err);
-    return sendError(res, 'Unable to block the host account');
+    return sendError(res, "Unable to block the host account");
   }
 };
 
@@ -50,38 +53,38 @@ const unblockHost = async (req, res) => {
   try {
     const host = await Host.findById(req.params.id);
     if (!host) {
-      return badRequestError(res, 'Unable to verify host details');
+      return badRequestError(res, "Unable to verify host details");
     }
-    if (host.status === 'Pending' || host.status === 'Active') {
+    if (host.status === "Pending" || host.status === "Active") {
       return badRequestError(
         res,
         `host ${host.first_name} ${host.last_name}'s account was not blocked`
       );
     }
     if (host.email_verified) {
-      status = 'Active';
+      status = "Active";
     } else {
-      status = 'Pending';
+      status = "Pending";
     }
     host.status = status;
     await host.save();
-    return sendSuccess(res, `Host ${host.first_name} ${host.last_name} is now active`);
+    return sendSuccess(
+      res,
+      `Host ${host.first_name} ${host.last_name} is now active`
+    );
   } catch (err) {
     log(err);
-    return sendError(res, 'Unable to block the host account');
+    return sendError(res, "Unable to block the host account");
   }
 };
 
 const deleteHost = async (req, res) => {
   try {
     await Host.findByIdAndDelete(req.params.id);
-    return res.status(200).json({
-      success: true,
-      message: 'Successfully deleted the host profile',
-    });
+    return sendSuccess(res, "Successfully deleted the host profile");
   } catch (err) {
     console.log(err);
-    return sendError(res, 'Unable to delete the host profile');
+    return sendError(res, "Unable to delete the host profile");
   }
 };
 
@@ -91,9 +94,9 @@ const fetchAllHosts = async (req, res) => {
     const hosts = await Host.find({
       ...others,
     }).limit(req.query.limit);
-    return res.status(200).json({ success: true, data: hosts });
+    return sendSuccess(res, "Hosts fetched", hosts);
   } catch (error) {
-    return sendError(res, 'Unable to fetch the hosts data');
+    return sendError(res, "Unable to fetch the hosts data");
   }
 };
 
@@ -102,11 +105,11 @@ const fetchSingleHost = async (req, res, next) => {
   try {
     const host = await Host.findById(id);
     if (!host) {
-      return sendError(res, 'Host profile does not exist');
+      return sendError(res, "Host profile does not exist");
     }
-    return res.status(200).json({ success: true, data: host });
+    return sendSuccess(res, "Host account fetched", host);
   } catch (error) {
-    return sendError(res, 'Unable to fetch the host profile data');
+    return sendError(res, "Unable to fetch the host profile data");
   }
 };
 
