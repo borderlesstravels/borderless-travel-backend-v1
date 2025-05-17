@@ -13,10 +13,18 @@ const {
   liveSession,
   localSessionLogout,
   liveSessionLogout,
+  addToRedis,
+  getFromRedis,
 } = require("../../utils/helpers");
 const { isValidObjectId } = require("mongoose");
 const ResetPasswordToken = require("../../models/user/ResetPasswordToken");
 const UserReferral = require("../../models/user/UserReferral");
+const { nanoid } = require("nanoid");
+const {
+  addSessionToken,
+  getSessionToken,
+  deleteSessionToken,
+} = require("../../middlewares/general");
 
 const signup = async (req, res, next) => {
   const { first_name, last_name, email, password, referred_by } = req.body;
@@ -209,7 +217,7 @@ const resetPassword = async (req, res, next) => {
 };
 
 // LOGIN
-const login = async (req, res, next) => {
+const loginOld = async (req, res, next) => {
   const { user, password } = req.body;
 
   const origin = req.get("host");
@@ -240,6 +248,34 @@ const login = async (req, res, next) => {
   next();
 };
 
+const login = async (req, res, next) => {
+  const { user, password } = req.body;
+  const isPasswordCorrect = bcrypt.compareSync(password, user.password);
+  if (!isPasswordCorrect) {
+    return sendLoginError(res, "Invalid login ID or password", 0);
+  }
+  if (!user.email_verified) {
+    return res.status(401).json({
+      success: true,
+      loginStatus: 1,
+      message: "Unverified email",
+      userId: user._id,
+    });
+  }
+
+  const sessionId = nanoid();
+  console.log("sessionId", sessionId);
+  const token = jwt.sign({ id: user._id }, process.env.JWT_USER_SECRET_KEY, {
+    expiresIn: "1d",
+  });
+  await addSessionToken(sessionId, token);
+
+  // await addToRedis(sessionId, token, Number(600));
+  res.set("u-x-key", sessionId);
+  req.body = { user, token };
+  next();
+};
+
 const isUserLogin = async (req, res) => {
   const cookies = req.headers.cookie;
   console.log("Session check cookie: ", cookies);
@@ -252,7 +288,7 @@ const isUserLogin = async (req, res) => {
   }
 };
 
-const verifyUserLoginToken = (req, res, next) => {
+const verifyUserLoginTokenOld = (req, res, next) => {
   const cookies = req.headers.cookie;
   if (!cookies) {
     return sendError(res, "No cookie found", 404);
@@ -271,7 +307,44 @@ const verifyUserLoginToken = (req, res, next) => {
   });
 };
 
-const logout = (req, res, next) => {
+const verifyUserLoginToken = async (req, res, next) => {
+  const tokenKey = req.headers["u-x-key"];
+  console.log(tokenKey);
+  try {
+    if (!tokenKey) {
+      return sendError(res, "Unauthorised. No headers key");
+    }
+    if (tokenKey) {
+      // const token = await getFromRedis(String(tokenKey));
+      const sessionToken = await getSessionToken(String(tokenKey));
+      if (!sessionToken) {
+        return sendError(res, "Authorization token expired");
+      }
+      if (sessionToken) {
+        console.log("sessionToken", sessionToken);
+        const token = sessionToken.value;
+        console.log("token", token);
+        jwt.verify(
+          String(token),
+          process.env.JWT_USER_SECRET_KEY,
+          (err, user) => {
+            if (err) {
+              return sendError(res, "Invalid Token");
+            } else {
+              req.id = user.id;
+              next();
+            }
+          }
+        );
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    return sendError(res, "Unauthorised");
+  }
+};
+
+const logoutOld = (req, res, next) => {
   const origin = req.get("host");
   console.log("origin", origin);
   const cookies = req.headers.cookie;
@@ -331,6 +404,39 @@ const logout = (req, res, next) => {
       // console.log("req.cookies[`${user.id}`] 2", req.cookies[`${user.id}`]);
     }
   });
+};
+
+const logout = async (req, res, next) => {
+  const tokenKey = req.headers["u-x-key"];
+  try {
+    if (!tokenKey) {
+      return sendError(res, "Unauthorised. No headers key");
+    }
+    const sessionToken = await getSessionToken(String(tokenKey));
+    if (!sessionToken) {
+      return sendSuccess(res, "Session already expired");
+    }
+    if (sessionToken) {
+      const token = sessionToken.value;
+      jwt.verify(
+        String(token),
+        process.env.JWT_USER_SECRET_KEY,
+        (err, user) => {
+          if (err) {
+            return sendError(res, `Invalid session token - ${err}`, 400);
+          }
+          if (user) {
+            const clearSession = deleteSessionToken(sessionToken._id);
+            if (clearSession) {
+              return sendSuccess(res, "Successfully logged out");
+            } else {
+              return sendError(res, `Unable to log you out`);
+            }
+          }
+        }
+      );
+    }
+  } catch (error) {}
 };
 
 const isEmailRegistered = async (req, res) => {

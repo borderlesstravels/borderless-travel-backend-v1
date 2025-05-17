@@ -1,4 +1,6 @@
 const crypto = require("crypto");
+const redis = require("redis");
+const { promisify } = require("util");
 const User = require("../../models/user/User");
 const Notification = require("../../models/general/Notification");
 const {
@@ -165,4 +167,51 @@ exports.localSessionLogout = {
   path: "/",
   httpOnly: true,
   sameSite: "lax",
+};
+
+// function connectToRedis() {
+//   const client = redis.createClient();
+//   client.on("connect", () => {
+//     console.log("connected to redis successfully");
+//   });
+//   client.on("error", (error) => {
+//     console.log("error connecting to redis", error);
+//   });
+//   return client;
+// }
+// const redisClient = connectToRedis();
+
+exports.addToRedis = async (key, value, expiresIn = 0) => {
+  // try {
+  //   const setAsync = promisify(redisClient.set).bind(redisClient);
+  //   await setAsync(key, JSON.stringify(value));
+  //   if (expiresIn) redisClient.expire(key, expiresIn);
+  //   return true;
+  // } catch (error) {
+  //   console.log(object);
+  //   throw new Error(error);
+  // }
+};
+
+exports.delInRedis = async (key) => {
+  // try {
+  //   const delAsync = promisify(redisClient.del).bind(redisClient);
+  //   await delAsync(key);
+  //   return true;
+  // } catch (error) {
+  //   console.log("error", error);
+  //   throw new Error(error);
+  // }
+};
+
+exports.getFromRedis = async (key) => {
+  // try {
+  //   const getAsync = promisify(redisClient.get).bind(redisClient);
+  //   const value = await getAsync(key);
+  //   if (value) return JSON.parse(value);
+  //   return value;
+  // } catch (error) {
+  //   console.log("error", error);
+  //   throw new Error(error);
+  // }
 };

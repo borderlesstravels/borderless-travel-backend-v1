@@ -1,26 +1,42 @@
-const Notification = require("../models/general/Notification");
+const SessionStore = require("../models/general/SessionStore");
 const { sendError } = require("../utils/helpers");
 
-// const saveNotification = async (req, res, next) => {
-//   const { owner, type, title, description, message } = req.body;
-//   try {
-//     const newNot = new Notification({
-//       owner,
-//       type,
-//       title,
-//       description,
-//     });
-//     await newNot.save();
-//     next();
-//   } catch (error) {
-//     console.log(error);
-//     return sendError(
-//       res,
-//       `${message}. Unable to send notification. Something went wrong`
-//     );
-//   }
-// };
+exports.addSessionToken = async (key, value) => {
+  try {
+    const newSession = new SessionStore({
+      key,
+      value,
+    });
+    const saveSession = await newSession.save();
+    if (saveSession) {
+      return true;
+    }
+  } catch (error) {
+    console.log("session store error:", error);
+    return sendError(res, "Unable to save session");
+  }
+};
 
-module.exports = {
-  //   saveNotification,
+exports.getSessionToken = async (key) => {
+  try {
+    const session = await SessionStore.findOne({ key });
+    if (session) {
+      return session;
+    }
+  } catch (error) {
+    console.log("session store error:", error);
+    return sendError(res, "Unable to save session");
+  }
+};
+
+exports.deleteSessionToken = async (id) => {
+  try {
+    const deleteSession = await SessionStore.findByIdAndDelete(id);
+    if (deleteSession) {
+      return true;
+    }
+  } catch (error) {
+    console.log("session store deletion error:", error);
+    return sendError(res, "Unable to clear session");
+  }
 };
