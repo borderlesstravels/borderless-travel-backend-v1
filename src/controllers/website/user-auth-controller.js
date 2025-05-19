@@ -13,8 +13,6 @@ const {
   liveSession,
   localSessionLogout,
   liveSessionLogout,
-  addToRedis,
-  getFromRedis,
 } = require("../../utils/helpers");
 const { isValidObjectId } = require("mongoose");
 const ResetPasswordToken = require("../../models/user/ResetPasswordToken");
@@ -24,6 +22,9 @@ const {
   addSessionToken,
   getSessionToken,
   deleteSessionToken,
+  createLoginSession,
+  verifyLoginSession,
+  logoutSession,
 } = require("../../middlewares/general");
 
 const signup = async (req, res, next) => {
@@ -140,21 +141,12 @@ const verifyEmail = async (req, res, next) => {
   await user.save();
   console.log("User verified");
 
-  const loginTtoken = jwt.sign(
+  const { sessionId } = await createLoginSession(
     { id: user._id },
-    process.env.JWT_USER_SECRET_KEY,
-    {
-      expiresIn: "10d",
-    }
+    process.env.JWT_USER_SECRET_KEY
   );
-  res.cookie(String(user._id), loginTtoken, {
-    path: "/",
-    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
-    httpOnly: true,
-    // sameSite: "lax",
-    sameSite: "none",
-    secure: true,
-  });
+  res.set("u-x-key", sessionId);
+
   req.body = { user };
   next();
 };
@@ -263,20 +255,16 @@ const login = async (req, res, next) => {
     });
   }
 
-  const sessionId = nanoid();
-  console.log("sessionId", sessionId);
-  const token = jwt.sign({ id: user._id }, process.env.JWT_USER_SECRET_KEY, {
-    expiresIn: "1d",
-  });
-  await addSessionToken(sessionId, token);
-
-  // await addToRedis(sessionId, token, Number(600));
+  const { sessionId, token } = await createLoginSession(
+    { id: user._id },
+    process.env.JWT_USER_SECRET_KEY
+  );
   res.set("u-x-key", sessionId);
   req.body = { user, token };
   next();
 };
 
-const isUserLogin = async (req, res) => {
+const isUserLoginOld = async (req, res) => {
   const cookies = req.headers.cookie;
   console.log("Session check cookie: ", cookies);
   if (cookies) {
@@ -285,6 +273,27 @@ const isUserLogin = async (req, res) => {
       .json({ success: true, message: "You are a logged in user" });
   } else if (!cookies) {
     return sendError(res, "No session found. You are not logged in");
+  }
+};
+const isUserLogin = async (req, res) => {
+  const tokenKey = req.headers["u-x-key"];
+  console.log(tokenKey);
+  try {
+    if (!tokenKey) {
+      return sendError(res, "Unauthorised. No headers key");
+    }
+    if (tokenKey) {
+      const sessionToken = await getSessionToken(String(tokenKey));
+      if (!sessionToken) {
+        return sendError(res, "Session token expired");
+      }
+      if (sessionToken) {
+        return sendSuccess(res, "You are a logged in user");
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    return sendError(res, "Unauthorised");
   }
 };
 
@@ -315,7 +324,6 @@ const verifyUserLoginToken = async (req, res, next) => {
       return sendError(res, "Unauthorised. No headers key");
     }
     if (tokenKey) {
-      // const token = await getFromRedis(String(tokenKey));
       const sessionToken = await getSessionToken(String(tokenKey));
       if (!sessionToken) {
         return sendError(res, "Authorization token expired");
@@ -323,19 +331,15 @@ const verifyUserLoginToken = async (req, res, next) => {
       if (sessionToken) {
         console.log("sessionToken", sessionToken);
         const token = sessionToken.value;
-        console.log("token", token);
-        jwt.verify(
-          String(token),
-          process.env.JWT_USER_SECRET_KEY,
-          (err, user) => {
-            if (err) {
-              return sendError(res, "Invalid Token");
-            } else {
-              req.id = user.id;
-              next();
-            }
-          }
+        const checkSession = await verifyLoginSession(
+          token,
+          process.env.JWT_USER_SECRET_KEY
         );
+        if (!checkSession) {
+          return sendError(res, "Invalid Token");
+        } else {
+          next();
+        }
       }
     }
   } catch (error) {
@@ -344,7 +348,7 @@ const verifyUserLoginToken = async (req, res, next) => {
   }
 };
 
-const logoutOld = (req, res, next) => {
+const logoutOld = (req, res) => {
   const origin = req.get("host");
   console.log("origin", origin);
   const cookies = req.headers.cookie;
@@ -406,7 +410,7 @@ const logoutOld = (req, res, next) => {
   });
 };
 
-const logout = async (req, res, next) => {
+const logout = async (req, res) => {
   const tokenKey = req.headers["u-x-key"];
   try {
     if (!tokenKey) {
@@ -418,25 +422,21 @@ const logout = async (req, res, next) => {
     }
     if (sessionToken) {
       const token = sessionToken.value;
-      jwt.verify(
-        String(token),
+
+      const logoutProcess = await logoutSession(
+        token,
         process.env.JWT_USER_SECRET_KEY,
-        (err, user) => {
-          if (err) {
-            return sendError(res, `Invalid session token - ${err}`, 400);
-          }
-          if (user) {
-            const clearSession = deleteSessionToken(sessionToken._id);
-            if (clearSession) {
-              return sendSuccess(res, "Successfully logged out");
-            } else {
-              return sendError(res, `Unable to log you out`);
-            }
-          }
-        }
+        sessionToken._id
       );
+      if (logoutProcess) {
+        return sendSuccess(res, "Successfully logged out");
+      } else {
+        return sendError(res, `Unable to log you out`);
+      }
     }
-  } catch (error) {}
+  } catch (error) {
+    return sendError(res, `Something went wrong - ${error}`);
+  }
 };
 
 const isEmailRegistered = async (req, res) => {

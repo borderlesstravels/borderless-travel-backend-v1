@@ -12,6 +12,7 @@ const Notification = require("../../models/general/Notification");
 const ShortletBooking = require("../../models/general/ShortletBooking");
 const User = require("../../models/user/User");
 const Markup = require("../../models/app-core/Markup");
+const { getSessionToken, logoutSession } = require("../../middlewares/general");
 
 const getHost = async (req, res) => {
   const userId = req.id;
@@ -495,7 +496,7 @@ const isHostLogin = async (req, res) => {
   }
 };
 
-const logoutHost = (req, res, next) => {
+const logoutHostOld = (req, res, next) => {
   console.log("Logout api called");
   const cookies = req.headers.cookie;
   if (!cookies) {
@@ -525,6 +526,34 @@ const logoutHost = (req, res, next) => {
         .json({ success: true, message: "Successfully logged out" });
     }
   });
+};
+
+const logoutHost = async (req, res) => {
+  const tokenKey = req.headers["u-x-key"];
+  try {
+    if (!tokenKey) {
+      return sendError(res, "Unauthorised. No headers key");
+    }
+    const sessionToken = await getSessionToken(String(tokenKey));
+    if (!sessionToken) {
+      return sendSuccess(res, "Session already expired");
+    }
+    if (sessionToken) {
+      const token = sessionToken.value;
+      const logoutProcess = await logoutSession(
+        token,
+        process.env.JWT_HOST_SECRET_KEY,
+        sessionToken._id
+      );
+      if (logoutProcess) {
+        return sendSuccess(res, "Successfully logged out");
+      } else {
+        return sendError(res, `Unable to log you out`);
+      }
+    }
+  } catch (error) {
+    return sendError(res, `Something went wrong - ${error}`);
+  }
 };
 
 module.exports = {

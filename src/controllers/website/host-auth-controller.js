@@ -11,6 +11,12 @@ const {
 const { isValidObjectId } = require("mongoose");
 const Host = require("../../models/host/Host");
 const ResetHostPasswordToken = require("../../models/host/ResetHostPasswordToken");
+const { nanoid } = require("nanoid");
+const {
+  addSessionToken,
+  getSessionToken,
+  createLoginSession,
+} = require("../../middlewares/general");
 
 const signupHost = async (req, res, next) => {
   const salt = bcrypt.genSaltSync(10);
@@ -108,6 +114,13 @@ const verifyHostEmail = async (req, res, next) => {
   await VerificationToken.findByIdAndDelete(vToken._id);
   await host.save();
   console.log("Host verified");
+
+  const { sessionId } = await createLoginSession(
+    { id: host._id },
+    process.env.JWT_HOST_SECRET_KEY
+  );
+  res.set("u-x-key", sessionId);
+
   req.body = {
     user: {
       _id: host._id,
@@ -194,7 +207,7 @@ const resetPasswordHost = async (req, res, next) => {
 };
 
 // LOGIN
-const loginHost = async (req, res, next) => {
+const loginHostOld = async (req, res, next) => {
   const { host, password } = req.body;
 
   const origin = req.get("host");
@@ -235,7 +248,42 @@ const loginHost = async (req, res, next) => {
   next();
 };
 
-const verifyHostLoginToken = (req, res, next) => {
+const loginHost = async (req, res, next) => {
+  const { host, password } = req.body;
+
+  const isPasswordCorrect = bcrypt.compareSync(password, host.password);
+  if (!isPasswordCorrect) {
+    return sendError(res, "Invalid login ID or password");
+  }
+  if (!host.email_verified) {
+    return res.status(401).json({
+      success: true,
+      loginStatus: 1,
+      message: "Unverified email",
+      userId: host._id,
+    });
+  }
+
+  const { sessionId, token } = await createLoginSession(
+    { id: host._id },
+    process.env.JWT_HOST_SECRET_KEY
+  );
+  res.set("u-x-key", sessionId);
+
+  req.body = {
+    user: {
+      _id: host._id,
+      email: host.email,
+      first_name: host.first_name,
+      last_name: host.last_name,
+      email_verified: host.email_verified,
+    },
+    token,
+  };
+  next();
+};
+
+const verifyHostLoginTokenOld = (req, res, next) => {
   const cookies = req.headers.cookie;
   if (!cookies) {
     return sendError(
@@ -260,6 +308,38 @@ const verifyHostLoginToken = (req, res, next) => {
       next();
     }
   });
+};
+
+const verifyHostLoginToken = async (req, res, next) => {
+  const tokenKey = req.headers["u-x-key"];
+  console.log(tokenKey);
+
+  try {
+    if (!tokenKey) {
+      return sendError(res, "Unauthorised. No headers key");
+    }
+    if (tokenKey) {
+      const sessionToken = await getSessionToken(String(tokenKey));
+      if (!sessionToken) {
+        return sendError(res, "Authorization token expired");
+      }
+      if (sessionToken) {
+        const token = sessionToken.value;
+        const checkSession = await verifyLoginSession(
+          token,
+          process.env.JWT_HOST_SECRET_KEY
+        );
+        if (!checkSession) {
+          return sendError(res, "Invalid Token");
+        } else {
+          next();
+        }
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    return sendError(res, "Unauthorised");
+  }
 };
 
 module.exports = {

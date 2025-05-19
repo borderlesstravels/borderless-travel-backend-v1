@@ -14,6 +14,12 @@ const Admin = require("../../models/admin/Admin");
 const AdminLoginToken = require("../../models/admin/AdminLoginToken");
 const { log } = require("console");
 const ResetAdminPasswordToken = require("../../models/admin/ResetAdminPasswordToken");
+const {
+  createLoginSession,
+  getSessionToken,
+  verifyLoginSession,
+  logoutSession,
+} = require("../../middlewares/general");
 
 const verifyEmail = async (req, res, next) => {
   const { userId, otp } = req.body;
@@ -198,7 +204,7 @@ const verifyLoginAttempt = async (req, res, next) => {
   next();
 };
 
-const logAdminIn = async (req, res, next) => {
+const logAdminInOld = async (req, res, next) => {
   const { admin } = req.body;
   const origin = req.get("host");
   console.log("origin", origin);
@@ -222,7 +228,18 @@ const logAdminIn = async (req, res, next) => {
   next();
 };
 
-const isAdminLogin = async (req, res) => {
+const logAdminIn = async (req, res, next) => {
+  const { admin } = req.body;
+  const { sessionId, token } = await createLoginSession(
+    { id: admin._id },
+    process.env.JWT_ADMIN_SECRET_KEY
+  );
+  res.set("a-x-key", sessionId);
+  req.body = { user: admin, token };
+  next();
+};
+
+const isAdminLoginOld = async (req, res) => {
   const cookies = req.headers.cookie;
   if (cookies) {
     return res
@@ -232,8 +249,29 @@ const isAdminLogin = async (req, res) => {
     return sendError(res, "No session found. You are not logged in", 401);
   }
 };
+const isAdminLogin = async (req, res) => {
+  const tokenKey = req.headers["a-x-key"];
+  console.log(tokenKey);
+  try {
+    if (!tokenKey) {
+      return sendError(res, "Unauthorised. No headers key");
+    }
+    if (tokenKey) {
+      const sessionToken = await getSessionToken(String(tokenKey));
+      if (!sessionToken) {
+        return sendError(res, "Session token expired");
+      }
+      if (sessionToken) {
+        return sendSuccess(res, "You are a logged in user");
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    return sendError(res, "Unauthorised");
+  }
+};
 
-const verifyAdminLoginToken = (req, res, next) => {
+const verifyAdminLoginTokenOld = (req, res, next) => {
   const cookies = req.headers.cookie;
   if (!cookies) {
     return sendError(
@@ -257,6 +295,37 @@ const verifyAdminLoginToken = (req, res, next) => {
     }
   });
 };
+const verifyAdminLoginToken = async (req, res, next) => {
+  const tokenKey = req.headers["a-x-key"];
+  console.log(tokenKey);
+
+  try {
+    if (!tokenKey) {
+      return sendError(res, "Unauthorised. No headers key");
+    }
+    if (tokenKey) {
+      const sessionToken = await getSessionToken(String(tokenKey));
+      if (!sessionToken) {
+        return sendError(res, "Authorization token expired");
+      }
+      if (sessionToken) {
+        const token = sessionToken.value;
+        const checkSession = await verifyLoginSession(
+          token,
+          process.env.JWT_ADMIN_SECRET_KEY
+        );
+        if (!checkSession) {
+          return sendError(res, "Invalid Token");
+        } else {
+          next();
+        }
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    return sendError(res, "Unauthorised");
+  }
+};
 
 const getAdmin = async (req, res) => {
   const adminId = req.id;
@@ -272,7 +341,7 @@ const getAdmin = async (req, res) => {
   return sendSuccess(res, "successfully fetched admin data", admin);
 };
 
-const logoutAdmin = (req, res, next) => {
+const logoutAdminOld = (req, res, next) => {
   console.log("Logout api called");
   const cookies = req.headers.cookie;
   if (!cookies) {
@@ -293,6 +362,34 @@ const logoutAdmin = (req, res, next) => {
       .status(200)
       .json({ success: true, message: "Successfully logged out" });
   });
+};
+
+const logoutAdmin = async (req, res) => {
+  const tokenKey = req.headers["a-x-key"];
+  try {
+    if (!tokenKey) {
+      return sendError(res, "Unauthorised. No headers key");
+    }
+    const sessionToken = await getSessionToken(String(tokenKey));
+    if (!sessionToken) {
+      return sendSuccess(res, "Session already expired");
+    }
+    if (sessionToken) {
+      const token = sessionToken.value;
+      const logoutProcess = await logoutSession(
+        token,
+        process.env.JWT_ADMIN_SECRET_KEY,
+        sessionToken._id
+      );
+      if (logoutProcess) {
+        return sendSuccess(res, "Successfully logged out");
+      } else {
+        return sendError(res, `Unable to log you out`);
+      }
+    }
+  } catch (error) {
+    return sendError(res, `Something went wrong - ${error}`);
+  }
 };
 
 module.exports = {
