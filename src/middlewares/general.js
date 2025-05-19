@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const SessionStore = require("../models/general/SessionStore");
 const { sendError } = require("../utils/helpers");
 
-exports.addSessionToken = async (key, value) => {
+const addSessionToken = async (key, value) => {
   try {
     const newSession = new SessionStore({
       key,
@@ -19,7 +19,7 @@ exports.addSessionToken = async (key, value) => {
   }
 };
 
-exports.getSessionToken = async (key) => {
+const getSessionToken = async (key) => {
   try {
     const session = await SessionStore.findOne({ key });
     if (session) {
@@ -31,7 +31,7 @@ exports.getSessionToken = async (key) => {
   }
 };
 
-exports.deleteSessionToken = async (id) => {
+const deleteSessionToken = async (id) => {
   try {
     const deleteSession = await SessionStore.findByIdAndDelete(id);
     if (deleteSession) {
@@ -43,7 +43,7 @@ exports.deleteSessionToken = async (id) => {
   }
 };
 
-exports.createLoginSession = async (id, secrete) => {
+const createLoginSession = async (id, secrete) => {
   const sessionId = nanoid();
   console.log("sessionId", sessionId);
   const token = jwt.sign(id, secrete, {
@@ -53,32 +53,48 @@ exports.createLoginSession = async (id, secrete) => {
   return { sessionId, token };
 };
 
-exports.verifyLoginSession = async (token, secrete) => {
+const verifyLoginSession = async (token, secrete, req) => {
   console.log("token", token);
+  let result;
   jwt.verify(String(token), secrete, (err, user) => {
+    console.log("err", err);
+    console.log("user", user);
     if (err) {
-      return false;
-      return sendError(res, "Invalid Token");
-    } else {
+      result = false;
+    }
+    if (user) {
       req.id = user.id;
-      return true;
+      result = true;
     }
   });
+  return result;
 };
 
-exports.logoutSession = async (token, secrete, sessionTokenId) => {
+const logoutSession = async (token, secrete, sessionTokenId) => {
+  let result;
   jwt.verify(String(token), secrete, async (err, user) => {
     if (err) {
       console.log("logout error:", err);
-      return false;
+      result = false;
     }
     if (user) {
       const clearSession = await deleteSessionToken(sessionTokenId);
       if (clearSession) {
-        return true;
+        result = true;
       } else {
-        return false;
+        result = false;
       }
     }
   });
+  return result;
+};
+
+module.exports = {
+  addSessionToken,
+  getSessionToken,
+  deleteSessionToken,
+
+  createLoginSession,
+  verifyLoginSession,
+  logoutSession,
 };

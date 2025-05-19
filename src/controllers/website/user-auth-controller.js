@@ -333,8 +333,10 @@ const verifyUserLoginToken = async (req, res, next) => {
         const token = sessionToken.value;
         const checkSession = await verifyLoginSession(
           token,
-          process.env.JWT_USER_SECRET_KEY
+          process.env.JWT_USER_SECRET_KEY,
+          req
         );
+        console.log("checkSession", checkSession);
         if (!checkSession) {
           return sendError(res, "Invalid Token");
         } else {
@@ -428,6 +430,7 @@ const logout = async (req, res) => {
         process.env.JWT_USER_SECRET_KEY,
         sessionToken._id
       );
+      console.log("logoutProcess", logoutProcess);
       if (logoutProcess) {
         return sendSuccess(res, "Successfully logged out");
       } else {

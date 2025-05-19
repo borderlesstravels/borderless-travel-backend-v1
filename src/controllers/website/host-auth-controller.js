@@ -327,7 +327,8 @@ const verifyHostLoginToken = async (req, res, next) => {
         const token = sessionToken.value;
         const checkSession = await verifyLoginSession(
           token,
-          process.env.JWT_HOST_SECRET_KEY
+          process.env.JWT_HOST_SECRET_KEY,
+          req
         );
         if (!checkSession) {
           return sendError(res, "Invalid Token");
