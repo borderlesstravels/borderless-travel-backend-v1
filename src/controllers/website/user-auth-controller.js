@@ -26,6 +26,7 @@ const {
   verifyLoginSession,
   logoutSession,
 } = require("../../middlewares/general");
+const SessionStore = require("../../models/general/SessionStore");
 
 const signup = async (req, res, next) => {
   const { first_name, last_name, email, password, referred_by } = req.body;
@@ -146,6 +147,7 @@ const verifyEmail = async (req, res, next) => {
     process.env.JWT_USER_SECRET_KEY
   );
   res.set("u-x-key", sessionId);
+  res.header("Access-Control-Expose-Headers", "a-x-key");
 
   req.body = { user };
   next();
@@ -260,6 +262,7 @@ const login = async (req, res, next) => {
     process.env.JWT_USER_SECRET_KEY
   );
   res.set("u-x-key", sessionId);
+  res.header("Access-Control-Expose-Headers", "u-x-key");
   req.body = { user, token };
   next();
 };
@@ -424,15 +427,20 @@ const logout = async (req, res) => {
     }
     if (sessionToken) {
       const token = sessionToken.value;
-
-      const logoutProcess = await logoutSession(
+      const checkSession = await verifyLoginSession(
         token,
         process.env.JWT_USER_SECRET_KEY,
-        sessionToken._id
+        req
       );
-      console.log("logoutProcess", logoutProcess);
-      if (logoutProcess) {
-        return sendSuccess(res, "Successfully logged out");
+      if (checkSession) {
+        const deleteData = await SessionStore.findByIdAndDelete(
+          sessionToken._id
+        );
+        console.log("deleteData", deleteData);
+        if (deleteData) {
+          return sendSuccess(res, "Successfully logged out");
+        }
+        return sendError(res, `Unable to log you out now`);
       } else {
         return sendError(res, `Unable to log you out`);
       }

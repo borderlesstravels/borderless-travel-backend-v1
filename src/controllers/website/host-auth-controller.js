@@ -120,6 +120,7 @@ const verifyHostEmail = async (req, res, next) => {
     process.env.JWT_HOST_SECRET_KEY
   );
   res.set("u-x-key", sessionId);
+  res.header("Access-Control-Expose-Headers", "u-x-key");
 
   req.body = {
     user: {
@@ -269,6 +270,7 @@ const loginHost = async (req, res, next) => {
     process.env.JWT_HOST_SECRET_KEY
   );
   res.set("u-x-key", sessionId);
+  res.header("Access-Control-Expose-Headers", "u-x-key");
 
   req.body = {
     user: {

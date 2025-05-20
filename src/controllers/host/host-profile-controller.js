@@ -13,6 +13,7 @@ const ShortletBooking = require("../../models/general/ShortletBooking");
 const User = require("../../models/user/User");
 const Markup = require("../../models/app-core/Markup");
 const { getSessionToken, logoutSession } = require("../../middlewares/general");
+const SessionStore = require("../../models/general/SessionStore");
 
 const getHost = async (req, res) => {
   const userId = req.id;
@@ -540,15 +541,20 @@ const logoutHost = async (req, res) => {
     }
     if (sessionToken) {
       const token = sessionToken.value;
-      const logoutProcess = await logoutSession(
+      const checkSession = await verifyLoginSession(
         token,
         process.env.JWT_HOST_SECRET_KEY,
-        sessionToken._id
+        req
       );
-      if (logoutProcess) {
-        return sendSuccess(res, "Successfully logged out");
-      } else {
-        return sendError(res, `Unable to log you out`);
+      if (checkSession) {
+        const deleteData = await SessionStore.findByIdAndDelete(
+          sessionToken._id
+        );
+        console.log("deleteData", deleteData);
+        if (deleteData) {
+          return sendSuccess(res, "Successfully logged out");
+        }
+        return sendError(res, `Unable to log you out now`);
       }
     }
   } catch (error) {

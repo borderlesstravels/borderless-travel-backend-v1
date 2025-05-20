@@ -235,6 +235,7 @@ const logAdminIn = async (req, res, next) => {
     process.env.JWT_ADMIN_SECRET_KEY
   );
   res.set("a-x-key", sessionId);
+  res.header("Access-Control-Expose-Headers", "a-x-key");
   req.body = { user: admin, token };
   next();
 };
@@ -377,15 +378,20 @@ const logoutAdmin = async (req, res) => {
     }
     if (sessionToken) {
       const token = sessionToken.value;
-      const logoutProcess = await logoutSession(
+      const checkSession = await verifyLoginSession(
         token,
         process.env.JWT_ADMIN_SECRET_KEY,
-        sessionToken._id
+        req
       );
-      if (logoutProcess) {
-        return sendSuccess(res, "Successfully logged out");
-      } else {
-        return sendError(res, `Unable to log you out`);
+      if (checkSession) {
+        const deleteData = await SessionStore.findByIdAndDelete(
+          sessionToken._id
+        );
+        console.log("deleteData", deleteData);
+        if (deleteData) {
+          return sendSuccess(res, "Successfully logged out");
+        }
+        return sendError(res, `Unable to log you out now`);
       }
     }
   } catch (error) {

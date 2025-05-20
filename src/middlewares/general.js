@@ -15,7 +15,7 @@ const addSessionToken = async (key, value) => {
     }
   } catch (error) {
     console.log("session store error:", error);
-    return sendError(res, "Unable to save session");
+    return false;
   }
 };
 
@@ -27,7 +27,7 @@ const getSessionToken = async (key) => {
     }
   } catch (error) {
     console.log("session store error:", error);
-    return sendError(res, "Unable to save session");
+    return false;
   }
 };
 
@@ -39,7 +39,7 @@ const deleteSessionToken = async (id) => {
     }
   } catch (error) {
     console.log("session store deletion error:", error);
-    return sendError(res, "Unable to clear session");
+    return false;
   }
 };
 
@@ -57,8 +57,6 @@ const verifyLoginSession = async (token, secrete, req) => {
   console.log("token", token);
   let result;
   jwt.verify(String(token), secrete, (err, user) => {
-    console.log("err", err);
-    console.log("user", user);
     if (err) {
       result = false;
     }
@@ -70,22 +68,18 @@ const verifyLoginSession = async (token, secrete, req) => {
   return result;
 };
 
-const logoutSession = async (token, secrete, sessionTokenId) => {
+const logoutSession = async (token, secrete) => {
   let result;
-  jwt.verify(String(token), secrete, async (err, user) => {
+  jwt.verify(String(token), secrete, (err, user) => {
     if (err) {
       console.log("logout error:", err);
       result = false;
     }
     if (user) {
-      const clearSession = await deleteSessionToken(sessionTokenId);
-      if (clearSession) {
-        result = true;
-      } else {
-        result = false;
-      }
+      result = true;
     }
   });
+  console.log("result", result);
   return result;
 };
 
