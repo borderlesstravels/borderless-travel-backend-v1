@@ -12,7 +12,11 @@ const Notification = require("../../models/general/Notification");
 const ShortletBooking = require("../../models/general/ShortletBooking");
 const User = require("../../models/user/User");
 const Markup = require("../../models/app-core/Markup");
-const { getSessionToken, logoutSession } = require("../../middlewares/general");
+const {
+  getSessionToken,
+  logoutSession,
+  verifyLoginSession,
+} = require("../../middlewares/general");
 const SessionStore = require("../../models/general/SessionStore");
 
 const getHost = async (req, res) => {

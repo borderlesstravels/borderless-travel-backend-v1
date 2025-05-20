@@ -20,6 +20,7 @@ const {
   verifyLoginSession,
   logoutSession,
 } = require("../../middlewares/general");
+const SessionStore = require("../../models/general/SessionStore");
 
 const verifyEmail = async (req, res, next) => {
   const { userId, otp } = req.body;
