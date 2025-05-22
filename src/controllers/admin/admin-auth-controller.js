@@ -205,30 +205,6 @@ const verifyLoginAttempt = async (req, res, next) => {
   next();
 };
 
-const logAdminInOld = async (req, res, next) => {
-  const { admin } = req.body;
-  const origin = req.get("host");
-  console.log("origin", origin);
-
-  const token = jwt.sign({ id: admin._id }, process.env.JWT_ADMIN_SECRET_KEY, {
-    expiresIn: "1d",
-  });
-  res.cookie(
-    String(admin._id),
-    token,
-    // {
-    //   path: "/",
-    //   expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
-    //   httpOnly: true,
-    //   sameSite: "none",
-    //   secure: true,
-    // }
-    origin.includes("localhost") ? localSession : liveSession
-  );
-  req.body = { user: admin, token };
-  next();
-};
-
 const logAdminIn = async (req, res, next) => {
   const { admin } = req.body;
   const { sessionId, token } = await createLoginSession(
@@ -241,16 +217,6 @@ const logAdminIn = async (req, res, next) => {
   next();
 };
 
-const isAdminLoginOld = async (req, res) => {
-  const cookies = req.headers.cookie;
-  if (cookies) {
-    return res
-      .status(200)
-      .json({ success: true, message: "You are logged in" });
-  } else if (!cookies) {
-    return sendError(res, "No session found. You are not logged in", 401);
-  }
-};
 const isAdminLogin = async (req, res) => {
   const tokenKey = req.headers["a-x-key"];
   console.log(tokenKey);
@@ -273,30 +239,6 @@ const isAdminLogin = async (req, res) => {
   }
 };
 
-const verifyAdminLoginTokenOld = (req, res, next) => {
-  const cookies = req.headers.cookie;
-  if (!cookies) {
-    return sendError(
-      res,
-      "You are not authenticated or authorised to perform this operation"
-    );
-  }
-  const token = cookies.split("=")[1];
-  if (!token) {
-    return sendError(
-      res,
-      "You are not authenticated or authorised to perform this operation"
-    );
-  }
-  jwt.verify(String(token), process.env.JWT_ADMIN_SECRET_KEY, (err, admin) => {
-    if (err) {
-      return sendError(res, "Invalid authorisation token", 404);
-    } else {
-      req.id = admin.id;
-      next();
-    }
-  });
-};
 const verifyAdminLoginToken = async (req, res, next) => {
   const tokenKey = req.headers["a-x-key"];
   console.log(tokenKey);
@@ -342,29 +284,6 @@ const getAdmin = async (req, res) => {
     return sendError(res, "Admin data not found");
   }
   return sendSuccess(res, "successfully fetched admin data", admin);
-};
-
-const logoutAdminOld = (req, res, next) => {
-  console.log("Logout api called");
-  const cookies = req.headers.cookie;
-  if (!cookies) {
-    return sendError(res, "No cookie found", 205);
-  }
-  const token = cookies.split("=")[1];
-  if (!token) {
-    return sendError(res, "No token found", 205);
-  }
-  jwt.verify(String(token), process.env.JWT_ADMIN_SECRET_KEY, (err, admin) => {
-    if (err) {
-      return sendError(res, "Invalid Token", 400);
-      // return res.status(400).json({ message: "Invalid Token" })
-    }
-    res.clearCookie(`${admin.id}`);
-    req.cookies[`${admin.id}`] = "";
-    return res
-      .status(200)
-      .json({ success: true, message: "Successfully logged out" });
-  });
 };
 
 const logoutAdmin = async (req, res) => {

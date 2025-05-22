@@ -286,33 +286,6 @@ const loginHost = async (req, res, next) => {
   next();
 };
 
-const verifyHostLoginTokenOld = (req, res, next) => {
-  const cookies = req.headers.cookie;
-  if (!cookies) {
-    return sendError(
-      res,
-      "You are not authenticated to perform this operation",
-      401
-    );
-  }
-  const token = cookies.split("=")[1];
-  if (!token) {
-    return sendError(
-      res,
-      "You are not authenticated to perform this operation",
-      401
-    );
-  }
-  jwt.verify(String(token), process.env.JWT_HOST_SECRET_KEY, (err, host) => {
-    if (err) {
-      return sendError(res, "Invalid authorisation token", 401);
-    } else {
-      req.id = host.id;
-      next();
-    }
-  });
-};
-
 const verifyHostLoginToken = async (req, res, next) => {
   const tokenKey = req.headers["u-x-key"];
   console.log(tokenKey);

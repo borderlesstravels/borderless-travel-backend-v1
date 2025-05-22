@@ -108,6 +108,15 @@ const addProperty = async (req, res) => {
   // let commission_amount = 0;
 
   try {
+    const host = await Host.findById(req.id);
+    if (!host) {
+      sendError(
+        res,
+        "Unauthorised. Host account cannot ben found. Kindly try again."
+      );
+    }
+    hostPropCount = host.properties;
+    host.properties = Number(hostPropCount + 1);
     const markup = await Markup.findOne({ service_name: "stay" });
     if (markup) {
       const commission_percent = markup.commission;
@@ -133,6 +142,7 @@ const addProperty = async (req, res) => {
     }
     const property = new ShortLet(req.body);
     await property.save();
+    await host.save();
     return sendSuccess(
       res,
       `Successfully added a new listing - ${req.body.apartment_name}`,
@@ -499,38 +509,6 @@ const isHostLogin = async (req, res) => {
   } else if (!cookies) {
     return sendError(res, "No session found. You are not logged in");
   }
-};
-
-const logoutHostOld = (req, res, next) => {
-  console.log("Logout api called");
-  const cookies = req.headers.cookie;
-  if (!cookies) {
-    return sendError(
-      res,
-      "No cookie found.  You are never logged in to begin with",
-      401
-    );
-  }
-  const token = cookies.split("=")[1];
-  console.log(token);
-  if (!token) {
-    return sendError(
-      res,
-      "No token found.  You are never logged in to begin with",
-      401
-    );
-  }
-  jwt.verify(String(token), process.env.JWT_HOST_SECRET_KEY, (err, host) => {
-    if (err) {
-      return sendError(res, "Invalid Token.", 401);
-    } else {
-      res.clearCookie(`${host.id}`);
-      req.cookies[`${host.id}`] = "";
-      return res
-        .status(200)
-        .json({ success: true, message: "Successfully logged out" });
-    }
-  });
 };
 
 const logoutHost = async (req, res) => {

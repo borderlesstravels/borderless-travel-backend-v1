@@ -122,6 +122,7 @@ const bookStayAUth = async (req, res, next) => {
 
   const host = await Host.findById(apartment.owner);
   if (!host) sendError(res, "Apartment does not belong to anyone");
+  const hostGuestsCount = host.guests;
 
   let check_in_date = new Date(req.body.check_in_date);
   let check_out_date = new Date(req.body.check_out_date);
@@ -152,7 +153,9 @@ const bookStayAUth = async (req, res, next) => {
       price,
       booking_reference,
     });
+    host.guests = Number(hostGuestsCount + 1);
     await newBooking.save();
+    await host.save();
     const notifyUser = await saveNotification(
       userId,
       "booking",
