@@ -1,6 +1,4 @@
 const crypto = require("crypto");
-const redis = require("redis");
-const { promisify } = require("util");
 const User = require("../../models/user/User");
 const Notification = require("../../models/general/Notification");
 const {
@@ -8,9 +6,6 @@ const {
 } = require("../../../public/email-templates/profile/notification.temp");
 const sendEmail = require("../email/sendEmail.util");
 const APIToken = require("../../models/app-core/APIToken");
-const { nanoid } = require("nanoid");
-const jwt = require("jsonwebtoken");
-const { addSessionToken } = require("../../middlewares/general");
 
 exports.sendError = (res, error, status = 401) => {
   return res.status(status).json({ success: false, error });
@@ -143,78 +138,4 @@ exports.verifyAPIToken = async (res, firm, api_key) => {
         "Invalid credentials! You are not authorised to perform this request",
     });
   }
-};
-
-exports.liveSession = {
-  path: "/",
-  expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
-  httpOnly: true,
-  sameSite: "none",
-  secure: true,
-};
-
-exports.localSession = {
-  path: "/",
-  expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
-  httpOnly: true,
-  sameSite: "lax",
-};
-
-exports.liveSessionLogout = {
-  path: "/",
-  httpOnly: true,
-  sameSite: "none",
-  secure: true,
-};
-exports.localSessionLogout = {
-  path: "/",
-  httpOnly: true,
-  sameSite: "lax",
-};
-
-// function connectToRedis() {
-//   const client = redis.createClient();
-//   client.on("connect", () => {
-//     console.log("connected to redis successfully");
-//   });
-//   client.on("error", (error) => {
-//     console.log("error connecting to redis", error);
-//   });
-//   return client;
-// }
-// const redisClient = connectToRedis();
-
-exports.addToRedis = async (key, value, expiresIn = 0) => {
-  // try {
-  //   const setAsync = promisify(redisClient.set).bind(redisClient);
-  //   await setAsync(key, JSON.stringify(value));
-  //   if (expiresIn) redisClient.expire(key, expiresIn);
-  //   return true;
-  // } catch (error) {
-  //   console.log(object);
-  //   throw new Error(error);
-  // }
-};
-
-exports.delInRedis = async (key) => {
-  // try {
-  //   const delAsync = promisify(redisClient.del).bind(redisClient);
-  //   await delAsync(key);
-  //   return true;
-  // } catch (error) {
-  //   console.log("error", error);
-  //   throw new Error(error);
-  // }
-};
-
-exports.getFromRedis = async (key) => {
-  // try {
-  //   const getAsync = promisify(redisClient.get).bind(redisClient);
-  //   const value = await getAsync(key);
-  //   if (value) return JSON.parse(value);
-  //   return value;
-  // } catch (error) {
-  //   console.log("error", error);
-  //   throw new Error(error);
-  // }
 };

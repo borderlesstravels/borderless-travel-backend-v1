@@ -1,13 +1,10 @@
 const VerificationToken = require("../../models/user/VerificationToken");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const {
   sendError,
   createRandomBytes,
   generateOTP,
   sendSuccess,
-  localSession,
-  liveSession,
 } = require("../../utils/helpers");
 const { isValidObjectId } = require("mongoose");
 const Admin = require("../../models/admin/Admin");

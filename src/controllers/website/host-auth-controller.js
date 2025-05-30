@@ -1,19 +1,15 @@
 const VerificationToken = require("../../models/user/VerificationToken");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const {
   sendError,
   createRandomBytes,
   generateOTP,
-  localSession,
-  liveSession,
 } = require("../../utils/helpers");
 const { isValidObjectId } = require("mongoose");
 const Host = require("../../models/host/Host");
 const ResetHostPasswordToken = require("../../models/host/ResetHostPasswordToken");
 const { nanoid } = require("nanoid");
 const {
-  addSessionToken,
   getSessionToken,
   createLoginSession,
   verifyLoginSession,
@@ -209,47 +205,6 @@ const resetPasswordHost = async (req, res, next) => {
 };
 
 // LOGIN
-const loginHostOld = async (req, res, next) => {
-  const { host, password } = req.body;
-
-  const origin = req.get("host");
-  console.log("origin", origin);
-
-  const isPasswordCorrect = bcrypt.compareSync(password, host.password);
-  console.log("isPasswordCorrect", isPasswordCorrect);
-  if (!isPasswordCorrect) {
-    return sendError(res, "Invalid login ID or password");
-  }
-  if (!host.email_verified) {
-    return res.status(401).json({
-      success: true,
-      loginStatus: 1,
-      message: "Unverified email",
-      userId: host._id,
-    });
-  }
-
-  const token = jwt.sign({ id: host._id }, process.env.JWT_HOST_SECRET_KEY, {
-    expiresIn: "1d",
-  });
-  res.cookie(
-    String(host._id),
-    token,
-    origin.includes("localhost") ? localSession : liveSession
-  );
-  req.body = {
-    user: {
-      _id: host._id,
-      email: host.email,
-      first_name: host.first_name,
-      last_name: host.last_name,
-      email_verified: host.email_verified,
-    },
-    token,
-  };
-  next();
-};
-
 const loginHost = async (req, res, next) => {
   const { host, password } = req.body;
 

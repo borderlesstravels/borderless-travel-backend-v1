@@ -1,7 +1,6 @@
 const User = require("../../models/user/User");
 const VerificationToken = require("../../models/user/VerificationToken");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const {
   sendError,
   createRandomBytes,
@@ -9,10 +8,6 @@ const {
   sendLoginError,
   checkUserEmailReg,
   sendSuccess,
-  localSession,
-  liveSession,
-  localSessionLogout,
-  liveSessionLogout,
 } = require("../../utils/helpers");
 const { isValidObjectId } = require("mongoose");
 const ResetPasswordToken = require("../../models/user/ResetPasswordToken");
@@ -147,7 +142,7 @@ const verifyEmail = async (req, res, next) => {
     process.env.JWT_USER_SECRET_KEY
   );
   res.set("u-x-key", sessionId);
-  res.header("Access-Control-Expose-Headers", "a-x-key");
+  res.header("Access-Control-Expose-Headers", "u-x-key");
 
   req.body = { user };
   next();
@@ -211,37 +206,6 @@ const resetPassword = async (req, res, next) => {
 };
 
 // LOGIN
-const loginOld = async (req, res, next) => {
-  const { user, password } = req.body;
-
-  const origin = req.get("host");
-  console.log("origin", origin);
-
-  const isPasswordCorrect = bcrypt.compareSync(password, user.password);
-  if (!isPasswordCorrect) {
-    return sendLoginError(res, "Invalid login ID or password", 0);
-  }
-  if (!user.email_verified) {
-    return res.status(401).json({
-      success: true,
-      loginStatus: 1,
-      message: "Unverified email",
-      userId: user._id,
-    });
-  }
-
-  const token = jwt.sign({ id: user._id }, process.env.JWT_USER_SECRET_KEY, {
-    expiresIn: "1d",
-  });
-  res.cookie(
-    String(user._id),
-    token,
-    origin.includes("localhost") ? localSession : liveSession
-  );
-  req.body = { user, token };
-  next();
-};
-
 const login = async (req, res, next) => {
   const { user, password } = req.body;
   const isPasswordCorrect = bcrypt.compareSync(password, user.password);
@@ -267,17 +231,6 @@ const login = async (req, res, next) => {
   next();
 };
 
-const isUserLoginOld = async (req, res) => {
-  const cookies = req.headers.cookie;
-  console.log("Session check cookie: ", cookies);
-  if (cookies) {
-    return res
-      .status(200)
-      .json({ success: true, message: "You are a logged in user" });
-  } else if (!cookies) {
-    return sendError(res, "No session found. You are not logged in");
-  }
-};
 const isUserLogin = async (req, res) => {
   const tokenKey = req.headers["u-x-key"];
   console.log(tokenKey);
@@ -298,25 +251,6 @@ const isUserLogin = async (req, res) => {
     console.log(error);
     return sendError(res, "Unauthorised");
   }
-};
-
-const verifyUserLoginTokenOld = (req, res, next) => {
-  const cookies = req.headers.cookie;
-  if (!cookies) {
-    return sendError(res, "No cookie found", 404);
-  }
-  const token = cookies.split("=")[1];
-  if (!token) {
-    return sendError(res, "No token found", 404);
-  }
-  jwt.verify(String(token), process.env.JWT_USER_SECRET_KEY, (err, user) => {
-    if (err) {
-      return sendError(res, "Invalid Token", 404);
-    } else {
-      req.id = user.id;
-      next();
-    }
-  });
 };
 
 const verifyUserLoginToken = async (req, res, next) => {
@@ -351,68 +285,6 @@ const verifyUserLoginToken = async (req, res, next) => {
     console.log(error);
     return sendError(res, "Unauthorised");
   }
-};
-
-const logoutOld = (req, res) => {
-  const origin = req.get("host");
-  console.log("origin", origin);
-  const cookies = req.headers.cookie;
-  console.log("cookies: ", cookies);
-  if (!cookies) {
-    return sendError(
-      res,
-      "No cookie found.  You are never logged in to begin with",
-      401
-    );
-  }
-  const token = cookies.split("=")[1];
-  console.info("token:", token);
-  // const token2 = cookies.split(";")[0];
-  // console.info("token2:", token2);
-
-  let session;
-
-  if (origin.includes("localhost")) {
-    session = { ...localSessionLogout, domain: origin };
-  } else {
-    session = { ...liveSessionLogout, domain: origin };
-  }
-
-  console.log("session", session);
-
-  if (!token) {
-    return sendError(
-      res,
-      "No token found.  You are never logged in to begin with",
-      401
-    );
-  }
-  jwt.verify(String(token), process.env.JWT_USER_SECRET_KEY, (err, user) => {
-    if (err) {
-      console.log("err", err);
-      return sendError(res, `Invalid Token - ${err}`, 400);
-    }
-    if (user) {
-      // console.log("user", user);
-      // console.log("req.cookies", req.cookies);
-      // console.log("req.cookies[`${user.id}`]", req.cookies[`${user.id}`]);
-
-      // res.cookie(
-      //   String(user.id),
-      //   token,
-      //   origin.includes("localhost") ? localSessionLogout : liveSessionLogout
-      // );
-
-      res.clearCookie(`${user.id}`);
-      req.cookies[`${user.id}`] = "";
-      setTimeout(() => {
-        return sendSuccess(res, "Successfully logged out");
-      }, 200);
-
-      // console.log("req.cookies 2", req.cookies);
-      // console.log("req.cookies[`${user.id}`] 2", req.cookies[`${user.id}`]);
-    }
-  });
 };
 
 const logout = async (req, res) => {

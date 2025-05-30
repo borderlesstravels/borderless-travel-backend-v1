@@ -1,38 +1,45 @@
-const { sendError, sendSuccess, generateSlug } = require('../../utils/helpers');
-const { log } = require('console');
-const Content = require('../../models/content/Content');
-const ContentCategory = require('../../models/content/ContentCategory');
+const { sendError, sendSuccess, generateSlug } = require("../../utils/helpers");
+const { log } = require("console");
+const Content = require("../../models/content/Content");
+const ContentCategory = require("../../models/content/ContentCategory");
 
 const addPost = async (req, res) => {
   const adminId = req.id;
   if (
-    !req.files['cover_image'] ||
-    req.files['cover_image'] === null ||
-    req.files['cover_image'] == ''
+    !req.files["cover_image"] ||
+    req.files["cover_image"] === null ||
+    req.files["cover_image"] == ""
   ) {
-    return sendError(res, 'Please add a cover thumbnail image for the post');
+    return sendError(res, "Please add a cover thumbnail image for the post");
   }
-  const rawImagesArray = req.files['cover_image'];
+  const rawImagesArray = req.files["cover_image"];
   const namedImage = rawImagesArray.map((a) => a.filename);
   const stringnifiedImages = JSON.stringify(namedImage);
-  const formmatedImages = stringnifiedImages.replace(/[^a-zA-Z0-9_.,]/g, '');
-  const cover_image = formmatedImages.replace(/[,]/g, ', ');
+  const formmatedImages = stringnifiedImages.replace(/[^a-zA-Z0-9_.,]/g, "");
+  const cover_image = formmatedImages.replace(/[,]/g, ", ");
   const { title, content, author, category, post_status } = req.body;
-  console.log('cover_image: ', cover_image);
+  console.log("cover_image: ", cover_image);
   const slug = generateSlug(title);
 
   if (
-    post_status === 'scheduled' &&
-    (!req.body.published_date || req.body.published_date === null || req.body.published_date == '')
+    post_status === "scheduled" &&
+    (!req.body.published_date ||
+      req.body.published_date === null ||
+      req.body.published_date == "")
   ) {
-    return sendError(res, 'Kindly specify the scheduled date for post auto-publishing');
+    return sendError(
+      res,
+      "Kindly specify the scheduled date for post auto-publishing"
+    );
   }
 
-  if (post_status === 'scheduled') {
+  if (post_status === "scheduled") {
     published_date = req.body.published_date;
   } else {
-    published_date = Date.now;
+    published_date = Date.now();
   }
+
+  console.log("published_date", published_date);
 
   const newPost = new Content({
     title,
@@ -47,28 +54,32 @@ const addPost = async (req, res) => {
   });
   try {
     await newPost.save();
-    return sendSuccess(res, 'The post has been successfully published', newPost);
+    return sendSuccess(
+      res,
+      "The post has been successfully published",
+      newPost
+    );
   } catch (err) {
-    console.log('content post error', err);
-    return sendError(res, 'Unable to save the post to the databse', 500);
+    console.log("content post error", err);
+    return sendError(res, "Unable to save the post to the databse", 500);
   }
 };
 
 const editPost = async (req, res) => {
   const post = await Content.findById(req.params.id);
   if (
-    req.files['cover_image'] &&
-    (req.files['cover_image'] !== '' || req.files['cover_image'] !== null)
+    req.files["cover_image"] &&
+    (req.files["cover_image"] !== "" || req.files["cover_image"] !== null)
   ) {
-    const rawImagesArray = req.files['cover_image'];
+    const rawImagesArray = req.files["cover_image"];
     const namedImage = rawImagesArray.map((a) => a.filename);
     const stringnifiedImages = JSON.stringify(namedImage);
-    const formmatedImages = stringnifiedImages.replace(/[^a-zA-Z0-9_.,]/g, '');
-    const cover_image = formmatedImages.replace(/[,]/g, ', ');
+    const formmatedImages = stringnifiedImages.replace(/[^a-zA-Z0-9_.,]/g, "");
+    const cover_image = formmatedImages.replace(/[,]/g, ", ");
     req.body.cover_image = cover_image;
-  } else if (req.files['cover_image'] && req.files['cover_image'] === '') {
+  } else if (req.files["cover_image"] && req.files["cover_image"] === "") {
     req.body.cover_image = post.cover_image;
-  } else if (req.files['cover_image'] && req.files['cover_image'] === null) {
+  } else if (req.files["cover_image"] && req.files["cover_image"] === null) {
     req.body.cover_image = post.cover_image;
   } else {
     req.body.cover_image = post.cover_image;
@@ -80,20 +91,20 @@ const editPost = async (req, res) => {
       { $set: req.body },
       { new: true }
     );
-    return sendSuccess(res, 'Successfully updated the post', savedPost);
+    return sendSuccess(res, "Successfully updated the post", savedPost);
   } catch (err) {
     console.log(err);
-    return sendError(res, 'Unable to update the post');
+    return sendError(res, "Unable to update the post");
   }
 };
 
 const deletePost = async (req, res) => {
   try {
     await Content.findByIdAndDelete(req.params.id);
-    return sendSuccess(res, 'Successfully deleted the post');
+    return sendSuccess(res, "Successfully deleted the post");
   } catch (err) {
     console.log(err);
-    return sendError(res, 'Unable to delete the post');
+    return sendError(res, "Unable to delete the post");
   }
 };
 
@@ -103,9 +114,9 @@ const fetchAllPosts = async (req, res) => {
     const posts = await Content.find({
       ...others,
     }).limit(req.query.limit);
-    return sendSuccess(res, 'Succesfully fetched posts', posts);
+    return sendSuccess(res, "Succesfully fetched posts", posts);
   } catch (error) {
-    return sendError(res, 'Unable to fetch the posts data');
+    return sendError(res, "Unable to fetch the posts data");
   }
 };
 
@@ -114,11 +125,11 @@ const fetchSinglePost = async (req, res) => {
   try {
     const post = await Content.findById(id);
     if (!post) {
-      return sendError(res, 'post does not exist');
+      return sendError(res, "post does not exist");
     }
-    return sendSuccess(res, 'Succesfully fetched post', post);
+    return sendSuccess(res, "Succesfully fetched post", post);
   } catch (error) {
-    return sendError(res, 'Unable to fetch the post profile data');
+    return sendError(res, "Unable to fetch the post profile data");
   }
 };
 
@@ -130,9 +141,9 @@ const addPostCategory = async (req, res) => {
   const slugExists = await ContentCategory.findOne({ slug: slug });
 
   if (categoryExists) {
-    return sendError(res, 'Post category already exists');
+    return sendError(res, "Post category already exists");
   } else if (slugExists) {
-    return sendError(res, 'Post category slug already exists');
+    return sendError(res, "Post category slug already exists");
   }
 
   const postCategory = new ContentCategory({
@@ -142,9 +153,17 @@ const addPostCategory = async (req, res) => {
   });
   try {
     await postCategory.save();
-    return sendSuccess(res, 'New post category has been successfully added', postCategory);
+    return sendSuccess(
+      res,
+      "New post category has been successfully added",
+      postCategory
+    );
   } catch (err) {
-    return sendError(res, 'Unable to save the post category to the databse', 500);
+    return sendError(
+      res,
+      "Unable to save the post category to the databse",
+      500
+    );
   }
 };
 
@@ -155,20 +174,24 @@ const editPostCategory = async (req, res) => {
       { $set: req.body },
       { new: true }
     );
-    return sendSuccess(res, 'Successfully updated the post category', savedPostCategory);
+    return sendSuccess(
+      res,
+      "Successfully updated the post category",
+      savedPostCategory
+    );
   } catch (err) {
     console.log(err);
-    return sendError(res, 'Unable to update the post category');
+    return sendError(res, "Unable to update the post category");
   }
 };
 
 const deletePostCategory = async (req, res) => {
   try {
     await ContentCategory.findByIdAndDelete(req.params.id);
-    return sendSuccess(res, 'Successfully deleted the post category');
+    return sendSuccess(res, "Successfully deleted the post category");
   } catch (err) {
     console.log(err);
-    return sendError(res, 'Unable to delete the post category');
+    return sendError(res, "Unable to delete the post category");
   }
 };
 
@@ -178,9 +201,13 @@ const fetchAllPostCategories = async (req, res) => {
     const postCategories = await ContentCategory.find({
       ...others,
     }).limit(req.query.limit);
-    return sendSuccess(res, 'Succesfully fetched post categories', postCategories);
+    return sendSuccess(
+      res,
+      "Succesfully fetched post categories",
+      postCategories
+    );
   } catch (error) {
-    return sendError(res, 'Unable to fetch the post categories data');
+    return sendError(res, "Unable to fetch the post categories data");
   }
 };
 
@@ -189,12 +216,12 @@ const fetchSinglePostCategory = async (req, res) => {
   try {
     const postCategory = await ContentCategory.findById(id);
     if (!postCategory) {
-      return sendError(res, 'post category does not exist');
+      return sendError(res, "post category does not exist");
     }
-    return sendSuccess(res, 'Succesfully fetched post category', postCategory);
+    return sendSuccess(res, "Succesfully fetched post category", postCategory);
   } catch (error) {
     console.log(error);
-    return sendError(res, 'Unable to fetch the post category');
+    return sendError(res, "Unable to fetch the post category");
   }
 };
 
