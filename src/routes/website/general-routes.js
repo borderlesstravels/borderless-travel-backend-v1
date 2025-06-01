@@ -19,6 +19,11 @@ const {
   payForShortlet,
   saveWaitlist,
   fetchWaitlists,
+  fetchAllHelpArticles,
+  fetchHelpArticlesByCategory,
+  fetchSinglePostBySlug,
+  fetchAllBlogs,
+  fetchPostCategories,
 } = require("../../controllers/website/general-controller");
 const { careerAppDocUpload } = require("../../utils/helpers/files");
 const {
@@ -57,5 +62,11 @@ router.get("/fetch-waitlists", fetchWaitlists);
 router.get("/jobs", fetchJobPostings);
 router.get("/single-job/:id", fetchSingleJobPosting);
 router.post("/apply-for-job/:id", careerAppDocUpload, applyForJob);
+
+router.get("/post-categories", fetchPostCategories);
+router.get("/all-help-articles", fetchAllHelpArticles);
+router.get("/all-blogs", fetchAllBlogs);
+router.get("/help-articles-category/:category", fetchHelpArticlesByCategory);
+router.get("/single-post/:slug", fetchSinglePostBySlug);
 
 module.exports = router;

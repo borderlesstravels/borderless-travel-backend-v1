@@ -1,7 +1,7 @@
 const { sendError, sendSuccess, generateSlug } = require("../../utils/helpers");
-const { log } = require("console");
 const Content = require("../../models/content/Content");
 const ContentCategory = require("../../models/content/ContentCategory");
+const fs = require("fs");
 
 const addPost = async (req, res) => {
   const adminId = req.id;
@@ -77,6 +77,23 @@ const editPost = async (req, res) => {
     const formmatedImages = stringnifiedImages.replace(/[^a-zA-Z0-9_.,]/g, "");
     const cover_image = formmatedImages.replace(/[,]/g, ", ");
     req.body.cover_image = cover_image;
+
+    if (post) {
+      console.log("post", post);
+      let post_cover = post.cover_image;
+      const file_path = path.join("public/files/imgs/posts", post_cover);
+      console.log(file_path);
+
+      fs.unlink(file_path, (err) => {
+        if (err) {
+          console.log(
+            "there was a problem deleting the post cover from folder."
+          );
+        } else {
+          console.log("post image deteled from folder");
+        }
+      });
+    }
   } else if (req.files["cover_image"] && req.files["cover_image"] === "") {
     req.body.cover_image = post.cover_image;
   } else if (req.files["cover_image"] && req.files["cover_image"] === null) {
@@ -100,6 +117,22 @@ const editPost = async (req, res) => {
 
 const deletePost = async (req, res) => {
   try {
+    const post = await Content.findById(req.params.id);
+    if (post) {
+      let post_cover = post.cover_image;
+      const file_path = path.join("public/files/imgs/posts", post_cover);
+      console.log(file_path);
+
+      fs.unlink(file_path, (err) => {
+        if (err) {
+          console.log(
+            "there was a problem deleting the post cover from folder."
+          );
+        } else {
+          console.log("post image deteled from folder");
+        }
+      });
+    }
     await Content.findByIdAndDelete(req.params.id);
     return sendSuccess(res, "Successfully deleted the post");
   } catch (err) {
@@ -138,7 +171,9 @@ const addPostCategory = async (req, res) => {
   const { category, slug } = req.body;
 
   const categoryExists = await ContentCategory.findOne({ category: category });
-  const slugExists = await ContentCategory.findOne({ slug: slug });
+  const slugExists = await ContentCategory.findOne({
+    slug: slug.toLowerCase(),
+  });
 
   if (categoryExists) {
     return sendError(res, "Post category already exists");
@@ -148,7 +183,7 @@ const addPostCategory = async (req, res) => {
 
   const postCategory = new ContentCategory({
     category,
-    slug,
+    slug: slug.toLowerCase(),
     published_by: adminId,
   });
   try {

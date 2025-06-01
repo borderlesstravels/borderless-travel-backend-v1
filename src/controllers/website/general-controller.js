@@ -1,5 +1,7 @@
 const { fetcher_ip_details } = require("../../api/fetcher");
 const Markup = require("../../models/app-core/Markup");
+const Content = require("../../models/content/Content");
+const ContentCategory = require("../../models/content/ContentCategory");
 const BookingRequest = require("../../models/general/BookingRequest");
 const FlightBooking = require("../../models/general/FlightBooking");
 const Job = require("../../models/general/Job");
@@ -323,6 +325,72 @@ const applyForJob = async (req, res, next) => {
   }
 };
 
+// Content
+
+const fetchPostCategories = async (req, res) => {
+  try {
+    const postCategories = await ContentCategory.find().limit(req.query.limit);
+    return sendSuccess(
+      res,
+      "Succesfully fetched post categories",
+      postCategories
+    );
+  } catch (error) {
+    return sendError(res, "Unable to fetch the post categories data");
+  }
+};
+
+const fetchAllHelpArticles = async (req, res, next) => {
+  try {
+    const posts = await Content.find().limit(req.query.limit);
+    const allHelpPosts = posts.filter(
+      (item) => item.category !== "blog".toLowerCase()
+    );
+    return sendSuccess(res, "Succesfully fetched help posts", allHelpPosts);
+  } catch (error) {
+    console.log("fetch help articles error", error);
+    return sendError(res, "Unable to fetch the posts data");
+  }
+};
+
+const fetchAllBlogs = async (req, res, next) => {
+  try {
+    const blogs = await Content.find({ category: "blog".toLowerCase() }).limit(
+      req.query.limit
+    );
+    return sendSuccess(res, "Succesfully fetched all blogs", blogs);
+  } catch (error) {
+    console.log("fetch help articles error", error);
+    return sendError(res, "Unable to fetch the posts data");
+  }
+};
+
+const fetchHelpArticlesByCategory = async (req, res, next) => {
+  try {
+    const posts = await Content.find({ category: req.params.category }).limit(
+      req.query.limit
+    );
+    return sendSuccess(res, "Succesfully fetched posts", posts);
+  } catch (error) {
+    return sendError(res, "Unable to fetch the posts data");
+  }
+};
+
+const fetchSinglePostBySlug = async (req, res) => {
+  try {
+    const post = await Content.findOne({ slug: req.params.slug });
+    if (!post) {
+      return sendError(res, "post does not exist");
+    }
+    const postCount = Number(post.views_count);
+    post.views_count = Number(postCount + 1);
+    await post.save();
+    return sendSuccess(res, "Succesfully fetched post", post);
+  } catch (error) {
+    return sendError(res, "Unable to fetch the post profile data");
+  }
+};
+
 module.exports = {
   services,
   payForFlight,
@@ -334,4 +402,10 @@ module.exports = {
   fetchJobPostings,
   fetchSingleJobPosting,
   applyForJob,
+
+  fetchPostCategories,
+  fetchAllHelpArticles,
+  fetchAllBlogs,
+  fetchHelpArticlesByCategory,
+  fetchSinglePostBySlug,
 };
