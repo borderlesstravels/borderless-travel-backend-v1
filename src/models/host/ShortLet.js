@@ -41,7 +41,7 @@ const shortLetSchema = new Schema({
   },
 
   images: {
-    type: String,
+    type: Array,
     required: true,
   },
   single: {

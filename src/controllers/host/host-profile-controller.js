@@ -16,6 +16,8 @@ const {
   getSessionToken,
   logoutSession,
   verifyLoginSession,
+  uploadSingleImage,
+  uploadMultipleImages,
 } = require("../../middlewares/general");
 const SessionStore = require("../../models/general/SessionStore");
 
@@ -96,11 +98,12 @@ const getHostReviews = async (req, res) => {
 // **
 // Property Management
 const addProperty = async (req, res) => {
-  const rawImagesArray = req.files && req.files["images"];
-  const namedImage = rawImagesArray?.map((a) => a.filename);
-  const stringnifiedImages = JSON.stringify(namedImage);
-  const formmatedImages = stringnifiedImages?.replace(/[^a-zA-Z0-9_.,]/g, "");
-  const images = formmatedImages?.replace(/[,]/g, ", ");
+  const images = await uploadMultipleImages(
+    req,
+    res,
+    "Apartment images are missing!"
+  );
+
   req.body.images = images;
   req.body.owner = req.id;
   console.log("req body", req.body);
@@ -143,6 +146,7 @@ const addProperty = async (req, res) => {
     const property = new ShortLet(req.body);
     await property.save();
     await host.save();
+    console.log("property", property);
     return sendSuccess(
       res,
       `Successfully added a new listing - ${req.body.apartment_name}`,
@@ -155,18 +159,17 @@ const addProperty = async (req, res) => {
 };
 
 const editProperty = async (req, res) => {
-  let files;
-  files = req?.files;
-
-  if (files) {
-    const rawImagesArray = req.files && req.files["images"];
-    const namedImage = rawImagesArray?.map((a) => a.filename);
-    const stringnifiedImages = JSON.stringify(namedImage);
-    const formmatedImages = stringnifiedImages?.replace(/[^a-zA-Z0-9_.,]/g, "");
-    const images = formmatedImages?.replace(/[,]/g, ", ");
-    req.body.images = images;
-    console.log("images", images);
+  let new_images = [];
+  let current_images = req.body.current_images;
+  if (req.files.length) {
+    new_images = await uploadMultipleImages(
+      req,
+      res,
+      "Apartment images are missing!"
+    );
   }
+  let images = current_images.concat(new_images);
+  req.body.images = images;
   console.log("req body", req.body);
   let commission_amount = 0;
 
@@ -183,24 +186,24 @@ const editProperty = async (req, res) => {
     const markup = await Markup.findOne({ service_name: "stay" });
     if (markup) {
       const commission_percent = markup.commission;
-      commission_amount = (commission_percent / 100) * amount;
-    }
-    if (req.body.single_price != selectedProperty.single_price) {
+
       if (Number(req.body.single_price) > 0) {
-        req.body.single_price =
-          Number(req.body.single_price) + commission_amount;
+        const price = req.body.single_price;
+        const commission_amount =
+          (Number(commission_percent) / 100) * Number(price);
+        req.body.single_price = Number(price) + Number(commission_amount);
       }
-    }
-    if (req.body.suites_price != selectedProperty.suites_price) {
       if (Number(req.body.suites_price) > 0) {
-        req.body.suites_price =
-          Number(req.body.suites_price) + commission_amount;
+        const price = req.body.suites_price;
+        const commission_amount =
+          (Number(commission_percent) / 100) * Number(price);
+        req.body.suites_price = Number(price) + Number(commission_amount);
       }
-    }
-    if (req.body.executive_price != selectedProperty.executive_price) {
       if (Number(req.body.executive_price) > 0) {
-        req.body.executive_price =
-          Number(req.body.executive_price) + commission_amount;
+        const price = req.body.executive_price;
+        const commission_amount =
+          (Number(commission_percent) / 100) * Number(price);
+        req.body.executive_price = Number(price) + Number(commission_amount);
       }
     }
 
@@ -470,15 +473,11 @@ const updateHostPassword = async (req, res, next) => {
 
 const setHostProfileAvatar = async (req, res) => {
   const userId = req.id;
-  const rawImagesArray = req.files["avatar"];
-  if (!rawImagesArray) {
-    return badRequestError(res, "Please add the image avatar to be uploaded");
-  }
-  const namedImage = rawImagesArray.map((a) => a.filename);
-  const stringnifiedImages = JSON.stringify(namedImage);
-  const formmatedImages = stringnifiedImages.replace(/[^a-zA-Z0-9_.,]/g, "");
-  const avatar = formmatedImages.replace(/[,]/g, ", ");
-  console.log("avatar: ", avatar);
+  const avatar = await uploadSingleImage(
+    req,
+    res,
+    "Please add the image avatar to be uploaded"
+  );
 
   try {
     // const host = await Host.findById()

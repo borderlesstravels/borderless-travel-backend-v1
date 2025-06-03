@@ -2,6 +2,8 @@ const { nanoid } = require("nanoid");
 const jwt = require("jsonwebtoken");
 const SessionStore = require("../models/general/SessionStore");
 const { sendError } = require("../utils/helpers");
+const cloudinary = require("../../cloudinary");
+const fs = require("fs");
 
 const addSessionToken = async (key, value) => {
   try {
@@ -83,6 +85,36 @@ const logoutSession = async (token, secrete) => {
   return result;
 };
 
+const uploadSingleImage = async (req, res, errorMessage) => {
+  if (!req.files.length) {
+    return sendError(res, errorMessage);
+  }
+  const uploader = async (path) => await cloudinary.uploads(path, "Images");
+  const file = req.files[0];
+  const { path } = file;
+  const image = await uploader(path);
+  fs.unlinkSync(path);
+  return image;
+};
+
+const uploadMultipleImages = async (req, res, errorMessage) => {
+  if (!req.files.length) {
+    return sendError(res, errorMessage);
+  }
+  const uploader = async (path) => await cloudinary.uploads(path, "Images");
+
+  const images = [];
+  const files = req.files;
+  for (const file of files) {
+    const { path } = file;
+    const newPath = await uploader(path);
+    console.log("newPath", newPath);
+    images.push(newPath);
+    fs.unlinkSync(path);
+  }
+  return images;
+};
+
 module.exports = {
   addSessionToken,
   getSessionToken,
@@ -91,4 +123,7 @@ module.exports = {
   createLoginSession,
   verifyLoginSession,
   logoutSession,
+
+  uploadSingleImage,
+  uploadMultipleImages,
 };

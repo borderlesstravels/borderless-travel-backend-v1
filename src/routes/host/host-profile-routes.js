@@ -1,4 +1,5 @@
 const express = require("express");
+const upload = require("../../../multer");
 
 const {
   passwordUpdatedEmail,
@@ -49,7 +50,7 @@ router.put("/update-profile", verifyHostLoginToken, updateHostProfile);
 router.put(
   "/update-profile-avatar",
   verifyHostLoginToken,
-  hostImageUpload,
+  upload.array("avatar"),
   setHostProfileAvatar
 );
 
@@ -69,7 +70,7 @@ router.post("/logout", logoutHost);
 router.post(
   "/add-listing",
   verifyHostLoginToken,
-  shortletImageUpload,
+  upload.array("images"),
   addProperty
 );
 router.get("/listings", verifyHostLoginToken, getHostProperties);
@@ -77,7 +78,7 @@ router.get("/listing/:id", fetchSingleShortlet);
 router.put(
   "/update-listing/:id",
   verifyHostLoginToken,
-  shortletImageUpload,
+  upload.array("images"),
   editProperty
 );
 router.put(

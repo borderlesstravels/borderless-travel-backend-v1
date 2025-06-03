@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
@@ -28,7 +28,7 @@ const hostSchema = new Schema({
   },
   status: {
     type: String,
-    default: 'Pending',
+    default: "Pending",
   },
   properties: {
     type: Number,
@@ -43,7 +43,7 @@ const hostSchema = new Schema({
     default: false,
   },
   avatar: {
-    type: String,
+    type: Object,
   },
   createdAt: {
     type: Date,
@@ -51,4 +51,4 @@ const hostSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('Host', hostSchema);
+module.exports = mongoose.model("Host", hostSchema);

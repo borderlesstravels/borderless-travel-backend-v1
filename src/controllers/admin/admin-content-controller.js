@@ -2,21 +2,17 @@ const { sendError, sendSuccess, generateSlug } = require("../../utils/helpers");
 const Content = require("../../models/content/Content");
 const ContentCategory = require("../../models/content/ContentCategory");
 const fs = require("fs");
+const { uploadSingleImage } = require("../../middlewares/general");
 
 const addPost = async (req, res) => {
   const adminId = req.id;
-  if (
-    !req.files["cover_image"] ||
-    req.files["cover_image"] === null ||
-    req.files["cover_image"] == ""
-  ) {
-    return sendError(res, "Please add a cover thumbnail image for the post");
-  }
-  const rawImagesArray = req.files["cover_image"];
-  const namedImage = rawImagesArray.map((a) => a.filename);
-  const stringnifiedImages = JSON.stringify(namedImage);
-  const formmatedImages = stringnifiedImages.replace(/[^a-zA-Z0-9_.,]/g, "");
-  const cover_image = formmatedImages.replace(/[,]/g, ", ");
+
+  const cover_image = await uploadSingleImage(
+    req,
+    res,
+    "Please add a cover thumbnail image for the post"
+  );
+
   const { title, content, author, category, post_status } = req.body;
   console.log("cover_image: ", cover_image);
   const slug = generateSlug(title);
@@ -44,6 +40,7 @@ const addPost = async (req, res) => {
   const newPost = new Content({
     title,
     slug,
+    description,
     content,
     author,
     category,
@@ -67,39 +64,17 @@ const addPost = async (req, res) => {
 
 const editPost = async (req, res) => {
   const post = await Content.findById(req.params.id);
-  if (
-    req.files["cover_image"] &&
-    (req.files["cover_image"] !== "" || req.files["cover_image"] !== null)
-  ) {
-    const rawImagesArray = req.files["cover_image"];
-    const namedImage = rawImagesArray.map((a) => a.filename);
-    const stringnifiedImages = JSON.stringify(namedImage);
-    const formmatedImages = stringnifiedImages.replace(/[^a-zA-Z0-9_.,]/g, "");
-    const cover_image = formmatedImages.replace(/[,]/g, ", ");
+  if (req.files.length) {
+    const cover_image = await uploadSingleImage(
+      req,
+      res,
+      "Please add a cover thumbnail image for the post"
+    );
     req.body.cover_image = cover_image;
-
-    if (post) {
-      console.log("post", post);
-      let post_cover = post.cover_image;
-      const file_path = path.join("public/files/imgs/posts", post_cover);
-      console.log(file_path);
-
-      fs.unlink(file_path, (err) => {
-        if (err) {
-          console.log(
-            "there was a problem deleting the post cover from folder."
-          );
-        } else {
-          console.log("post image deteled from folder");
-        }
-      });
-    }
-  } else if (req.files["cover_image"] && req.files["cover_image"] === "") {
-    req.body.cover_image = post.cover_image;
-  } else if (req.files["cover_image"] && req.files["cover_image"] === null) {
-    req.body.cover_image = post.cover_image;
   } else {
-    req.body.cover_image = post.cover_image;
+    if (post) {
+      req.body.cover_image = post.cover_image;
+    }
   }
 
   try {

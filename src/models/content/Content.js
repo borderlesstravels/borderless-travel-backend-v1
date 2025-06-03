@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
@@ -19,12 +19,16 @@ const contentSchema = new Schema({
     type: String,
     required: true,
   },
+  description: {
+    type: String,
+    required: true,
+  },
   content: {
     type: String,
     required: true,
   },
   cover_image: {
-    type: String,
+    type: Object,
     required: true,
   },
   slug: {
@@ -49,4 +53,4 @@ const contentSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('Content', contentSchema);
+module.exports = mongoose.model("Content", contentSchema);
