@@ -212,7 +212,6 @@ const saveWaitlist = async (req, res, next) => {
       req.body.country = ip_data.data.country_name;
       req.body.city = ip_data.data.city;
     }
-    console.log("ip_data", ip_data.data);
     existingContact = await Waitlist.findOne({ email: req.body.email });
     if (existingContact) {
       return sendError(
@@ -326,7 +325,6 @@ const applyForJob = async (req, res, next) => {
 };
 
 // Content
-
 const fetchPostCategories = async (req, res) => {
   try {
     const postCategories = await ContentCategory.find().limit(req.query.limit);
@@ -339,7 +337,6 @@ const fetchPostCategories = async (req, res) => {
     return sendError(res, "Unable to fetch the post categories data");
   }
 };
-
 const fetchAllHelpArticles = async (req, res, next) => {
   try {
     const posts = await Content.find().limit(req.query.limit);
@@ -352,7 +349,6 @@ const fetchAllHelpArticles = async (req, res, next) => {
     return sendError(res, "Unable to fetch the posts data");
   }
 };
-
 const fetchAllBlogs = async (req, res, next) => {
   try {
     const blogs = await Content.find({ category: "blog".toLowerCase() }).limit(
@@ -364,7 +360,6 @@ const fetchAllBlogs = async (req, res, next) => {
     return sendError(res, "Unable to fetch the posts data");
   }
 };
-
 const fetchHelpArticlesByCategory = async (req, res, next) => {
   try {
     const posts = await Content.find({ category: req.params.category }).limit(
@@ -375,7 +370,6 @@ const fetchHelpArticlesByCategory = async (req, res, next) => {
     return sendError(res, "Unable to fetch the posts data");
   }
 };
-
 const fetchSinglePostBySlug = async (req, res) => {
   try {
     const post = await Content.findOne({ slug: req.params.slug });

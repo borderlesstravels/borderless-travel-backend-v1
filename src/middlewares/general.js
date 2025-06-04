@@ -102,13 +102,11 @@ const uploadMultipleImages = async (req, res, errorMessage) => {
     return sendError(res, errorMessage);
   }
   const uploader = async (path) => await cloudinary.uploads(path, "Images");
-
   const images = [];
   const files = req.files;
   for (const file of files) {
     const { path } = file;
     const newPath = await uploader(path);
-    console.log("newPath", newPath);
     images.push(newPath);
     fs.unlinkSync(path);
   }
