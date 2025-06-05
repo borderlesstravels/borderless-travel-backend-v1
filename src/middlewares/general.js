@@ -53,7 +53,8 @@ const createLoginSession = async (id, secrete) => {
     expiresIn: "1d",
   });
   await addSessionToken(sessionId, token);
-  return { sessionId, token, id };
+  const sid = id.id;
+  return { sessionId, token, sid };
 };
 
 const verifyLoginSession = async (token, secrete, req) => {
