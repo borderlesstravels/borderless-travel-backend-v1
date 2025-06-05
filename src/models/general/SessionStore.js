@@ -3,6 +3,10 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const sessionStoreSchema = new Schema({
+  owner: {
+    type: String,
+    required: true,
+  },
   key: {
     type: String,
     required: true,

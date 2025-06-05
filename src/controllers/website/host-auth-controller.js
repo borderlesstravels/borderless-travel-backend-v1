@@ -264,6 +264,7 @@ const verifyHostLoginToken = async (req, res, next) => {
         if (!checkSession) {
           return sendError(res, "Invalid Token");
         } else {
+          req.id = sessionToken.owner;
           next();
         }
       }

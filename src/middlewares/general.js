@@ -5,9 +5,10 @@ const { sendError } = require("../utils/helpers");
 const cloudinary = require("../../cloudinary");
 const fs = require("fs");
 
-const addSessionToken = async (key, value) => {
+const addSessionToken = async (key, value, id) => {
   try {
     const newSession = new SessionStore({
+      owner: id,
       key,
       value,
     });
@@ -52,7 +53,7 @@ const createLoginSession = async (id, secrete) => {
     expiresIn: "1d",
   });
   await addSessionToken(sessionId, token);
-  return { sessionId, token };
+  return { sessionId, token, id };
 };
 
 const verifyLoginSession = async (token, secrete, req) => {
