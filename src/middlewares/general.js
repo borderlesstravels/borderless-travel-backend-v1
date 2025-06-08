@@ -52,8 +52,8 @@ const createLoginSession = async (id, secrete) => {
   const token = jwt.sign(id, secrete, {
     expiresIn: "1d",
   });
-  await addSessionToken(sessionId, token);
   const sid = id.id;
+  await addSessionToken(sessionId, token, sid);
   return { sessionId, token, sid };
 };
 
