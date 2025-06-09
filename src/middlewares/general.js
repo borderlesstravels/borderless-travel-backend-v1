@@ -87,32 +87,37 @@ const logoutSession = async (token, secrete) => {
   return result;
 };
 
-const uploadSingleImage = async (req, res, errorMessage) => {
-  if (!req.files.length) {
-    return sendError(res, errorMessage);
+const uploadSingleImage = async (req) => {
+  if (req.files.length) {
+    const uploader = async (path) => await cloudinary.uploads(path, "Images");
+    const file = req.files[0];
+    const { path } = file;
+    const image = await uploader(path);
+    fs.unlinkSync(path);
+    return image;
+  } else {
+    return null;
   }
-  const uploader = async (path) => await cloudinary.uploads(path, "Images");
-  const file = req.files[0];
-  const { path } = file;
-  const image = await uploader(path);
-  fs.unlinkSync(path);
-  return image;
 };
 
-const uploadMultipleImages = async (req, res, errorMessage) => {
-  if (!req.files.length) {
-    return sendError(res, errorMessage);
+const uploadMultipleImages = async (req) => {
+  // if (!req.files.length) {
+  //   return sendError(res, errorMessage);
+  // }
+  if (req.files.length) {
+    const uploader = async (path) => await cloudinary.uploads(path, "Images");
+    const images = [];
+    const files = req.files;
+    for (const file of files) {
+      const { path } = file;
+      const newPath = await uploader(path);
+      images.push(newPath);
+      fs.unlinkSync(path);
+    }
+    return images;
+  } else {
+    return null;
   }
-  const uploader = async (path) => await cloudinary.uploads(path, "Images");
-  const images = [];
-  const files = req.files;
-  for (const file of files) {
-    const { path } = file;
-    const newPath = await uploader(path);
-    images.push(newPath);
-    fs.unlinkSync(path);
-  }
-  return images;
 };
 
 module.exports = {

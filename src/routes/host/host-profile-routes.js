@@ -15,28 +15,15 @@ const {
   logoutHost,
   isHostLogin,
   setHostProfileAvatar,
-  addProperty,
   getHostReviews,
-  getHostProperties,
   getHostNotifications,
-  editProperty,
-  approveShortletBooking,
-  declineShortletBooking,
-  fetchSingleShortlet,
-  fetchShortletBookings,
-  fetchSingleShortletBooking,
   openNotification,
 } = require("../../controllers/host/host-profile-controller");
 const {
   validateHostUpdateProfileParams,
   validate,
   validateUpdatePasswordParams,
-  validateAddPropertyParams,
 } = require("../../middlewares/validator");
-const {
-  hostImageUpload,
-  shortletImageUpload,
-} = require("../../utils/helpers/files");
 
 const router = express.Router();
 
@@ -65,34 +52,5 @@ router.put(
 
 router.get("/check-session", isHostLogin);
 router.post("/logout", logoutHost);
-
-// Shortlet
-router.post(
-  "/add-listing",
-  verifyHostLoginToken,
-  upload.array("images"),
-  addProperty
-);
-router.get("/listings", verifyHostLoginToken, getHostProperties);
-router.get("/listing/:id", fetchSingleShortlet);
-router.put(
-  "/update-listing/:id",
-  verifyHostLoginToken,
-  upload.array("images"),
-  editProperty
-);
-router.put(
-  "/confirm-booking/:id",
-  verifyHostLoginToken,
-  approveShortletBooking
-);
-router.put(
-  "/decline-booking/:id",
-  verifyHostLoginToken,
-  declineShortletBooking
-);
-
-router.get("/shortlet-bookings", verifyHostLoginToken, fetchShortletBookings);
-router.get("/single-shortlet-booking/:id", fetchSingleShortletBooking);
 
 module.exports = router;

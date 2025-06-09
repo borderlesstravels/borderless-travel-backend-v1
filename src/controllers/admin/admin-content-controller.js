@@ -7,11 +7,10 @@ const { uploadSingleImage } = require("../../middlewares/general");
 const addPost = async (req, res) => {
   const adminId = req.id;
 
-  const cover_image = await uploadSingleImage(
-    req,
-    res,
-    "Please add a cover thumbnail image for the post"
-  );
+  const cover_image = await uploadSingleImage(req, res);
+  if (!cover_image) {
+    return sendError(res, "Please add a cover thumbnail image for the post");
+  }
 
   const { title, content, author, category, post_status } = req.body;
   console.log("cover_image: ", cover_image);

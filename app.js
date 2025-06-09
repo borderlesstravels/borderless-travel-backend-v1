@@ -6,7 +6,9 @@ const userAuthRouter = require("./src/routes/website/user-auth-routes");
 const hostAuthRouter = require("./src/routes/website/host-auth-routes");
 
 const userProfileRouter = require("./src/routes/user/user-profile-routes");
+
 const hostProfileRouter = require("./src/routes/host/host-profile-routes");
+const hostListingRouter = require("./src/routes/host/host-listing-routes");
 
 const adminAuthRouter = require("./src/routes/admin/admin-auth-routes");
 const adminManagementRouter = require("./src/routes/admin/admin-admin-routes");
@@ -52,8 +54,11 @@ app.use(express.json());
 app.use(express.static("public"));
 app.use("/api/v1/user-auth", userAuthRouter);
 app.use("/api/v1/host-auth", hostAuthRouter);
+
 app.use("/api/v1/user-profile", userProfileRouter);
-app.use("/api/v1/host-profile", hostProfileRouter);
+
+app.use("/api/v1/host-app/profile", hostProfileRouter);
+app.use("/api/v1/host-app/listing-management", hostListingRouter);
 
 app.use("/api/v1/admin-app/admin-auth", adminAuthRouter);
 app.use("/api/v1/admin-app/admin-management", adminManagementRouter);
