@@ -137,7 +137,7 @@ const forgotPasswordHost = async (req, res, next) => {
   if (!email)
     return sendError(res, "Please provide your Host account contact email");
 
-  const host = await Host.findOne({ email });
+  const host = await Host.findOne({ email: email.toLowerCase() });
   if (!host)
     return sendError(
       res,

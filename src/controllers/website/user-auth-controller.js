@@ -153,7 +153,7 @@ const forgotPassword = async (req, res, next) => {
   const { email } = req.body;
   if (!email) return sendError(res, "Please provide account email");
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email: email.toLowerCase() });
   if (!user) return sendError(res, "Sorry, user not found. Invalid request");
 
   if (!user.email_verified) {
