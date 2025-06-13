@@ -1,19 +1,12 @@
-const jwt = require("jsonwebtoken");
 const Host = require("../../models/host/Host");
-const {
-  sendError,
-  sendSuccess,
-  saveNotification,
-} = require("../../utils/helpers");
+const { sendError, sendSuccess } = require("../../utils/helpers");
 const bcrypt = require("bcryptjs");
 const Review = require("../../models/general/Review");
 const Notification = require("../../models/general/Notification");
 const {
   getSessionToken,
-  logoutSession,
   verifyLoginSession,
   uploadSingleImage,
-  uploadMultipleImages,
 } = require("../../middlewares/general");
 const SessionStore = require("../../models/general/SessionStore");
 
