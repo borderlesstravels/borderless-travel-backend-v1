@@ -1,7 +1,7 @@
-const { isValidObjectId } = require('mongoose');
-const { sendError } = require('../utils/helpers');
-const Host = require('../models/host/Host');
-const ResetHostPasswordToken = require('../models/host/ResetHostPasswordToken');
+const { isValidObjectId } = require("mongoose");
+const { sendError } = require("../utils/helpers");
+const Host = require("../models/host/Host");
+const ResetHostPasswordToken = require("../models/host/ResetHostPasswordToken");
 
 const validateNewHost = async (req, res, next) => {
   const { first_name, last_name, email, password } = req.body;
@@ -23,7 +23,7 @@ const validateNewHost = async (req, res, next) => {
   req.body = {
     first_name,
     last_name,
-    email,
+    email: refinedEmail,
     password,
   };
   next();
@@ -32,21 +32,21 @@ const validateNewHost = async (req, res, next) => {
 const isHostPasswordResetTokenValid = async (req, res, next) => {
   const { token, id } = req.query;
 
-  if (!token || !id) return sendError(res, 'Invalid request');
+  if (!token || !id) return sendError(res, "Invalid request");
 
-  if (!isValidObjectId(id)) return sendError(res, 'Invalid host id');
+  if (!isValidObjectId(id)) return sendError(res, "Invalid host id");
 
   const host = await Host.findById(id);
 
-  if (!host) return sendError(res, 'Host account not found');
+  if (!host) return sendError(res, "Host account not found");
 
   const resToken = await ResetHostPasswordToken.findOne({ owner: host._id });
-  if (!resToken) return sendError(res, 'Reset token not found');
+  if (!resToken) return sendError(res, "Reset token not found");
 
   const resetToken = resToken.token;
 
   if (token !== resetToken) {
-    return sendError(res, 'Password reset token is invalid');
+    return sendError(res, "Password reset token is invalid");
   }
 
   req.body.host = host;
@@ -59,28 +59,30 @@ const validateHostLoginType = async (req, res, next) => {
   let host;
   let hostIdentity;
 
-  if (loginId.includes('@')) {
+  if (loginId.includes("@")) {
     hostIdentity = loginId.toLowerCase();
     try {
-      host = await Host.findOne({email: hostIdentity
+      host = await Host.findOne({
+        email: hostIdentity,
         // $or: [{ email: hostIdentity }, { contact_email: hostIdentity }],
       });
     } catch (err) {
       return sendError(res, err.message, 500);
     }
     if (!host) {
-      return sendError(res, 'Email not registered. Signup instead.');
+      return sendError(res, "Email not registered. Signup instead.");
     }
-  } else if (loginId.charAt(0) === '+') {
+  } else if (loginId.charAt(0) === "+") {
     try {
-      host = await Host.findOne({phone: loginId
+      host = await Host.findOne({
+        phone: loginId,
         // $or: [{ hotel_phone: loginId }, { contact_phone: loginId }],
       });
     } catch (err) {
       return sendError(res, err.message, 500);
     }
     if (!host) {
-      return sendError(res, 'Phone number not registered. Signup instead.');
+      return sendError(res, "Phone number not registered. Signup instead.");
     }
   }
 
