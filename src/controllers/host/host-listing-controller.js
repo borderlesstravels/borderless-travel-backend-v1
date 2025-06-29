@@ -77,17 +77,20 @@ const hostAddProperty = async (req, res) => {
 };
 
 const hostEditProperty = async (req, res) => {
-  let new_images = [];
+  // let new_images = [];
   let current_images = req.body.current_images;
   if (req.files.length) {
-    new_images = await uploadMultipleImages(
+    let new_images = await uploadMultipleImages(
       req,
       res,
       "Apartment images are missing!"
     );
+    console.log("new_images", new_images);
     if (new_images) {
       let images = current_images.concat(new_images);
       req.body.images = images;
+    } else {
+      req.body.images = req.body.images;
     }
   }
   console.log("req body", req.body);
@@ -183,11 +186,30 @@ const hostFetchSingleProperty = async (req, res) => {
 
 const hostDeleteProperty = async (req, res) => {
   try {
+    const property = await ShortLet.findOne({
+      _id: req.params.id,
+      owner: req.id,
+    });
+    if (!property) {
+      return sendError(res, "Listing is no longer available");
+    }
+    const shortletBooking = await ShortletBooking.find({
+      apartment_id: property._id,
+      status: "pending",
+      payment_status: "paid",
+    });
+    console.log("shortletBooking", shortletBooking);
+    if (shortletBooking.length > 0) {
+      return sendError(
+        res,
+        "You cannot delete this listing at this time as it has a pending booking that has been paid for. Please contact the support team for help"
+      );
+    }
     await ShortLet.findByIdAndDelete(req.params.id);
-    return sendSuccess(res, "Successfully deleted the markup data");
+    return sendSuccess(res, "Successfully deleted the listing data");
   } catch (error) {
     console.log(error);
-    return sendError(res, "Unable to delete the markup data");
+    return sendError(res, "Unable to delete the listing data");
   }
 };
 

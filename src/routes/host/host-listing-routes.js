@@ -14,6 +14,7 @@ const {
   hostDeclineShortletBooking,
   hostFetchShortletBookings,
   hostFetchSingleShortletBooking,
+  hostDeleteProperty,
 } = require("../../controllers/host/host-listing-controller");
 
 const router = express.Router();
@@ -27,6 +28,7 @@ router.post(
 );
 router.get("/listings", verifyHostLoginToken, hostGetHostProperties);
 router.get("/listing/:id", hostFetchSingleProperty);
+router.delete("/delete-listing/:id", verifyHostLoginToken, hostDeleteProperty);
 router.put(
   "/update-listing/:id",
   verifyHostLoginToken,
