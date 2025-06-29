@@ -385,6 +385,18 @@ const fetchSinglePostBySlug = async (req, res) => {
   }
 };
 
+// Homepage
+const fetchLatestTravelInfo = async (req, res, next) => {
+  try {
+    const posts = await Content.find({ category: "Flight" }).limit(
+      req.query.limit
+    );
+    return sendSuccess(res, "Succesfully fetched posts", posts);
+  } catch (error) {
+    return sendError(res, "Unable to fetch the posts data");
+  }
+};
+
 module.exports = {
   services,
   payForFlight,
@@ -402,4 +414,5 @@ module.exports = {
   fetchAllBlogs,
   fetchHelpArticlesByCategory,
   fetchSinglePostBySlug,
+  fetchLatestTravelInfo,
 };

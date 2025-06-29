@@ -6,6 +6,7 @@ const {
   bookStayAUth,
   fetchShortletsMinified,
   bookStayThirdParty,
+  fetchShortletsForLet,
 } = require("../../controllers/website/shortlet-controller");
 const {
   verifyUserLoginToken,
@@ -17,6 +18,7 @@ const {
 const router = express.Router();
 
 router.get("/fetch-shortlets", fetchShortlets);
+router.get("/fetch-shortlets-for-rent", fetchShortletsForLet);
 router.get("/fetch-shortlets-location", fetchShortletsMinified);
 router.get("/fetch-shortlet/:id", fetchSingleShortlet);
 router.get("/fetch-shortlet-reviews/:product_reviewed", fetchShortletReviews);

@@ -24,6 +24,7 @@ const {
   fetchSinglePostBySlug,
   fetchAllBlogs,
   fetchPostCategories,
+  fetchLatestTravelInfo,
 } = require("../../controllers/website/general-controller");
 const { careerAppDocUpload } = require("../../utils/helpers/files");
 const {
@@ -68,5 +69,6 @@ router.get("/all-help-articles", fetchAllHelpArticles);
 router.get("/all-blogs", fetchAllBlogs);
 router.get("/help-articles-category/:category", fetchHelpArticlesByCategory);
 router.get("/single-post/:slug", fetchSinglePostBySlug);
+router.get("/latest-travel-info", fetchLatestTravelInfo);
 
 module.exports = router;

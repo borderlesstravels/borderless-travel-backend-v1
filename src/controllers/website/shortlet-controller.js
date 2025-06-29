@@ -270,6 +270,31 @@ const bookStayThirdParty = async (req, res, next) => {
   }
 };
 
+const fetchShortletsForLet = async (req, res) => {
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(res, firm, api_key);
+  let shuffledShortlets;
+  try {
+    const shortlets = await ShortLet.find().limit(req.query.limit);
+    if (shortlets) {
+      const newArr = shortlets.slice();
+      for (let i = newArr.length - 1; i > 0; i--) {
+        const rand = Math.floor(Math.random() * (i + 1));
+        [newArr[i], newArr[rand]] = [newArr[rand], newArr[i]];
+      }
+      shuffledShortlets = newArr.slice(0, 4);
+    }
+    return sendSuccess(
+      res,
+      "Successfully fetched the available shortlet apartments",
+      shuffledShortlets
+    );
+  } catch (error) {
+    console.log(error);
+    return sendError(res, "Unable to fetch available shortlets");
+  }
+};
+
 module.exports = {
   fetchShortlets,
   fetchShortletsMinified,
@@ -278,4 +303,6 @@ module.exports = {
 
   bookStayAUth,
   bookStayThirdParty,
+
+  fetchShortletsForLet,
 };
