@@ -1,14 +1,14 @@
-const express = require('express');
+const express = require("express");
 const {
   validateHostSignupParams,
   validate,
   validateUserSignupParams,
-} = require('../../middlewares/validator');
+} = require("../../middlewares/validator");
 const {
   validateNewHost,
   isHostPasswordResetTokenValid,
   validateHostLoginType,
-} = require('../../middlewares/host');
+} = require("../../middlewares/host");
 const {
   signupHost,
   generateHostEmailVerificationToken,
@@ -16,35 +16,41 @@ const {
   forgotPasswordHost,
   resetPasswordHost,
   loginHost,
-} = require('../../controllers/website/host-auth-controller');
+} = require("../../controllers/website/host-auth-controller");
 const {
-  verificationEmail,
+  accountVerificationEmail,
   emailVerifiedEmail,
   resetPasswordEmail,
   passwordUpdatedEmail,
   loginSuccessfulEmail,
-} = require('../../services/emailServices');
+  successfulSignupEmail,
+} = require("../../services/emailServices");
 
 const router = express.Router();
 
 router.post(
-  '/signup',
+  "/signup",
   validateUserSignupParams,
   validate,
   validateNewHost,
   signupHost,
   generateHostEmailVerificationToken,
-  verificationEmail
+  successfulSignupEmail,
+  accountVerificationEmail
 );
-router.post('/resend-verification-otp', generateHostEmailVerificationToken, verificationEmail);
-router.post('/verify-email', verifyHostEmail, emailVerifiedEmail);
-router.post('/forgot-password', forgotPasswordHost, resetPasswordEmail);
 router.post(
-  '/reset-password',
+  "/resend-verification-otp",
+  generateHostEmailVerificationToken,
+  accountVerificationEmail
+);
+router.post("/verify-email", verifyHostEmail, emailVerifiedEmail);
+router.post("/forgot-password", forgotPasswordHost, resetPasswordEmail);
+router.post(
+  "/reset-password",
   isHostPasswordResetTokenValid,
   resetPasswordHost,
   passwordUpdatedEmail
 );
-router.post('/login', validateHostLoginType, loginHost, loginSuccessfulEmail);
+router.post("/login", validateHostLoginType, loginHost, loginSuccessfulEmail);
 
 module.exports = router;

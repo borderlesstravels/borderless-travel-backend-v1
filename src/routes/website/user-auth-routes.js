@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require("express");
 const {
   signup,
   login,
@@ -9,39 +9,53 @@ const {
   logout,
   isUserLogin,
   isEmailRegistered,
-} = require('../../controllers/website/user-auth-controller');
+} = require("../../controllers/website/user-auth-controller");
 const {
-  verificationEmail,
+  accountVerificationEmail,
   emailVerifiedEmail,
   resetPasswordEmail,
   passwordUpdatedEmail,
   loginSuccessfulEmail,
-} = require('../../services/emailServices');
-const { validateUserSignupParams, validate } = require('../../middlewares/validator');
+  successfulSignupEmail,
+} = require("../../services/emailServices");
+const {
+  validateUserSignupParams,
+  validate,
+} = require("../../middlewares/validator");
 const {
   isPasswordResetTokenValid,
   validateNewUser,
   validateLoginType,
-} = require('../../middlewares/user');
+} = require("../../middlewares/user");
 
 const router = express.Router();
 
 router.post(
-  '/signup',
+  "/signup",
   validateUserSignupParams,
   validate,
   validateNewUser,
   signup,
   generateEmailVerificationToken,
-  verificationEmail
+  successfulSignupEmail,
+  accountVerificationEmail
 );
-router.post('/resend-verification-otp', generateEmailVerificationToken, verificationEmail);
-router.post('/verify-email', verifyEmail, emailVerifiedEmail);
-router.post('/forgot-password', forgotPassword, resetPasswordEmail);
-router.post('/reset-password', isPasswordResetTokenValid, resetPassword, passwordUpdatedEmail);
-router.post('/login', validateLoginType, login, loginSuccessfulEmail);
-router.get('/check-session', isUserLogin);
-router.post('/logout', logout);
-router.post('/check-email', isEmailRegistered);
+router.post(
+  "/resend-verification-otp",
+  generateEmailVerificationToken,
+  accountVerificationEmail
+);
+router.post("/verify-email", verifyEmail, emailVerifiedEmail);
+router.post("/forgot-password", forgotPassword, resetPasswordEmail);
+router.post(
+  "/reset-password",
+  isPasswordResetTokenValid,
+  resetPassword,
+  passwordUpdatedEmail
+);
+router.post("/login", validateLoginType, login, loginSuccessfulEmail);
+router.get("/check-session", isUserLogin);
+router.post("/logout", logout);
+router.post("/check-email", isEmailRegistered);
 
 module.exports = router;

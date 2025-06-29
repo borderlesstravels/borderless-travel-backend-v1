@@ -1,63 +1,291 @@
 const { emailFooter } = require("../../includes/footer.template");
 const { emailHead } = require("../../includes/head.template");
 
-const verifyEmailCodeTemp = (first_name, otp) => {
+const verifyEmailCodeTemp = (
+  first_name,
+  optChar1,
+  optChar2,
+  optChar3,
+  optChar4
+) => {
   const head = emailHead();
   const footer = emailFooter();
 
   const body = `
-    <table class="row row-3" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-size: auto;">
+    <!-- Header -->
+    <table
+      style="
+        font-family: arial, helvetica, sans-serif;
+        border-collapse: collapse;
+        border-style: hidden; /* hide standard table (collapsed) border */
+      "
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      width="100%"
+      border="0"
+    >
       <tbody>
         <tr>
-          <td>
-            <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; color: #000; background-color: #eef4f3; background-size: auto; border: 0 solid #efeef4; width: 700px; margin: 0 auto;" width="700">
-              <tbody>
-                <tr>
-                  <td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; text-align: left; font-weight: 400; background-color: #ffffff; padding-bottom: 20px; padding-left: 25px; padding-right: 25px; padding-top: 20px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
-                    <table class="heading_block block-1" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-                      <tr>
-                        <td class="pad" style="padding-bottom:20px;padding-top:10px;text-align:center;width:100%;">
-                          <h2 style="margin: 0; color: #660476; direction: ltr; font-family: Inter, sans-serif; font-size: 15px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0;"><span class="tinyMce-placeholder">Dear ${first_name},&nbsp;</span></h2>
-                        </td>
-                      </tr>
-                    </table>
-                    <table class="paragraph_block block-2" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
-                      <tr>
-                        <td class="pad">
-                          <div style="color:#201f42;direction:ltr;font-family:Inter, sans-serif;font-size:14px;font-weight:400;letter-spacing:0px;line-height:150%;text-align:left;mso-line-height-alt:21px;">
-                            <p style="margin: 0; margin-bottom: 0px;">
-                              Welcome to ${process.env.APP_NAME} and thanks for signing up! You're one step closer to an easy and stressfree travel experience. With us, your travel freedom is borderless.
-                            </p>
-                            <p style="margin: 0; margin-bottom: 0px;">&nbsp;</p>
-                            <p style="margin: 0; margin-bottom: 0px;">
-                              To get started, veriify your email account by using the One Time Passsword code seen below. 
-                            </p>
-                            <p style="margin: 0; margin-bottom: 0px;">&nbsp;</p>
-                          </div>
-                        </td>
-                      </tr>
-                    </table>
-                    <table class="button_block block-3" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-                      <tr>
-                        <td class="pad" style="padding-bottom:15px;padding-top:20px;text-align:center;">
-                          <div class="alignment" align="center"><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://www.example.com" style="height:46px;width:170px;v-text-anchor:middle;" arcsize="0%" strokeweight="0.75pt" strokecolor="#201F42" fillcolor="#201f42"><w:anchorlock/><v:textbox inset="0px,0px,0px,0px"><center style="color:#ffffff; font-family:Georgia, serif; font-size:17px"><![endif]--><a style="text-decoration:none;display:inline-block;color:#ffffff;background-color:#201f42;border-radius:0px;width:auto;border-top:1px solid #201F42;font-weight:400;border-right:1px solid #201F42;border-bottom:1px solid #201F42;border-left:1px solid #201F42;padding-top:5px;padding-bottom:5px;font-family:'Noto Serif', Georgia, serif;font-size:17px;text-align:center;cursor: normal;mso-border-alt:none;word-break:keep-all;"><span style="padding-left:70px;padding-right:70px;font-size:24px;display:inline-block;"><span style="word-break: break-word; line-height: 34px;"><strong>${otp}</strong></span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <table class="paragraph_block block-5" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
-                      <tr>
-                        <td class="pad" style="padding-top:10px;">
-                          <div style="color:#201f42;direction:ltr;font-family:Inter, sans-serif;font-size:14px;font-weight:400;letter-spacing:0px;line-height:150%;text-align:left;mso-line-height-alt:21px;">
-                            <p style="margin: 0;">The verification code will be valid for 30 minutes. Please do not share this code with anyone. Contact us if you do not recognize tis activity. Welcome to ${process.env.APP_NAME} once again.</p>
-                          </div>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <td
+            class="v-container-padding-padding"
+            style="
+              overflow-wrap: break-word;
+              word-break: break-word;
+              padding: 20px;
+              padding-bottom: 0;
+              font-family: arial, helvetica, sans-serif;
+              background-color: #ffffff;
+              border-top-left-radius: 15px;
+              border-top-right-radius: 15px;
+            "
+            align="left"
+          >
+            <!--[if mso]><table width="100%"><tr><td><![endif]-->
+            <h1
+              class="v-text-align"
+              style="
+                margin: 0px;
+                line-height: 140%;
+                text-align: left;
+                word-wrap: break-word;
+                font-size: 26px;
+                font-weight: 600;
+                padding-top: 15px;
+                padding-bottom: 15px;
+              "
+            >
+              <span
+                ><span
+                  >Verify Your Borderless Account
+                  Tunde</span
+                ></span
+              >
+            </h1>
+            <!--[if mso]></td></tr></table><![endif]-->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Salutation -->
+    <table
+      style="
+        font-family: arial, helvetica, sans-serif;
+        border-collapse: collapse;
+        border-style: hidden; /* hide standard table (collapsed) border */
+      "
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      width="100%"
+      border="0"
+    >
+      <tbody>
+        <tr>
+          <td
+            class="v-container-padding-padding"
+            style="
+              overflow-wrap: break-word;
+              word-break: break-word;
+              padding: 20px;
+              padding-bottom: 0;
+              font-family: arial, helvetica, sans-serif;
+              background-color: #ffffff;
+              border-top-left-radius: 15px;
+              border-top-right-radius: 15px;
+            "
+            align="left"
+          >
+            <!--[if mso]><table width="100%"><tr><td><![endif]-->
+            <h1
+              class="v-text-align"
+              style="
+                margin: 0px;
+                line-height: 140%;
+                text-align: left;
+                word-wrap: break-word;
+                font-size: 16px;
+                font-weight: 500;
+                padding-top: 15px;
+                padding-bottom: 15px;
+              "
+            >
+              <span><span>Dear ${first_name},</span></span>
+            </h1>
+            <!--[if mso]></td></tr></table><![endif]-->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Upper Email Body -->
+    <table
+      style="font-family: arial, helvetica, sans-serif"
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      width="100%"
+      border="0"
+    >
+      <tbody>
+        <tr>
+          <td
+            class="v-container-padding-padding"
+            style="
+              overflow-wrap: break-word;
+              word-break: break-word;
+              padding-bottom: 50px;
+              font-family: arial, helvetica, sans-serif;
+              background-color: #ffffff;
+              border-bottom-left-radius: 15px;
+              border-bottom-right-radius: 15px;
+            "
+            align="left"
+          >
+            <div
+              class="v-text-align"
+              style="
+                font-size: 16px;
+                line-height: 140%;
+                text-align: left;
+                padding: 0 20px;
+                word-wrap: break-word;
+                margin-bottom: 40px;
+              "
+            >
+              <p style="line-height: 140%; font-size: 18px">
+                <span
+                  style="
+                    display: block;
+                    margin-bottom: 25px;
+                  "
+                >
+                  We're almost there! To complete your
+                  signup with Borderless, please use the
+                  One-Time Password (OTP) below to verify
+                  your email:
+                </span>
+                <span style="display: block">
+                  <table
+                    role="presentation"
+                    cellpadding="0"
+                    cellspacing="0"
+                    border="0"
+                    width="100%"
+                    style="padding: 0 70px"
+                  >
+                    <tr>
+                      <td align="center" style="width: 25%">
+                        <span
+                          style="
+                            display: inline-block;
+                            margin: 0 auto;
+                            width: 60px;
+                            height: 60px;
+                            line-height: 60px;
+                            font-size: 30px;
+                            background-color: #892cdc0d;
+                            text-align: center;
+                          "
+                        >
+                          ${optChar1}
+                        </span>
+                      </td>
+                      <td align="center" style="width: 25%">
+                        <span
+                          style="
+                            display: inline-block;
+                            margin: 0 auto;
+                            width: 60px;
+                            height: 60px;
+                            line-height: 60px;
+                            font-size: 30px;
+                            background-color: #892cdc0d;
+                            text-align: center;
+                          "
+                        >
+                          ${optChar2}
+                        </span>
+                      </td>
+                      <td align="center" style="width: 25%">
+                        <span
+                          style="
+                            display: inline-block;
+                            margin: 0 auto;
+                            width: 60px;
+                            height: 60px;
+                            line-height: 60px;
+                            font-size: 30px;
+                            background-color: #892cdc0d;
+                            text-align: center;
+                          "
+                        >
+                          ${optChar3}
+                        </span>
+                      </td>
+                      <td align="center" style="width: 25%">
+                        <span
+                          style="
+                            display: inline-block;
+                            margin: 0 auto;
+                            width: 60px;
+                            height: 60px;
+                            line-height: 60px;
+                            font-size: 30px;
+                            background-color: #892cdc0d;
+                            text-align: center;
+                          "
+                        >
+                          ${optChar4}
+                        </span>
+                      </td>
+                    </tr>
+                  </table>
+                </span>
+                <span
+                  style="
+                    display: block;
+                    margin-bottom: 25px;
+                  "
+                >
+                  Enter this code on our website or app
+                  within the next 10 minutes.
+                </span>
+                <span
+                  style="
+                    display: block;
+                    margin-bottom: 25px;
+                  "
+                >
+                  If you didn't request this, feel free to
+                  ignore this email or contact our 24/7
+                  support at
+                  <a
+                    style="color: #670677"
+                    href="mailto:support@borderless.com"
+                    >support@borderless.com</a
+                  >.
+                </span>
+                <span
+                  style="
+                    display: block;
+                    margin-bottom: 25px;
+                  "
+                >
+                  Let's get you ready for boundless
+                  adventures!
+                </span>
+                <span
+                  style="
+                    display: block;
+                    margin-bottom: 25px;
+                  "
+                >
+                  Best,<br />Team Borderless
+                </span>
+              </p>
+            </div>
           </td>
         </tr>
       </tbody>

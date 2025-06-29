@@ -31,6 +31,9 @@ const { sendSuccess, sendError } = require("../utils/helpers");
 const {
   waitlistSubscribedTemp,
 } = require("../../public/email-templates/website/waitlistSubscribed.template");
+const {
+  signedUpTemp,
+} = require("../../public/email-templates/auth/signup/signedUp.template");
 
 // Waitlist email
 const waitlistSubscribedEMail = async (req, res) => {
@@ -63,13 +66,36 @@ const waitlistSubscribedEMail = async (req, res) => {
   // }
 };
 
-// General
-const verificationEmail = async (req, res) => {
+// SignUp
+const successfulSignupEmail = async (req, res, next) => {
   const { user, otp } = req.body;
   const email = user.email;
   const first_name = user.first_name;
-  const subject = "Verify Your Email";
-  const email_body = verifyEmailCodeTemp(first_name, otp);
+  const subject = "Welcome to Borderless - Your Journey Begins Here!";
+  const email_body = signedUpTemp(first_name);
+  try {
+    sendEmail(subject, email_body, email);
+    next();
+  } catch (error) {
+    return res.status(500).json(error.message);
+  }
+};
+const accountVerificationEmail = async (req, res) => {
+  const { user, otp } = req.body;
+  const email = user.email;
+  const first_name = user.first_name;
+  const subject = "Verify Your Borderless Account";
+  const optChar1 = otp.charAt(0);
+  const optChar2 = otp.charAt(1);
+  const optChar3 = otp.charAt(2);
+  const optChar4 = otp.charAt(3);
+  const email_body = verifyEmailCodeTemp(
+    first_name,
+    optChar1,
+    optChar2,
+    optChar3,
+    optChar4
+  );
   try {
     sendEmail(subject, email_body, email);
     return res.status(200).json({
@@ -142,7 +168,7 @@ const resetPasswordEmail = async (req, res) => {
   }
 
   const send_to = email;
-  const subject = `Reset Your Password`;
+  const subject = `Reset Your Borderless Password`;
   const email_body = resetPasswordTemp(firstName, link);
   try {
     sendEmail(subject, email_body, send_to);
@@ -161,7 +187,7 @@ const passwordUpdatedEmail = async (req, res) => {
   const email = user.email;
   const firstName = user.first_name;
   const send_to = email;
-  const subject = `Your Password Has Been Updated`;
+  const subject = `Your Borderless Password Has Been Updated`;
   const email_body = passwordUpdatedTemp(firstName);
   try {
     sendEmail(subject, email_body, send_to);
@@ -179,8 +205,18 @@ const loginVerificationEmail = async (req, res) => {
   const { user, otp } = req.body;
   const email = user.email;
   const fName = user.first_name;
-  const subject = `Please Verify That It's You`;
-  const email_body = verifyLoginCodeTemp(fName, otp);
+  const optChar1 = otp.charAt(0);
+  const optChar2 = otp.charAt(1);
+  const optChar3 = otp.charAt(2);
+  const optChar4 = otp.charAt(3);
+  const subject = `Your Borderless Login Code`;
+  const email_body = verifyLoginCodeTemp(
+    fName,
+    optChar1,
+    optChar2,
+    optChar3,
+    optChar4
+  );
   try {
     sendEmail(subject, email_body, email);
     return res.status(200).json({
@@ -196,7 +232,7 @@ const loginSuccessfulEmail = async (req, res) => {
   const { user, token } = req.body;
   const email = user.email;
   const firstName = user.first_name;
-  const subject = `You Have Successfully Logged`;
+  const subject = `New Login to Your Borderless Account`;
   const email_body = loginVerifiedTemp(firstName);
   try {
     sendEmail(subject, email_body, email);
@@ -262,7 +298,9 @@ const profileUpdatedEmail = async (req, res) => {
 module.exports = {
   waitlistSubscribedEMail,
 
-  verificationEmail,
+  successfulSignupEmail,
+
+  accountVerificationEmail,
   emailVerifiedEmail,
   verificationEmailAutoSignup,
 
