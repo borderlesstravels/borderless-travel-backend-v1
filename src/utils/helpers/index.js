@@ -75,7 +75,7 @@ exports.generateSlug = (title) => {
     /[\\\.\,\+\*\?\^\$\@\#\%\^\&\*\-\_\[\]\(\)\{\}\/\'\#\:\!\=\|]/gi,
     ""
   );
-  const slug = sanitisedTitle.split(" ").join("-");
+  const slug = sanitisedTitle.split(" ").join("-").toLowerCase();
   return slug;
 };
 

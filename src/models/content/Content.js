@@ -9,7 +9,7 @@ const contentSchema = new Schema({
   },
   author: {
     type: String,
-    required: true,
+    default: "Borderless",
   },
   title: {
     type: String,

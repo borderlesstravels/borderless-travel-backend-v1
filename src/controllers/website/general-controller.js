@@ -372,7 +372,7 @@ const fetchHelpArticlesByCategory = async (req, res, next) => {
 };
 const fetchSinglePostBySlug = async (req, res) => {
   try {
-    const post = await Content.findOne({ slug: req.params.slug });
+    const post = await Content.findOne({ slug: req.params.slug.toLowerCase() });
     if (!post) {
       return sendError(res, "post does not exist");
     }

@@ -3,6 +3,7 @@ const Content = require("../../models/content/Content");
 const ContentCategory = require("../../models/content/ContentCategory");
 const fs = require("fs");
 const { uploadSingleImage } = require("../../middlewares/general");
+const path = require("path");
 
 const addPost = async (req, res) => {
   const adminId = req.id;
@@ -12,43 +13,52 @@ const addPost = async (req, res) => {
     return sendError(res, "Please add a cover thumbnail image for the post");
   }
 
-  const { title, content, author, category, post_status } = req.body;
+  const { title, content, description, author, category, post_status } =
+    req.body;
   console.log("cover_image: ", cover_image);
   const slug = generateSlug(title);
 
-  if (
-    post_status === "scheduled" &&
-    (!req.body.published_date ||
-      req.body.published_date === null ||
-      req.body.published_date == "")
-  ) {
-    return sendError(
-      res,
-      "Kindly specify the scheduled date for post auto-publishing"
-    );
-  }
-
-  if (post_status === "scheduled") {
-    published_date = req.body.published_date;
-  } else {
-    published_date = Date.now();
-  }
-
-  console.log("published_date", published_date);
-
-  const newPost = new Content({
-    title,
-    slug,
-    description,
-    content,
-    author,
-    category,
-    cover_image,
-    post_status,
-    published_date,
-    published_by: adminId,
-  });
   try {
+    if (
+      post_status === "scheduled" &&
+      (!req.body.published_date ||
+        req.body.published_date === null ||
+        req.body.published_date == "")
+    ) {
+      return sendError(
+        res,
+        "Kindly specify the scheduled date for post auto-publishing"
+      );
+    }
+
+    if (post_status === "scheduled") {
+      published_date = req.body.published_date;
+    } else {
+      published_date = Date.now();
+    }
+
+    console.log("published_date", published_date);
+
+    const newPost = new Content({
+      title,
+      slug,
+      description,
+      content,
+      author,
+      category,
+      cover_image,
+      post_status,
+      published_date,
+      published_by: adminId,
+    });
+
+    const postExists = await Content.findOne({ title });
+    if (postExists) {
+      return sendError(
+        res,
+        "Title already exists for another post. Kindly tweak it"
+      );
+    }
     await newPost.save();
     return sendSuccess(
       res,
@@ -94,7 +104,7 @@ const deletePost = async (req, res) => {
     const post = await Content.findById(req.params.id);
     if (post) {
       let post_cover = post.cover_image;
-      const file_path = path.join("public/files/imgs/posts", post_cover);
+      const file_path = path.join("public/files/imgs/posts", post_cover?.url);
       console.log(file_path);
 
       fs.unlink(file_path, (err) => {
@@ -110,7 +120,7 @@ const deletePost = async (req, res) => {
     await Content.findByIdAndDelete(req.params.id);
     return sendSuccess(res, "Successfully deleted the post");
   } catch (err) {
-    console.log(err);
+    console.log("content delete error", err);
     return sendError(res, "Unable to delete the post");
   }
 };
