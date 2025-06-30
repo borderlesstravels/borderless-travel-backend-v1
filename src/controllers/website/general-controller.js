@@ -376,11 +376,12 @@ const fetchSinglePostBySlug = async (req, res) => {
     if (!post) {
       return sendError(res, "post does not exist");
     }
-    const postCount = Number(post.views_count);
+    const postCount = post.views_count;
     post.views_count = Number(postCount + 1);
     await post.save();
     return sendSuccess(res, "Succesfully fetched post", post);
   } catch (error) {
+    console.log("fetchSinglePostBySlug error", error);
     return sendError(res, "Unable to fetch the post profile data");
   }
 };
