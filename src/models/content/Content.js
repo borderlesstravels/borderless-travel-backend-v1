@@ -21,7 +21,7 @@ const contentSchema = new Schema({
   },
   description: {
     type: String,
-    required: true,
+    // required: true,
   },
   content: {
     type: String,
