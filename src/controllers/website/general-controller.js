@@ -387,9 +387,9 @@ const fetchSinglePostBySlug = async (req, res) => {
 };
 
 // Homepage
-const fetchLatestTravelInfo = async (req, res, next) => {
+const fetchLatestTravelInfo = async (req, res) => {
   try {
-    const posts = await Content.find({ category: "Flight" }).limit(
+    const posts = await Content.find({ category: "flight" }).limit(
       req.query.limit
     );
     return sendSuccess(res, "Succesfully fetched posts", posts);

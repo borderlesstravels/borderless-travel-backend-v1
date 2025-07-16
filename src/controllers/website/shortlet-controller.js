@@ -15,7 +15,9 @@ const fetchShortlets = async (req, res) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
   try {
-    const shortlets = await ShortLet.find().limit(req.query.limit);
+    const shortlets = await ShortLet.find({ status: "available" }).limit(
+      req.query.limit
+    );
     if (!shortlets.length) {
       return sendSuccess(res, "No shortlet apartments record yet");
     }
@@ -34,7 +36,7 @@ const fetchShortletsMinified = async (req, res) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
   try {
-    const stlt = await ShortLet.find();
+    const stlt = await ShortLet.find({ status: "available" });
     const shortlets = stlt.map((ele) => ({
       _id: ele._id,
       apartment_name: ele.apartment_name,

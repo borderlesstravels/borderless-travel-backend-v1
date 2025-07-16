@@ -164,6 +164,77 @@ const hostGetHostProperties = async (req, res) => {
   }
 };
 
+const hostGetHostAvailableProperties = async (req, res) => {
+  const userId = req.id;
+  try {
+    const properties = await ShortLet.find({ status: "available" });
+    if (!properties.length) {
+      return sendSuccess(res, "No listings record yet");
+    }
+    const hostProperties = properties.filter((item) => item.owner == userId);
+    if (!hostProperties.length) {
+      return sendSuccess(res, "You have no listings yet");
+    }
+    return sendSuccess(res, "Successfully fetched data", hostProperties);
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch host's listings", 500);
+  }
+};
+
+const hostGetHostUnavailableProperties = async (req, res) => {
+  const userId = req.id;
+  try {
+    const properties = await ShortLet.find({ status: "unavailable" });
+    if (!properties.length) {
+      return sendSuccess(res, "No listings record yet");
+    }
+    const hostProperties = properties.filter((item) => item.owner == userId);
+    if (!hostProperties.length) {
+      return sendSuccess(res, "You have no listings yet");
+    }
+    return sendSuccess(res, "Successfully fetched data", hostProperties);
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch host's listings", 500);
+  }
+};
+
+const hostMarkListingAsAvailable = async (req, res, next) => {
+  try {
+    const listing = await ShortLet.findById(req.params.id);
+    if (!listing) {
+      return sendError(res, "Could not verify property existence");
+    }
+    listing.status = "available";
+    await listing.save();
+    return sendSuccess(
+      res,
+      "Successfully marked listing as AVAILABLE",
+      listing
+    );
+  } catch (error) {
+    return sendError(res, "Cannot update your password");
+  }
+};
+const hostMarkListingAsUnavailable = async (req, res, next) => {
+  try {
+    const listing = await ShortLet.findById(req.params.id);
+    if (!listing) {
+      return sendError(res, "Could not verify property existence");
+    }
+    listing.status = "unavailable";
+    await listing.save();
+    return sendSuccess(
+      res,
+      "Successfully marked listing as UNAVAILABLE",
+      listing
+    );
+  } catch (error) {
+    return sendError(res, "Cannot update your password");
+  }
+};
+
 const hostFetchSingleProperty = async (req, res) => {
   try {
     const shortlet = await ShortLet.findById(req.params.id);
@@ -362,6 +433,11 @@ module.exports = {
   hostAddProperty,
   hostEditProperty,
   hostGetHostProperties,
+  hostGetHostAvailableProperties,
+  hostGetHostUnavailableProperties,
+  hostMarkListingAsAvailable,
+  hostMarkListingAsUnavailable,
+
   hostFetchSingleProperty,
   hostDeleteProperty,
 

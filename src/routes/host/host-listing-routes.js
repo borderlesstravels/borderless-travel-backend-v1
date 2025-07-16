@@ -15,6 +15,10 @@ const {
   hostFetchShortletBookings,
   hostFetchSingleShortletBooking,
   hostDeleteProperty,
+  hostGetHostAvailableProperties,
+  hostGetHostUnavailableProperties,
+  hostMarkListingAsAvailable,
+  hostMarkListingAsUnavailable,
 } = require("../../controllers/host/host-listing-controller");
 
 const router = express.Router();
@@ -27,6 +31,19 @@ router.post(
   hostAddProperty
 );
 router.get("/listings", verifyHostLoginToken, hostGetHostProperties);
+router.get(
+  "/available-listings",
+  verifyHostLoginToken,
+  hostGetHostAvailableProperties
+);
+router.get(
+  "/unavailable-listings",
+  verifyHostLoginToken,
+  hostGetHostUnavailableProperties
+);
+router.put("/mark-listing-available/:id", hostMarkListingAsAvailable);
+router.put("/mark-listing-unavailable/:id", hostMarkListingAsUnavailable);
+
 router.get("/listing/:id", hostFetchSingleProperty);
 router.delete("/delete-listing/:id", verifyHostLoginToken, hostDeleteProperty);
 router.put(

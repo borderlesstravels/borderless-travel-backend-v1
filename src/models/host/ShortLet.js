@@ -260,6 +260,10 @@ const shortLetSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  status: {
+    type: String,
+    default: "available",
+  },
   createdAt: {
     type: Date,
     default: Date.now,
