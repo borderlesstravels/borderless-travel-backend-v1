@@ -166,7 +166,7 @@ const bookFlightAuth = async (req, res) => {
         "Unable to complete this request at this time. Please try again."
       );
     }
-    console.log("response", response);
+    // console.log("response", response);
     if (response?.status === 200) {
       const outboundData = response.data.outbound;
       const destPicker = Number(outboundData.length - 1);
@@ -247,9 +247,10 @@ const bookFlightAuth = async (req, res) => {
       //   return sendError(res, response.data.message, response?.status);
     } else {
       console.log({ response: response.data });
-      return sendError(res, response?.statusText, response?.status);
+      return sendError(res, response?.data?.message, response?.status);
     }
   } catch (error) {
+    console.log("book flight error:", error);
     return sendError(
       res,
       `Unable to book your flight at this time. Error - ${error}`
@@ -268,18 +269,18 @@ const bookFlightNoAuth = async (req, res, next) => {
   const hashedPassword = bcrypt.hashSync(password);
 
   try {
-    existingUser = await User.findOne({ email: contact_details.c_email });
+    const existingUser = await User.findOne({ email: contact_details.c_email });
+    if (existingUser) {
+      return sendError(
+        res,
+        "You are already a registered user. Please login first to continue, or use another email adrress"
+      );
+    }
   } catch (error) {
     console.log(error);
     return sendError(
       res,
       "Unable to verify that you do not have an account yet."
-    );
-  }
-  if (existingUser) {
-    return sendError(
-      res,
-      "You are already a registered user. Please login first to continue, or use another email adrress"
     );
   }
 
@@ -295,13 +296,13 @@ const bookFlightNoAuth = async (req, res, next) => {
     const response = await sender_tiqwa(`/flight/book/${flight_id}`, {
       passengers: passenger_details,
     });
+    console.log("response", response);
     if (!response) {
       return sendError(
         res,
         "Unable to complete this request at this time. Please try again."
       );
     }
-    // console.log("response", response);
     if (response?.status === 200) {
       const outboundData = response.data.outbound;
       const destPicker = Number(outboundData.length - 1);
@@ -395,17 +396,6 @@ const bookFlightNoAuth = async (req, res, next) => {
       } else {
         return sendError(res, "Unable to save booking to the database.");
       }
-      // } else if (response?.status === 400) {
-      //   console.log("response", response);
-      //   return sendError(
-      //     res,
-      //     "Please check the traveller's document(s) you provided. It might contain an expired document.",
-      //     response?.status
-      //   );
-      // } else if (response?.status === 403) {
-      //   return sendError(res, response.data.Message, response?.status);
-      // } else if (response?.status === 404) {
-      //   return sendError(res, response.data.message, response?.status);
     } else {
       return sendError(res, response?.statusText, response?.status);
     }
