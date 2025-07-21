@@ -83,7 +83,6 @@ const flightOfferSearch = async (req, res, next) => {
       "Unable to complete this request at this time. Please try again."
     );
   }
-  console.log("response", response);
   if (response?.status === 200) {
     return res
       .status(response.status)
