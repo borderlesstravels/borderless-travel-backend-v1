@@ -15,6 +15,7 @@ const {
   sendError,
   sendSuccess,
   badRequestError,
+  shuffleArray,
 } = require("../../utils/helpers");
 
 const services = async (req, res) => {
@@ -392,7 +393,9 @@ const fetchLatestTravelInfo = async (req, res) => {
     const posts = await Content.find({ category: "flight" }).limit(
       req.query.limit
     );
-    return sendSuccess(res, "Succesfully fetched posts", posts);
+    const shuffledArrs = await shuffleArray(posts);
+    const arrData = shuffledArrs.slice(0, 3);
+    return sendSuccess(res, "Succesfully fetched posts", arrData);
   } catch (error) {
     return sendError(res, "Unable to fetch the posts data");
   }

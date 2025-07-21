@@ -9,6 +9,7 @@ const {
   saveNotification,
   generateString,
   verifyAPIToken,
+  shuffleArray,
 } = require("../../utils/helpers");
 
 const fetchShortlets = async (req, res) => {
@@ -275,20 +276,31 @@ const bookStayThirdParty = async (req, res, next) => {
 const fetchShortletsForLet = async (req, res) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
-  let shuffledShortlets;
   try {
     const shortlets = await ShortLet.find().limit(req.query.limit);
-    if (shortlets) {
-      const newArr = shortlets.slice();
-      for (let i = newArr.length - 1; i > 0; i--) {
-        const rand = Math.floor(Math.random() * (i + 1));
-        [newArr[i], newArr[rand]] = [newArr[rand], newArr[i]];
-      }
-      shuffledShortlets = newArr.slice(0, 4);
-    }
+    const shuffledArrs = await shuffleArray(shortlets);
+    const shuffledShortlets = shuffledArrs.slice(0, 4);
     return sendSuccess(
       res,
       "Successfully fetched the available shortlet apartments",
+      shuffledShortlets
+    );
+  } catch (error) {
+    console.log(error);
+    return sendError(res, "Unable to fetch available shortlets");
+  }
+};
+
+const fetchFavouriteShortlets = async (req, res) => {
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(res, firm, api_key);
+  try {
+    const shortlets = await ShortLet.find();
+    const shuffledArrs = await shuffleArray(shortlets);
+    const shuffledShortlets = shuffledArrs.slice(0, 30);
+    return sendSuccess(
+      res,
+      "Successfully fetched the favourite shortlet apartments",
       shuffledShortlets
     );
   } catch (error) {
@@ -307,4 +319,5 @@ module.exports = {
   bookStayThirdParty,
 
   fetchShortletsForLet,
+  fetchFavouriteShortlets,
 };

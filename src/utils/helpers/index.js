@@ -54,6 +54,19 @@ exports.formatCurrency = (value) => {
   return value.toLocaleString("en-US", { style: "currency", currency: "NGN" });
 };
 
+exports.shuffleArray = (array) => {
+  if (array) {
+    const newArr = array.slice();
+    for (let i = newArr.length - 1; i > 0; i--) {
+      const rand = Math.floor(Math.random() * (i + 1));
+      [newArr[i], newArr[rand]] = [newArr[rand], newArr[i]];
+    }
+    return newArr;
+  } else {
+    return [];
+  }
+};
+
 exports.checkUserEmailReg = async (email) => {
   let existingUser;
   try {
