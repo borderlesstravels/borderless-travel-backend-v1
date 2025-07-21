@@ -534,6 +534,33 @@ const fetchFlightTicketDetails = async (req, res) => {
   }
 };
 
+const flightProviderWebHook = async (req, res) => {
+  const { event, data } = req.body;
+  try {
+    if (!event) {
+      return sendError(res, "Field 'event' is missing", 400);
+    }
+    if (!data) {
+      return sendError(res, "Field 'data' is missing", 400);
+    }
+    const booking = await FlightBooking.findOne({
+      booking_reference: data?.reference,
+    });
+    if (booking) {
+      if (event == "ticket.issued") {
+        booking.status = "issued";
+      } else if (event == "ticket.booked") {
+        booking.status = "booked";
+      }
+    }
+    await booking.save();
+    return sendSuccess(res, "Successfully completed operation");
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, `Unable to complete. Error - ${error}`);
+  }
+};
+
 module.exports = {
   travelBookingRequest,
   fetchAirports,
@@ -545,4 +572,6 @@ module.exports = {
   bookFlightNoAuth,
   bookFlightThirdParty,
   fetchFlightTicketDetails,
+
+  flightProviderWebHook,
 };

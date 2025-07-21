@@ -10,6 +10,7 @@ const {
   flightOfferSearchMultiCity,
   bookFlightThirdParty,
   travelBookingRequest,
+  flightProviderWebHook,
 } = require("../../controllers/website/flight-controller");
 const {
   validateFlightOfferSearch,
@@ -77,5 +78,8 @@ router.get(
   "/flight-ticket-details/:booking_reference",
   fetchFlightTicketDetails
 );
+
+// Provider webhook
+router.post("/tiqwa-webhook", flightProviderWebHook);
 
 module.exports = router;
