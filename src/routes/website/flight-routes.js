@@ -22,7 +22,10 @@ const {
 const {
   verifyUserLoginToken,
 } = require("../../controllers/website/user-auth-controller");
-const { verificationEmailAutoSignup } = require("../../services/emailServices");
+const {
+  verificationEmailAutoSignup,
+  bookingCreatedEmail,
+} = require("../../services/emailServices");
 
 const router = express.Router();
 
@@ -52,14 +55,16 @@ router.post(
   validateFlightBooking,
   validate,
   bookFlightNoAuth,
-  verificationEmailAutoSignup
+  verificationEmailAutoSignup,
+  bookingCreatedEmail
 );
 router.post(
   "/book-flight-auth/:flight_id",
   validateFlightBooking,
   validate,
   verifyUserLoginToken,
-  bookFlightAuth
+  bookFlightAuth,
+  bookingCreatedEmail
 );
 router.post(
   "/book-flight-tp/:flight_id",

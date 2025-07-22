@@ -152,3 +152,30 @@ exports.verifyAPIToken = async (res, firm, api_key) => {
     });
   }
 };
+
+exports.dateFormatter = (date) => {
+  var dateString = new Date(date).toString();
+  var splittedDateString = dateString.split(" ");
+  var day2 = splittedDateString[1];
+  var month = splittedDateString[2];
+  var year = splittedDateString[3];
+  var formatttedDate = `${day2} ${month}, ${year}`;
+  return formatttedDate;
+};
+exports.timeFormatter = (date) => {
+  var dateString = new Date(date).toString();
+  var splittedDateString = dateString.split(" ");
+  var time = splittedDateString[4];
+  var formatttedTime = `${time}`;
+  return formatttedTime;
+};
+// exports.dateDayFormatter = (date) => {
+//   var dateString = new Date(date).toString();
+//   var splittedDateString = dateString.split(" ");
+//   var day1 = splittedDateString[0];
+//   var day2 = splittedDateString[1];
+//   var month = splittedDateString[2];
+//   var year = splittedDateString[3];
+//   var formatttedDate = `${day2} ${month} ${year}`;
+//   return formatttedDate;
+// };

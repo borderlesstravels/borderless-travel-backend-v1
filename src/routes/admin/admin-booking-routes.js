@@ -13,6 +13,10 @@ const {
   allShortletBookings,
   singleShortletBooking,
 } = require("../../controllers/admin/admin-booking-controller");
+const {
+  flightTicketIssuedEmail,
+  flightTicketCancelledEmail,
+} = require("../../services/emailServices");
 
 const router = express.Router();
 
@@ -35,12 +39,14 @@ router.get(
 router.post(
   "/flight/issue-ticket/:booking_reference",
   verifyAdminLoginToken,
-  issueFlightTicket
+  issueFlightTicket,
+  flightTicketIssuedEmail
 );
 router.post(
   "/flight/cancel-ticket/:booking_reference",
   verifyAdminLoginToken,
-  cancelFlightTicket
+  cancelFlightTicket,
+  flightTicketCancelledEmail
 );
 
 // Third party apps

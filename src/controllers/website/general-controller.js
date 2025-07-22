@@ -16,6 +16,8 @@ const {
   sendSuccess,
   badRequestError,
   shuffleArray,
+  dateFormatter,
+  formatCurrency,
 } = require("../../utils/helpers");
 
 const services = async (req, res) => {
@@ -41,7 +43,7 @@ const services = async (req, res) => {
   }
 };
 
-const payForFlight = async (req, res) => {
+const payForFlight = async (req, res, next) => {
   const userId = req.id;
   const {
     service_name,
@@ -89,11 +91,22 @@ const payForFlight = async (req, res) => {
       booking.payment_status = "paid";
       await booking.save();
       await newPayment.save();
-      return sendSuccess(
-        res,
-        "Your payment has been successfully completed",
-        booking._id
-      );
+
+      const date = dateFormatter(booking.created_at);
+      const amountPaid = formatCurrency(amount);
+
+      req.body = {
+        first_name: booking.contact_name.split(" ")[0],
+        email: booking.client_email,
+        amountPaid: amountPaid,
+        booking_reference: booking.booking_reference,
+        date,
+        route: `${booking.origin} - ${booking.destination}`,
+        flight: booking.airline,
+        booking_id: booking._id,
+      };
+
+      next();
     } catch (error) {
       return sendError(res, `Unable to record your payment. Error - ${error}`);
     }
@@ -105,7 +118,7 @@ const payForFlight = async (req, res) => {
   }
 };
 
-const payForShortlet = async (req, res) => {
+const payForShortlet = async (req, res, next) => {
   const userId = req.id;
   const {
     service_name,
@@ -157,11 +170,24 @@ const payForShortlet = async (req, res) => {
       booking.status = "paid";
       await booking.save();
       await newPayment.save();
-      return sendSuccess(
-        res,
-        "Your payment has been successfully completed",
-        booking._id
-      );
+
+      const check_in_date = dateFormatter(booking.check_in_date);
+      const check_out_date = dateFormatter(booking.check_out_date);
+      const amountPaid = formatCurrency(amount);
+
+      req.body = {
+        first_name: booking.name.split(" ")[0],
+        email: booking.email,
+        apartment_name: booking.apartment_name,
+        amountPaid: amountPaid,
+        booking_reference: booking.booking_reference,
+        location: `${booking.apartment_address}, ${booking.apartment_city}, ${booking.apartment_country}`,
+        check_in_date,
+        check_out_date,
+        booking_id: booking._id,
+      };
+
+      next();
     } catch (error) {
       return sendError(res, `Unable to record your payment. Error - ${error}`);
     }

@@ -16,6 +16,7 @@ const {
   validate,
   validateShortletParams,
 } = require("../../middlewares/validator");
+const { bookingCreatedEmail } = require("../../services/emailServices");
 const router = express.Router();
 
 router.get("/fetch-shortlets", fetchShortlets);
@@ -29,7 +30,8 @@ router.post(
   validateShortletParams,
   validate,
   verifyUserLoginToken,
-  bookStayAUth
+  bookStayAUth,
+  bookingCreatedEmail
 );
 router.post(
   "/book-shortlet-tp/:apartment_id",

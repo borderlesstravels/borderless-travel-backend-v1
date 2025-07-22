@@ -34,6 +34,28 @@ const {
 const {
   signedUpTemp,
 } = require("../../public/email-templates/auth/signup/signedUp.template");
+const {
+  bookingSuccessfulTemp,
+} = require("../../public/email-templates/bookings/bookingSuccessful.template");
+
+const {
+  flightTicketIssuedTemp,
+} = require("../../public/email-templates/bookings/flightTicketIssued.template");
+const {
+  flightTicketCancelledTemp,
+} = require("../../public/email-templates/bookings/flightTicketCancelled.template");
+const {
+  apartmentAvailableTemp,
+} = require("../../public/email-templates/bookings/apartmentAvailable.template");
+const {
+  shortletBookingCompletedTemp,
+} = require("../../public/email-templates/bookings/shortletBookingCompleted.template");
+const {
+  flightBookingPaymentRecievedTemp,
+} = require("../../public/email-templates/bookings/flightBookingPaymentRecieved.template");
+const {
+  shortletBookingPaymentRecievedTemp,
+} = require("../../public/email-templates/bookings/shortletBookingPaymentRecieved.template");
 
 // Waitlist email
 const waitlistSubscribedEMail = async (req, res) => {
@@ -108,26 +130,19 @@ const accountVerificationEmail = async (req, res) => {
   }
 };
 
-const verificationEmailAutoSignup = async (req, res) => {
-  const { savedUser, bookingResponse } = req.body;
-  const email = savedUser.email;
-  const first_name = savedUser.first_name;
-  const subject = "Welcome to Boardless Travels!";
+const verificationEmailAutoSignup = async (req, res, next) => {
+  const { email, first_name, signUpSubject } = req.body;
   const email_body = accountAutoCreatedTemp(first_name);
   try {
-    sendEmail(subject, email_body, email);
+    sendEmail(signUpSubject, email_body, email);
+    next();
   } catch (error) {
-    // res.status(500).json(error.message);
     return sendError(
       res,
       "Request completed. Unable to send sign up email",
       500
     );
   }
-  return sendSuccess(res, "Request successfully completed!", {
-    userData: savedUser,
-    bookingResponse,
-  });
 };
 
 const emailVerifiedEmail = async (req, res) => {
@@ -225,7 +240,7 @@ const loginVerificationEmail = async (req, res) => {
       adminId: user._id,
     });
   } catch (error) {
-    res.status(500).json(error.message);
+    return res.status(500).json(error.message);
   }
 };
 const loginSuccessfulEmail = async (req, res) => {
@@ -250,7 +265,7 @@ const loginSuccessfulEmail = async (req, res) => {
       token,
     });
   } catch (error) {
-    res.status(500).json(error.message);
+    return res.status(500).json(error.message);
   }
 };
 
@@ -266,6 +281,198 @@ const contactUsEmail = async (req, res) => {
     return sendSuccess(
       res,
       "Your message has been successfully received. We shall revert shortly."
+    );
+  } catch (error) {
+    return res.status(500).json(error.message);
+  }
+};
+
+// Bookings
+const bookingCreatedEmail = async (req, res) => {
+  const {
+    first_name,
+    email,
+    category,
+    booking_reference,
+    date,
+    time,
+    subject,
+    responseMessage,
+    newBooking,
+  } = req.body;
+  const email_body = bookingSuccessfulTemp(
+    first_name,
+    booking_reference,
+    category,
+    date,
+    time
+  );
+  try {
+    sendEmail(subject, email_body, email);
+    return sendSuccess(res, responseMessage, { booking_reference, newBooking });
+  } catch (error) {
+    return res.status(500).json(error.message);
+  }
+};
+
+const apartmentAvailableEmail = async (req, res) => {
+  const { email, first_name, apartment_name, location, price, date } = req.body;
+  const email_body = apartmentAvailableTemp(
+    first_name,
+    apartment_name,
+    location,
+    price,
+    date
+  );
+  const subject = "Your Shortlet Apartment is Ready to Book!";
+  try {
+    sendEmail(subject, email_body, email);
+    return sendSuccess(
+      res,
+      "Successfully notified user on the apartment's availability"
+    );
+  } catch (error) {
+    return res.status(500).json(error.message);
+  }
+};
+const shortletBookingPaymentReceivedEmail = async (req, res, next) => {
+  const {
+    first_name,
+    email,
+    apartment_name,
+    amountPaid,
+    booking_reference,
+    check_in_date,
+    check_out_date,
+  } = req.body;
+  const email_body = shortletBookingPaymentRecievedTemp(
+    first_name,
+    apartment_name,
+    amountPaid,
+    booking_reference,
+    check_in_date,
+    check_out_date
+  );
+  const subject = "Shortlet Apartment Payment Received";
+  try {
+    sendEmail(subject, email_body, email);
+    next();
+  } catch (error) {
+    return res.status(500).json(error.message);
+  }
+};
+const shortletBookingCompletedEmail = async (req, res) => {
+  const {
+    email,
+    first_name,
+    apartment_name,
+    booking_reference,
+    location,
+    check_in_date,
+    check_out_date,
+    booking_id,
+  } = req.body;
+  const email_body = shortletBookingCompletedTemp(
+    first_name,
+    apartment_name,
+    booking_reference,
+    location,
+    check_in_date,
+    check_out_date
+  );
+  const subject = "Your Shortlet Booking is Confirmed and Completed!";
+  try {
+    sendEmail(subject, email_body, email);
+    return sendSuccess(
+      res,
+      "Your payment has been successfully completed",
+      booking_id
+    );
+  } catch (error) {
+    return res.status(500).json(error.message);
+  }
+};
+
+const flightBookingPaymentReceivedEmail = async (req, res) => {
+  const {
+    first_name,
+    email,
+    amountPaid,
+    booking_reference,
+    date,
+    route,
+    flight,
+    booking_id,
+  } = req.body;
+  const email_body = flightBookingPaymentRecievedTemp(
+    first_name,
+    booking_reference,
+    amountPaid,
+    route,
+    flight,
+    date
+  );
+  const subject = "Payment Received for Your Flight Booking";
+  try {
+    sendEmail(subject, email_body, email);
+    return sendSuccess(
+      res,
+      "Your payment has been successfully completed",
+      booking_id
+    );
+  } catch (error) {
+    res.status(500).json(error.message);
+  }
+};
+
+const flightTicketIssuedEmail = async (req, res) => {
+  const {
+    first_name,
+    email,
+    booking_reference,
+    flight,
+    destination,
+    route,
+    date,
+    time,
+  } = req.body;
+  const email_body = flightTicketIssuedTemp(
+    first_name,
+    booking_reference,
+    flight,
+    destination,
+    route,
+    date,
+    time
+  );
+  const subject = "Your Flight Ticket is Issued!";
+  try {
+    sendEmail(subject, email_body, email);
+    return sendSuccess(
+      res,
+      "Ticket has been successfully issued",
+      booking_reference
+    );
+  } catch (error) {
+    return res.status(500).json(error.message);
+  }
+};
+
+const flightTicketCancelledEmail = async (req, res) => {
+  const { first_name, email, booking_reference, route, date } = req.body;
+  const email_body = flightTicketCancelledTemp(
+    first_name,
+    booking_reference,
+    route,
+    date
+  );
+  const subject = "Update on Your Flight Booking!";
+  try {
+    sendEmail(subject, email_body, email);
+    return sendSuccess(
+      res,
+      "Ticket has been successfully cancelled",
+      booking_reference
     );
   } catch (error) {
     return res.status(500).json(error.message);
@@ -309,6 +516,16 @@ module.exports = {
   loginVerificationEmail,
   loginSuccessfulEmail,
   contactUsEmail,
+
+  bookingCreatedEmail,
+  apartmentAvailableEmail,
+
+  flightBookingPaymentReceivedEmail,
+  shortletBookingPaymentReceivedEmail,
+  shortletBookingCompletedEmail,
+
+  flightTicketIssuedEmail,
+  flightTicketCancelledEmail,
 
   profileUpdatedEmail,
 };

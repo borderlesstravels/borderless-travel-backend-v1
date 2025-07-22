@@ -20,6 +20,7 @@ const {
   hostMarkListingAsAvailable,
   hostMarkListingAsUnavailable,
 } = require("../../controllers/host/host-listing-controller");
+const { apartmentAvailableEmail } = require("../../services/emailServices");
 
 const router = express.Router();
 
@@ -55,7 +56,8 @@ router.put(
 router.put(
   "/confirm-booking/:id",
   verifyHostLoginToken,
-  hostApproveShortletBooking
+  hostApproveShortletBooking,
+  apartmentAvailableEmail
 );
 router.put(
   "/decline-booking/:id",

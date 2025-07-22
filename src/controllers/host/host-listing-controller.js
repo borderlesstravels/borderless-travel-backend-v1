@@ -4,11 +4,13 @@ const {
   sendError,
   sendSuccess,
   saveNotification,
+  dateFormatter,
 } = require("../../utils/helpers");
 const ShortletBooking = require("../../models/general/ShortletBooking");
 const User = require("../../models/user/User");
 const Markup = require("../../models/app-core/Markup");
 const { uploadMultipleImages } = require("../../middlewares/general");
+const Notification = require("../../models/general/Notification");
 
 const hostAddProperty = async (req, res) => {
   // let commission_amount = 0;
@@ -310,18 +312,27 @@ const hostApproveShortletBooking = async (req, res) => {
       return sendError(res, "Sorry, booking request owner not found");
     }
 
-    await apartmentBooking.save();
+    const newNot = new Notification({
+      owner: apartmentBooking.owner,
+      type: "booking",
+      title: `Reservation for ${apartmentBooking.apartment_name} confirmed`,
+      description: `Your reservation for a shortlet apartment; ${apartmentBooking.apartment_name} in ${apartmentBooking.address}, ${apartmentBooking.lga} has been successfully confirmed. Property is verified to be available. Please <a href="${process.env.USER_APP_URL}/stay-booking/${apartmentBooking.booking_reference}"> proceed to make payment</a>`,
+    });
 
-    const notifyUser = await saveNotification(
-      apartmentBooking.owner,
-      "booking",
-      `Reservation for ${apartmentBooking.apartment_name} confirmed`,
-      `Your reservation for a shortlet apartment; ${apartmentBooking.apartment_name} in ${apartmentBooking.address}, ${apartmentBooking.lga} has been successfully confirmed. Property is verified to be available. Please <a href="${process.env.USER_APP_URL}/stay-booking/${apartmentBooking.booking_reference}"> proceed to make payment</a>`,
-      user
-    );
-    if (notifyUser) {
-      return sendSuccess(res, "Successfully verified apartment's availability");
-    }
+    await apartmentBooking.save();
+    await newNot.save();
+    const check_in_date = dateFormatter(check_in_date);
+    const check_out_date = dateFormatter(check_out_date);
+
+    req.body = {
+      email: user.email,
+      first_name: user.first_name,
+      apartment_name: apartmentBooking.apartment_name,
+      location: `${apartmentBooking.apartment_address}, ${apartmentBooking.apartment_city}, ${apartmentBooking.apartment_country}`,
+      price: apartmentBooking.price,
+      date: `${check_in_date} - ${check_out_date}`,
+    };
+    next();
   } catch (error) {
     console.log(error);
     return sendError(

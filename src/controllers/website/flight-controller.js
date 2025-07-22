@@ -7,6 +7,8 @@ const {
   sendError,
   verifyAPIToken,
   sendSuccess,
+  dateFormatter,
+  timeFormatter,
 } = require("../../utils/helpers");
 const User = require("../../models/user/User");
 const APIToken = require("../../models/app-core/APIToken");
@@ -136,7 +138,7 @@ const confirmFlightPrice = async (req, res) => {
   }
 };
 
-const bookFlightAuth = async (req, res) => {
+const bookFlightAuth = async (req, res, next) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
 
@@ -194,14 +196,10 @@ const bookFlightAuth = async (req, res) => {
         const arrivalAirport = allAirports.filter(
           (airport) => airport.iata_code === destination_code
         );
-
-        console.log("departureAirport", departureAirport);
-        console.log("arrivalAirport", arrivalAirport);
-
         const origin = departureAirport[0].city;
         const destination = arrivalAirport[0].city;
 
-        const contactDetails = new FlightBooking({
+        const newBooking = new FlightBooking({
           owner: user._id,
           firm: firm,
           api_key: api_key,
@@ -226,25 +224,25 @@ const bookFlightAuth = async (req, res) => {
           payment_status: "pending",
           booking_reference: response?.data.reference,
         });
-        await contactDetails.save();
+        await newBooking.save();
         await User.findByIdAndUpdate(userId, { bookings: userBookings });
-        return res
-          .status(response.status)
-          .json({ success: true, data: response.data });
+        const date = dateFormatter(newBooking?.departure_time);
+        const time = timeFormatter(newBooking?.departure_time);
+        req.body = {
+          first_name: client.first_name,
+          email: newBooking.client_email,
+          category: "Flight",
+          booking_reference,
+          date,
+          time,
+          subject: `Your Booking Is Confirmed. Let's Travel`,
+          responseMessage: "Booking successfully created!",
+          newBooking,
+        };
+        next();
       } else {
         return sendError(res, "Unable to save booking to the database.");
       }
-      // } else if (response?.status === 400) {
-      //   console.log(response);
-      //   return sendError(
-      //     res,
-      //     "Please check the traveller's document(s) you provided. It might contain an expired document.",
-      //     response?.status
-      //   );
-      // } else if (response?.status === 403) {
-      //   return sendError(res, response.data.Message, response?.status);
-      // } else if (response?.status === 404) {
-      //   return sendError(res, response.data.message, response?.status);
     } else {
       console.log({ response: response.data });
       return sendError(res, response?.data?.message, response?.status);
@@ -336,7 +334,7 @@ const bookFlightNoAuth = async (req, res, next) => {
 
         try {
           const savedUser = await user.save();
-          const contactDetails = new FlightBooking({
+          const newBooking = new FlightBooking({
             owner: savedUser._id,
             firm: firm,
             api_key: api_key,
@@ -361,31 +359,23 @@ const bookFlightNoAuth = async (req, res, next) => {
             payment_status: "pending",
             booking_reference: response?.data.reference,
           });
-          await contactDetails.save();
-          const loginTtoken = jwt.sign(
-            { id: savedUser._id },
-            process.env.JWT_USER_SECRET_KEY,
-            {
-              expiresIn: "10d",
-            }
-          );
-          res.cookie(String(savedUser._id), loginTtoken, {
-            path: "/",
-            expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
-            httpOnly: true,
-            // sameSite: "lax",
-            sameSite: "none",
-            secure: true,
-          });
+          await newBooking.save();
+
+          const date = dateFormatter(newBooking?.created_at);
+          const time = dateFormatter(newBooking?.created_at);
           req.body = {
-            savedUser,
-            bookingResponse: response.data,
-            userId: savedUser._id,
+            first_name: client.first_name,
+            email: newBooking.client_email,
+            category: "Flight",
+            booking_reference,
+            date,
+            time,
+            subject: `Your Booking Is Confirmed. Let's Travel`,
+            signUpSubject: "Welcome to Boardless Travels!",
+            responseMessage: "Booking successfully created!",
+            newBooking,
           };
           next();
-          // return res
-          //   .status(response.status)
-          //   .json({ success: true, data: response.data });
         } catch (error) {
           console.log({ error });
           return sendError(

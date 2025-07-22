@@ -1,3 +1,4 @@
+const Notification = require("../../models/general/Notification");
 const Review = require("../../models/general/Review");
 const ShortletBooking = require("../../models/general/ShortletBooking");
 const Host = require("../../models/host/Host");
@@ -10,6 +11,7 @@ const {
   generateString,
   verifyAPIToken,
   shuffleArray,
+  dateFormatter,
 } = require("../../utils/helpers");
 
 const fetchShortlets = async (req, res) => {
@@ -159,14 +161,25 @@ const bookStayAUth = async (req, res, next) => {
     host.guests = Number(hostGuestsCount + 1);
     await newBooking.save();
     await host.save();
-    const notifyUser = await saveNotification(
-      userId,
-      "booking",
-      `Your reservation for ${apartment.apartment_name} has been created`,
-      `Your reservation for a shortlet apartment; ${apartment.apartment_name} in ${apartment.address}, ${apartment.lga} has been successfully created. Get ready to pay soon`,
-      user
-    );
-    const booking_id = newBooking._id;
+    // const notifyUser = await saveNotification(
+    //   userId,
+    //   "booking",
+    //   `Your reservation for ${apartment.apartment_name} has been created`,
+    //   `Your reservation for a shortlet apartment; ${apartment.apartment_name} in ${apartment.address}, ${apartment.lga} has been successfully created. Get ready to pay soon`,
+    //   user
+    // );
+    // const booking_id = newBooking._id;
+
+    const notifyUser = new Notification({
+      owner: userId,
+      type: "booking",
+      title: `Your reservation for ${apartment.apartment_name} has been created`,
+      description: `Your reservation for a shortlet apartment; ${apartment.apartment_name} in ${apartment.address}, ${apartment.lga} has been successfully created. Get ready to pay soon`,
+      apartment_id,
+      booking_id: newBooking._id,
+    });
+    await notifyUser.save();
+
     if (notifyUser) {
       const notifyHost = await saveNotification(
         apartment.owner,
@@ -178,17 +191,23 @@ const bookStayAUth = async (req, res, next) => {
         booking_id
       );
       if (notifyHost) {
-        req.body -
-          {
-            newBooking,
-            host,
-            user,
-          };
-        return sendSuccess(
-          res,
-          "Successfully created your shortlet booking. Please wait for feedback",
-          newBooking
-        );
+        const date = dateFormatter(newBooking?.created_at);
+        const time = dateFormatter(newBooking?.created_at);
+
+        req.body = {
+          first_name: user.first_name,
+          email: newBooking.email,
+          category: "Shortlet",
+          booking_reference,
+          date,
+          time,
+          subject: `Your Booking Is Confirmed`,
+          responseMessage:
+            "Successfully created your shortlet booking. Please wait for feedback",
+          newBooking,
+        };
+
+        next();
       }
     }
   } catch (error) {

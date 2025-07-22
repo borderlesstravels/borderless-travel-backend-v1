@@ -4,11 +4,12 @@ const {
   sendError,
   sendSuccess,
   verifyAPIToken,
+  dateFormatter,
+  timeFormatter,
 } = require("../../utils/helpers");
 const FlightBooking = require("../../models/general/FlightBooking");
 const { fetcher_tiqwa } = require("../../api/fetcher");
 const Payment = require("../../models/general/Payment");
-const APIToken = require("../../models/app-core/APIToken");
 const ShortletBooking = require("../../models/general/ShortletBooking");
 
 //
@@ -84,7 +85,7 @@ const fetchTicketDetails = async (req, res) => {
   }
 };
 
-const issueFlightTicket = async (req, res) => {
+const issueFlightTicket = async (req, res, next) => {
   const adminId = req.id;
   const { booking_reference } = req.params;
 
@@ -102,44 +103,55 @@ const issueFlightTicket = async (req, res) => {
       "Unauthorised! You are not authorised to perform this request"
     );
 
-  const response = await sender_tiqwa(`/flight/pay/${booking_reference}`);
-  if (!response) {
+  // const response = await sender_tiqwa(`/flight/pay/${booking_reference}`);
+  // if (!response) {
+  //   return sendError(
+  //     res,
+  //     "Unable to complete this request at this time. Please try again."
+  //   );
+  // }
+  // if (response?.status === 200) {
+  try {
+    const booking = await FlightBooking.findOne({ booking_reference });
+    booking.status = "issued";
+    booking.action_by = adminId ? adminId : api_key;
+    await booking.save();
+
+    const date = dateFormatter(booking?.departure_time);
+    const time = timeFormatter(booking?.departure_time);
+    req.body = {
+      first_name: booking.client_name.split(" ")[0],
+      email: booking.client_email,
+      booking_reference,
+      flight: booking.airline,
+      destination: booking.destination,
+      route: `${booking.origin} - ${booking.destination}`,
+      date,
+      time,
+    };
+
+    next();
+  } catch (error) {
+    console.log("Issue ticket action error: ", error);
     return sendError(
       res,
-      "Unable to complete this request at this time. Please try again."
+      "Ticket issued successfully. But the system could not update the booking record with new status",
+      204
     );
   }
-  if (response?.status === 200) {
-    try {
-      const booking = await FlightBooking.findOne({ booking_reference });
-      booking.status = "issued";
-      booking.action_by = adminId ? adminId : api_key;
-      await booking.save();
-      return sendSuccess(
-        res,
-        "Ticket has been successfully issued",
-        response.data
-      );
-    } catch (error) {
-      log(error);
-      return sendError(
-        res,
-        "Ticket issued successfully. But the system could not update the booking record with new status",
-        204
-      );
-    }
-  } else {
-    return sendError(res, response?.data.message, response?.status);
-  }
+  // } else {
+  //   return sendError(res, response?.data.message, response?.status);
+  // }
 };
 
-const cancelFlightTicket = async (req, res) => {
+const cancelFlightTicket = async (req, res, next) => {
   const { booking_reference } = req.params;
   const adminId = req.id;
 
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
   const booking = await FlightBooking.findOne({ booking_reference });
+
   if (!booking)
     return sendError(
       res,
@@ -151,36 +163,29 @@ const cancelFlightTicket = async (req, res) => {
       "Unauthorised! You are not authorised to perform this request"
     );
 
-  const response = await sender_tiqwa(`/flight/${booking_reference}`);
-  if (!response) {
+  try {
+    const booking = await FlightBooking.findOne({ booking_reference });
+    booking.status = "canceled";
+    booking.action_by = adminId ? adminId : api_key;
+    await booking.save();
+
+    const date = dateFormatter(booking?.departure_time);
+    req.body = {
+      first_name: booking.client_name.split(" ")[0],
+      email: booking.client_email,
+      booking_reference,
+      route: `${booking.origin} - ${booking.destination}`,
+      date,
+    };
+
+    next();
+  } catch (error) {
+    console.log("Cancel ticket action error: ", error);
     return sendError(
       res,
-      "Unable to complete this request at this time. Please try again."
+      "Ticket canceled successfully. But the system could not update the booking record with new status",
+      204
     );
-  }
-  console.log(response.status);
-
-  if (response?.status === 200) {
-    try {
-      const booking = await FlightBooking.findOne({ booking_reference });
-      booking.status = "canceled";
-      booking.action_by = adminId ? adminId : api_key;
-      await booking.save();
-      return sendSuccess(
-        res,
-        "Ticket has been successfully cancelled",
-        response.data
-      );
-    } catch (error) {
-      log(error);
-      return sendError(
-        res,
-        "Ticket canceled successfully. But the system could not update the booking record with new status",
-        204
-      );
-    }
-  } else {
-    return sendError(res, response?.data.message, response?.status);
   }
 };
 

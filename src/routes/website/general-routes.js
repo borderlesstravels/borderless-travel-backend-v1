@@ -2,6 +2,9 @@ const express = require("express");
 const {
   contactUsEmail,
   waitlistSubscribedEMail,
+  flightBookingPaymentReceivedEmail,
+  shortletBookingPaymentReceivedEmail,
+  shortletBookingCompletedEmail,
 } = require("../../services/emailServices");
 const {
   validateContactUsParams,
@@ -39,14 +42,17 @@ router.post(
   verifyUserLoginToken,
   validatePaymentRecord,
   validate,
-  payForFlight
+  payForFlight,
+  flightBookingPaymentReceivedEmail
 );
 router.post(
   "/record-shortlet-payment",
   verifyUserLoginToken,
   validatePaymentRecord,
   validate,
-  payForShortlet
+  payForShortlet,
+  shortletBookingPaymentReceivedEmail,
+  shortletBookingCompletedEmail
 );
 router.post("/contact-us", validateContactUsParams, validate, contactUsEmail);
 router.post("/subscribe", validateSubscriptionParams, validate, saveSubscriber);
