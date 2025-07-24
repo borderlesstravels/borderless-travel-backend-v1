@@ -367,7 +367,7 @@ const bookFlightNoAuth = async (req, res, next) => {
             first_name: client.first_name,
             email: newBooking.client_email,
             category: "Flight",
-            booking_reference,
+            booking_reference: newBooking.booking_reference,
             date,
             time,
             subject: `Your Booking Is Confirmed. Let's Travel`,
