@@ -415,11 +415,10 @@ const flightBookingPaymentReceivedEmail = async (req, res) => {
   const subject = "Payment Received for Your Flight Booking";
   try {
     sendEmail(subject, email_body, email);
-    return sendSuccess(
-      res,
-      "Your payment has been successfully completed",
-      booking_id
-    );
+    return sendSuccess(res, "Your payment has been successfully completed", {
+      booking_id,
+      booking_reference,
+    });
   } catch (error) {
     res.status(500).json(error.message);
   }

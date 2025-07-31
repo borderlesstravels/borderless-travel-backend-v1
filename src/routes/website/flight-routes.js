@@ -5,12 +5,11 @@ const {
   flightOfferSearch,
   confirmFlightPrice,
   fetchFlightTicketDetails,
-  bookFlightAuth,
-  bookFlightNoAuth,
   flightOfferSearchMultiCity,
   bookFlightThirdParty,
   travelBookingRequest,
   flightProviderWebHook,
+  bookFlight,
 } = require("../../controllers/website/flight-controller");
 const {
   validateFlightOfferSearch,
@@ -22,10 +21,7 @@ const {
 const {
   verifyUserLoginToken,
 } = require("../../controllers/website/user-auth-controller");
-const {
-  verificationEmailAutoSignup,
-  bookingCreatedEmail,
-} = require("../../services/emailServices");
+const { bookingCreatedEmail } = require("../../services/emailServices");
 
 const router = express.Router();
 
@@ -51,21 +47,13 @@ router.post(
 );
 router.get("/confirm-price/:flight_id", confirmFlightPrice);
 router.post(
-  "/book-flight-no-auth/:flight_id",
+  "/book-flight/:flight_id",
   validateFlightBooking,
   validate,
-  bookFlightNoAuth,
-  verificationEmailAutoSignup,
+  bookFlight,
   bookingCreatedEmail
 );
-router.post(
-  "/book-flight-auth/:flight_id",
-  validateFlightBooking,
-  validate,
-  verifyUserLoginToken,
-  bookFlightAuth,
-  bookingCreatedEmail
-);
+
 router.post(
   "/book-flight-tp/:flight_id",
   validateFlightBooking,

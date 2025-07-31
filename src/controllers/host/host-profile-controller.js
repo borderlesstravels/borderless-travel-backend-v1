@@ -150,6 +150,10 @@ const updateHostPassword = async (req, res, next) => {
 
 const setHostProfileAvatar = async (req, res) => {
   const userId = req.id;
+  const rawImagesArray = req.files["avatar"];
+  if (!rawImagesArray) {
+    return badRequestError(res, "Please add the image avatar to be uploaded");
+  }
   const avatar = await uploadSingleImage(req, res);
   if (!avatar) {
     return sendError(res, "Please add the image avatar to be uploaded");

@@ -12,6 +12,7 @@ const Review = require("../../models/general/Review");
 const Notification = require("../../models/general/Notification");
 const ShortLet = require("../../models/host/ShortLet");
 const Payment = require("../../models/general/Payment");
+const { uploadSingleImage } = require("../../middlewares/general");
 
 const getUser = async (req, res) => {
   const userId = req.id;
@@ -52,11 +53,10 @@ const setUserProfileAvatar = async (req, res) => {
   if (!rawImagesArray) {
     return badRequestError(res, "Please add the image avatar to be uploaded");
   }
-  const namedImage = rawImagesArray.map((a) => a.filename);
-  const stringnifiedImages = JSON.stringify(namedImage);
-  const formmatedImages = stringnifiedImages.replace(/[^a-zA-Z0-9_.,]/g, "");
-  const avatar = formmatedImages.replace(/[,]/g, ", ");
-  console.log("avatar: ", avatar);
+  const avatar = await uploadSingleImage(req, res);
+  if (!avatar) {
+    return sendError(res, "Please add the image avatar to be uploaded");
+  }
 
   try {
     const savedProfile = await User.findByIdAndUpdate(userId, {
@@ -141,8 +141,17 @@ const getReferralProfile = async (req, res) => {
 const userFlightBookings = async (req, res) => {
   const userId = req.id;
   try {
-    const flightBookings = await FlightBooking.find({ owner: userId })
-      .select("-action_by")
+    const user = await User.findById(userId);
+    if (!user) {
+      return sendError(res, "Your user account cannot be found");
+    }
+    const flightBookings = await FlightBooking.find({ owner: user.email })
+      .select([
+        "-action_by",
+        "-firm",
+        "-api_key",
+        "-passenger_details.documents",
+      ])
       .limit(req.query.limit);
     if (flightBookings.length < 1) {
       return sendSuccess(res, "No flight booking record found");
@@ -160,9 +169,12 @@ const userFlightBookings = async (req, res) => {
 
 const userSingleFlightBooking = async (req, res) => {
   try {
-    const flightBooking = await FlightBooking.findById(req.params.id).select(
-      "-action_by"
-    );
+    const flightBooking = await FlightBooking.findById(req.params.id).select([
+      "-action_by",
+      "-firm",
+      "-api_key",
+      "-passenger_details.documents",
+    ]);
     if (!flightBooking) {
       return sendSuccess(res, "No flight booking record found");
     }
@@ -195,8 +207,12 @@ const userShortletBookings = async (req, res) => {
 const userPaymentHistory = async (req, res) => {
   const userId = req.id;
   try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return sendError(res, "Your user account cannot be found");
+    }
     const userPayments = await Payment.find({
-      owner: userId,
+      owner: user.email,
     }).limit(req.query.limit);
     console.log(userPayments);
     return sendSuccess(

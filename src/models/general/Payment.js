@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-
+const mongoose = require("mongoose");
+const Double = require("@mongoosejs/double");
 const Schema = mongoose.Schema;
 
 const paymentSchema = new Schema({
@@ -28,19 +28,19 @@ const paymentSchema = new Schema({
     required: true,
   },
   amount_paid: {
-    type: Number,
+    type: Double,
     required: true,
   },
   service_amount: {
-    type: Number,
+    type: Double,
     required: true,
   },
   commission_percent: {
-    type: Number,
+    type: Double,
     required: true,
   },
   commission_amount: {
-    type: Number,
+    type: Double,
     required: true,
   },
   transaction_time: {
@@ -49,7 +49,7 @@ const paymentSchema = new Schema({
   },
   status: {
     type: String,
-    default: 'completed',
+    default: "completed",
   },
   action_by: {
     type: String,
@@ -60,4 +60,4 @@ const paymentSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('Payment', paymentSchema);
+module.exports = mongoose.model("Payment", paymentSchema);

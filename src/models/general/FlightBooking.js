@@ -1,8 +1,12 @@
 const mongoose = require("mongoose");
-
+const Double = require("@mongoosejs/double");
 const Schema = mongoose.Schema;
 
 const flightBookingSchema = new Schema({
+  owner: {
+    type: String,
+    required: true,
+  },
   firm: {
     type: String,
     required: true,
@@ -11,32 +15,12 @@ const flightBookingSchema = new Schema({
     type: String,
     required: true,
   },
-  owner: {
-    type: String,
-    // required: true,
-  },
-  client_name: {
-    type: String,
+  contact_details: {
+    type: Object,
     required: true,
   },
-  client_phone: {
-    type: String,
-    required: true,
-  },
-  client_email: {
-    type: String,
-    required: true,
-  },
-  contact_name: {
-    type: String,
-    required: true,
-  },
-  contact_email: {
-    type: String,
-    required: true,
-  },
-  contact_phone: {
-    type: String,
+  passenger_details: {
+    type: Array,
     required: true,
   },
   contact_relationship: {
@@ -76,7 +60,7 @@ const flightBookingSchema = new Schema({
     required: true,
   },
   price: {
-    type: Number,
+    type: Double,
     required: true,
   },
   status: {
@@ -85,7 +69,7 @@ const flightBookingSchema = new Schema({
   },
   payment_status: {
     type: String,
-    required: true,
+    default: "pending",
   },
   booking_reference: {
     type: String,

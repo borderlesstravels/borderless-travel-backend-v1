@@ -38,8 +38,7 @@ const router = express.Router();
 
 router.get("/services", services);
 router.post(
-  "/record-payment",
-  verifyUserLoginToken,
+  "/record-flight-payment",
   validatePaymentRecord,
   validate,
   payForFlight,

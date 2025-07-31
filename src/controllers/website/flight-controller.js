@@ -14,6 +14,7 @@ const User = require("../../models/user/User");
 const APIToken = require("../../models/app-core/APIToken");
 const BookingRequest = require("../../models/general/BookingRequest");
 const jwt = require("jsonwebtoken");
+const SaleRecord = require("../../models/general/SaleRecord");
 
 const travelBookingRequest = async (req, res) => {
   const newBookingRequest = new BookingRequest(req.body);
@@ -75,9 +76,6 @@ const fetchAirlines = async (req, res) => {
 const flightOfferSearch = async (req, res, next) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
-
-  console.log({ firm });
-  console.log({ api_key });
   const response = await fetcher_tiqwa("/flight/search", req.body);
   if (!response) {
     return sendError(
@@ -200,7 +198,7 @@ const bookFlightAuth = async (req, res, next) => {
         const destination = arrivalAirport[0].city;
 
         const newBooking = new FlightBooking({
-          owner: user._id,
+          owner: user.email,
           firm: firm,
           api_key: api_key,
           flight_id: flight_id,
@@ -256,45 +254,16 @@ const bookFlightAuth = async (req, res, next) => {
   }
 };
 
-const bookFlightNoAuth = async (req, res, next) => {
+const bookFlight = async (req, res, next) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
-
   const { flight_id } = req.params;
   const { contact_details, passenger_details } = req.body;
-  const client = passenger_details[0];
-  const password = contact_details.c_first_name.toLowerCase();
-  const hashedPassword = bcrypt.hashSync(password);
-
-  try {
-    const existingUser = await User.findOne({ email: contact_details.c_email });
-    if (existingUser) {
-      return sendError(
-        res,
-        "You are already a registered user. Please login first to continue, or use another email adrress"
-      );
-    }
-  } catch (error) {
-    console.log(error);
-    return sendError(
-      res,
-      "Unable to verify that you do not have an account yet."
-    );
-  }
-
-  const user = new User({
-    first_name: contact_details.c_first_name,
-    last_name: contact_details.c_last_name,
-    email: contact_details.c_email,
-    password: hashedPassword,
-    bookings: 1,
-  });
 
   try {
     const response = await sender_tiqwa(`/flight/book/${flight_id}`, {
       passengers: passenger_details,
     });
-    console.log("response", response);
     if (!response) {
       return sendError(
         res,
@@ -331,20 +300,17 @@ const bookFlightNoAuth = async (req, res, next) => {
 
         const origin = departureAirport[0].city;
         const destination = arrivalAirport[0].city;
+        const total_paid = response.data.amount;
+        const service_cost = response.data.pricing.payable;
+        const profit = response.data.pricing.markup.markup_value;
 
         try {
-          const savedUser = await user.save();
           const newBooking = new FlightBooking({
-            owner: savedUser._id,
+            owner: contact_details.c_email,
             firm: firm,
             api_key: api_key,
-            flight_id: flight_id,
-            client_name: `${client.first_name} ${client.last_name}`,
-            client_phone: client.phone_number,
-            client_email: client.email,
-            contact_name: `${contact_details.c_first_name} ${contact_details.c_last_name}`,
-            contact_email: contact_details.c_email,
-            contact_phone: contact_details.c_phone_number,
+            contact_details: contact_details,
+            passenger_details: passenger_details,
             contact_relationship: contact_details.c_relationship_to_p,
             airline,
             airline_logo,
@@ -354,18 +320,28 @@ const bookFlightNoAuth = async (req, res, next) => {
             destination_code,
             origin,
             destination,
-            price: response?.data?.amount,
+            price: total_paid,
             status: response?.data?.status,
-            payment_status: "pending",
             booking_reference: response?.data.reference,
           });
           await newBooking.save();
+          const newSale = new SaleRecord({
+            purchasing_firm: firm,
+            sale_reference: response?.data?.reference,
+            service: process.env.FLIGHT_SERVICE_NAME.toLowerCase(),
+            service_provider: process.env.FLIGHT_SERVICE_PROVIDER.toLowerCase(),
+            total_paid,
+            service_cost,
+            profit,
+          });
+          await newSale.save();
 
           const date = dateFormatter(newBooking?.created_at);
           const time = dateFormatter(newBooking?.created_at);
+
           req.body = {
-            first_name: client.first_name,
-            email: newBooking.client_email,
+            first_name: contact_details.c_first_name,
+            email: contact_details.c_email,
             category: "Flight",
             booking_reference: newBooking.booking_reference,
             date,
@@ -377,19 +353,29 @@ const bookFlightNoAuth = async (req, res, next) => {
           };
           next();
         } catch (error) {
-          console.log({ error });
+          console.log(
+            `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error -`,
+            error
+          );
           return sendError(
             res,
-            "Ticket booked, but we are unable to save your data on our database. Kindly get in touch with us soon."
+            `Ticket booked, but we are unable to save your data on our database. Kindly get in touch with us soon. Booking ID: ${response?.data.reference}`
           );
         }
       } else {
-        return sendError(res, "Unable to save booking to the database.");
+        console.log(
+          `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error - Unable to locate airports`
+        );
+        return sendError(
+          res,
+          `Booking established but could not be completed. Kindly reach out to support with this booking ID: ${response?.data.reference}`
+        );
       }
     } else {
       return sendError(res, response?.statusText, response?.status);
     }
   } catch (error) {
+    console.log("Unable to complete flight booking. Error -", error);
     return sendError(
       res,
       `Unable to book your flight at this time. Error - ${error}`
@@ -397,23 +383,11 @@ const bookFlightNoAuth = async (req, res, next) => {
   }
 };
 
-const bookFlightThirdParty = async (req, res) => {
+const bookFlightThirdParty = async (req, res, next) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
-
   const { flight_id } = req.params;
   const { contact_details, passenger_details } = req.body;
-  const client = passenger_details[0];
-  const password = contact_details.c_first_name.toLowerCase();
-  const hashedPassword = bcrypt.hashSync(password);
-
-  const user = new User({
-    first_name: contact_details.c_first_name,
-    last_name: contact_details.c_last_name,
-    email: contact_details.c_email,
-    password: hashedPassword,
-    bookings: 1,
-  });
 
   try {
     const response = await sender_tiqwa(`/flight/book/${flight_id}`, {
@@ -425,7 +399,6 @@ const bookFlightThirdParty = async (req, res) => {
         "Unable to complete this request at this time. Please try again."
       );
     }
-    console.log("response", response);
     if (response?.status === 200) {
       const outboundData = response.data.outbound;
       const destPicker = Number(outboundData.length - 1);
@@ -456,20 +429,17 @@ const bookFlightThirdParty = async (req, res) => {
 
         const origin = departureAirport[0].city;
         const destination = arrivalAirport[0].city;
+        const total_paid = response.data.amount;
+        const service_cost = response.data.pricing.payable;
+        const profit = response.data.pricing.markup.markup_value;
 
         try {
-          // const savedUser = await user.save();
-          const contactDetails = new FlightBooking({
+          const newBooking = new FlightBooking({
+            owner: contact_details.c_email,
             firm: firm,
             api_key: api_key,
-            // owner: savedUser._id,
-            flight_id: flight_id,
-            client_name: `${client.first_name} ${client.last_name}`,
-            client_phone: client.phone_number,
-            client_email: client.email,
-            contact_name: `${contact_details.c_first_name} ${contact_details.c_last_name}`,
-            contact_email: contact_details.c_email,
-            contact_phone: contact_details.c_phone_number,
+            contact_details: contact_details,
+            passenger_details: passenger_details,
             contact_relationship: contact_details.c_relationship_to_p,
             airline,
             airline_logo,
@@ -479,28 +449,48 @@ const bookFlightThirdParty = async (req, res) => {
             destination_code,
             origin,
             destination,
-            price: response?.data?.amount,
+            price: total_paid,
             status: response?.data?.status,
-            payment_status: "pending",
             booking_reference: response?.data.reference,
           });
-          await contactDetails.save();
+          await newBooking.save();
+          const newSale = new SaleRecord({
+            purchasing_firm: firm,
+            sale_reference: response?.data?.reference,
+            service: process.env.FLIGHT_SERVICE_NAME.toLowerCase(),
+            service_provider: process.env.FLIGHT_SERVICE_PROVIDER.toLowerCase(),
+            total_paid,
+            service_cost,
+            profit,
+          });
+          await newSale.save();
           return res
             .status(response.status)
             .json({ success: true, data: response.data });
-        } catch (err) {
+        } catch (error) {
+          console.log(
+            `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error -`,
+            error
+          );
           return sendError(
             res,
-            "Ticket booked, but we are unable to save your data on our database. Kindly get in touch with us soon."
+            `Ticket booked, but we are unable to save your data on our database. Kindly get in touch with us soon. Booking ID: ${response?.data.reference}`
           );
         }
       } else {
-        return sendError(res, "Unable to save booking to the database.");
+        console.log(
+          `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error - Unable to locate airports`
+        );
+        return sendError(
+          res,
+          `Booking established but could not be completed. Kindly reach out to support with this booking ID: ${response?.data.reference}`
+        );
       }
     } else {
       return sendError(res, response?.statusText, response?.status);
     }
   } catch (error) {
+    console.log("Unable to complete flight booking. Error -", error);
     return sendError(
       res,
       `Unable to book your flight at this time. Error - ${error}`
@@ -544,8 +534,8 @@ const flightProviderWebHook = async (req, res) => {
       } else if (event == "ticket.booked") {
         booking.status = "booked";
       }
+      await booking.save();
     }
-    await booking.save();
     return sendSuccess(res, "Successfully completed operation");
   } catch (error) {
     console.log("error", error);
@@ -561,7 +551,7 @@ module.exports = {
   flightOfferSearchMultiCity,
   confirmFlightPrice,
   bookFlightAuth,
-  bookFlightNoAuth,
+  bookFlight,
   bookFlightThirdParty,
   fetchFlightTicketDetails,
 

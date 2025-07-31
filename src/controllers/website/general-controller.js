@@ -7,6 +7,7 @@ const FlightBooking = require("../../models/general/FlightBooking");
 const Job = require("../../models/general/Job");
 const JobApplication = require("../../models/general/JobApplication");
 const Payment = require("../../models/general/Payment");
+const SaleRecord = require("../../models/general/SaleRecord");
 const ShortletBooking = require("../../models/general/ShortletBooking");
 const Subscriber = require("../../models/general/Subscriber");
 const Waitlist = require("../../models/general/Waitlist");
@@ -44,20 +45,12 @@ const services = async (req, res) => {
 };
 
 const payForFlight = async (req, res, next) => {
-  const userId = req.id;
-  const {
-    service_name,
-    booking_reference,
-    transaction_reference,
-    amount,
-    time,
-  } = req.body;
-
-  const user = await User.findById(userId, "-password");
-  if (!user) return sendError(res, "Sorry, please login first");
+  const { booking_reference, transaction_reference, amount, time } = req.body;
 
   try {
-    const markup = await Markup.findOne({ service_name: service_name });
+    const markup = await Markup.findOne({
+      service_name: process.env.FLIGHT_SERVICE_NAME.toLowerCase(),
+    });
     if (!markup) {
       return sendError(res, "The selected service does not exist");
     }
@@ -67,37 +60,50 @@ const payForFlight = async (req, res, next) => {
         booking_reference: booking_reference,
       });
       if (!booking) {
-        return sendError(res, "No booking record found");
+        return sendError(res, "Payment received, but no booking record found");
       }
       if (booking.payment_status === "paid") {
         return badRequestError(res, "You have already paid for this service");
       }
+      const sale = await SaleRecord.findOne({
+        sale_reference: booking_reference,
+      });
+      if (!sale) {
+        return sendError(
+          res,
+          "Payment received but we cannot record sales at this time. Kindly contact support"
+        );
+      }
       const commission_percent = markup.commission;
-      const commission_amount = (commission_percent / 100) * amount;
-      const service_amount = amount - commission_amount;
+      const sale_profit = sale?.profit?.value;
+      const service_amount = amount - sale_profit;
+      const owner = booking?.contact_details;
+      const payer_name = `${owner.c_first_name} ${owner.c_last_name}`;
       const newPayment = new Payment({
-        owner: userId,
-        service_name,
-        payer_name: `${user.first_name} ${user.last_name}`,
-        payer_email: user.email,
+        owner: owner.c_email,
+        service_name: process.env.FLIGHT_SERVICE_NAME.toLowerCase(),
+        payer_name: payer_name,
+        payer_email: owner.c_email,
         booking_reference,
         transaction_reference,
         amount_paid: amount,
         service_amount,
         commission_percent,
-        commission_amount,
+        commission_amount: sale_profit,
         transaction_time: time,
       });
       booking.payment_status = "paid";
+      sale.status = "completed";
       await booking.save();
       await newPayment.save();
+      await sale.save();
 
       const date = dateFormatter(booking.created_at);
       const amountPaid = formatCurrency(amount);
 
       req.body = {
-        first_name: booking.contact_name.split(" ")[0],
-        email: booking.client_email,
+        first_name: booking.contact_details?.c_first_name,
+        email: booking.contact_details?.c_email,
         amountPaid: amountPaid,
         booking_reference: booking.booking_reference,
         date,
@@ -105,7 +111,6 @@ const payForFlight = async (req, res, next) => {
         flight: booking.airline,
         booking_id: booking._id,
       };
-
       next();
     } catch (error) {
       return sendError(res, `Unable to record your payment. Error - ${error}`);
