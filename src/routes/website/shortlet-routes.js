@@ -26,7 +26,7 @@ router.get("/fetch-shortlets-location", fetchShortletsMinified);
 router.get("/fetch-shortlet/:id", fetchSingleShortlet);
 router.get("/fetch-shortlet-reviews/:product_reviewed", fetchShortletReviews);
 router.post(
-  "/book-shortlet-auth/:apartment_id",
+  "/book-shortlet/:apartment_id",
   validateShortletParams,
   validate,
   verifyUserLoginToken,

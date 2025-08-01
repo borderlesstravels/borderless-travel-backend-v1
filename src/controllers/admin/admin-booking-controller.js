@@ -22,11 +22,15 @@ const allFlightBookings = async (req, res) => {
     const flightBookings = await FlightBooking.find({ firm }).limit(
       req.query.limit
     );
-    return sendSuccess(
-      res,
-      "Successfully fetched all flight bookings",
-      flightBookings
-    );
+    if (!flightBookings) {
+      return sendError(res, "Flight bookings not available at this time.");
+    } else {
+      return sendSuccess(
+        res,
+        "Successfully fetched all flight bookings",
+        flightBookings
+      );
+    }
   } catch (error) {
     return sendError(res, "Cannot fetch flight bookings");
   }
@@ -219,11 +223,15 @@ const allShortletBookings = async (req, res) => {
     const shortletBookings = await ShortletBooking.find({ firm }).limit(
       req.query.limit
     );
-    return sendSuccess(
-      res,
-      "Successfully fetched all shortlet bookings",
-      shortletBookings
-    );
+    if (!shortletBookings) {
+      return sendError(res, "Shortlet bookings not available at this time.");
+    } else {
+      return sendSuccess(
+        res,
+        "Successfully fetched all shortlet bookings",
+        shortletBookings
+      );
+    }
   } catch (error) {
     return sendError(res, "Cannot fetch shortlet bookings");
   }

@@ -383,11 +383,10 @@ const shortletBookingCompletedEmail = async (req, res) => {
   const subject = "Your Shortlet Booking is Confirmed and Completed!";
   try {
     sendEmail(subject, email_body, email);
-    return sendSuccess(
-      res,
-      "Your payment has been successfully completed",
-      booking_id
-    );
+    return sendSuccess(res, "Your payment has been successfully completed", {
+      booking_id,
+      booking_reference,
+    });
   } catch (error) {
     return res.status(500).json(error.message);
   }

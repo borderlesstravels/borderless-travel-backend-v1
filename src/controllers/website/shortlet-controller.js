@@ -137,7 +137,7 @@ const bookStayAUth = async (req, res, next) => {
 
   try {
     const newBooking = new ShortletBooking({
-      owner: userId,
+      owner: user.email,
       firm,
       api_key,
       apartment_id,
@@ -146,7 +146,7 @@ const bookStayAUth = async (req, res, next) => {
       apartment_city: apartment.lga,
       apartment_state: apartment.state,
       apartment_country: apartment.country,
-      apartment_img: apartment.images.split(", ")[0].toString(),
+      apartment_img: apartment.images[0],
       apartment_owner: apartment.owner,
       name: `${user.first_name} ${user.last_name}`,
       email: user.email,
@@ -168,8 +168,8 @@ const bookStayAUth = async (req, res, next) => {
     //   `Your reservation for a shortlet apartment; ${apartment.apartment_name} in ${apartment.address}, ${apartment.lga} has been successfully created. Get ready to pay soon`,
     //   user
     // );
-    // const booking_id = newBooking._id;
 
+    const booking_id = newBooking._id;
     const notifyUser = new Notification({
       owner: userId,
       type: "booking",

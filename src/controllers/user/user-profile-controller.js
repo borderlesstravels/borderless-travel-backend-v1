@@ -187,8 +187,12 @@ const userSingleFlightBooking = async (req, res) => {
 const userShortletBookings = async (req, res) => {
   const userId = req.id;
   try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return sendError(res, "Your user account cannot be found");
+    }
     const shortletBookings = await ShortletBooking.find({
-      owner: userId,
+      owner: user.email,
     }).limit(req.query.limit);
     if (shortletBookings.length < 1) {
       return sendSuccess(res, "No shortlet booking record found");
@@ -254,7 +258,7 @@ const createReview = async (req, res) => {
     property_owner = "";
   }
   const newReview = new Review({
-    reviewer_id: req.id,
+    reviewer_id: user.email,
     reviewer_name: `${user.first_name} ${user.last_name}`,
     product_reviewed: product_reviewed,
     property_owner: property_owner,
@@ -284,9 +288,22 @@ const updateReview = async (req, res) => {
 };
 
 const deleteReview = async (req, res) => {
+  const userId = req.id;
   try {
-    await Review.findByIdAndDelete(req.params.id);
-    return sendSuccess(res, "Successfully deleted a review record");
+    const user = await User.findById(userId);
+    if (!user) {
+      return sendError(res, "Your user account cannot be found");
+    }
+    const review = await Review.findOne({
+      reviewer_id: user.email,
+      _id: req.params.id,
+    });
+    if (!review) {
+      return sendError(res, "You are not authorised to perform  this request");
+    } else {
+      await Review.findByIdAndDelete(review._id);
+      return sendSuccess(res, "Successfully deleted a review record");
+    }
   } catch (error) {
     console.log(error);
     return sendError(res, "Unable to delete the user profile");
@@ -295,9 +312,14 @@ const deleteReview = async (req, res) => {
 
 const userReviews = async (req, res) => {
   const userId = req.id;
+
   try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return sendError(res, "Your user account cannot be found");
+    }
     const reviews = await Review.find({
-      owner: userId,
+      reviewer_id: user.email,
     }).limit(req.query.limit);
     if (reviews.length < 1) {
       return sendSuccess(res, "No review record found");

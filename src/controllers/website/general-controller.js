@@ -19,6 +19,7 @@ const {
   shuffleArray,
   dateFormatter,
   formatCurrency,
+  verifyAPIToken,
 } = require("../../utils/helpers");
 
 const services = async (req, res) => {
@@ -45,11 +46,19 @@ const services = async (req, res) => {
 };
 
 const payForFlight = async (req, res, next) => {
-  const { booking_reference, transaction_reference, amount, time } = req.body;
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(res, firm, api_key);
+  const {
+    service_name,
+    booking_reference,
+    transaction_reference,
+    amount,
+    time,
+  } = req.body;
 
   try {
     const markup = await Markup.findOne({
-      service_name: process.env.FLIGHT_SERVICE_NAME.toLowerCase(),
+      service_name: service_name,
     });
     if (!markup) {
       return sendError(res, "The selected service does not exist");
@@ -81,7 +90,7 @@ const payForFlight = async (req, res, next) => {
       const payer_name = `${owner.c_first_name} ${owner.c_last_name}`;
       const newPayment = new Payment({
         owner: owner.c_email,
-        service_name: process.env.FLIGHT_SERVICE_NAME.toLowerCase(),
+        service_name: service_name,
         payer_name: payer_name,
         payer_email: owner.c_email,
         booking_reference,
@@ -124,6 +133,8 @@ const payForFlight = async (req, res, next) => {
 };
 
 const payForShortlet = async (req, res, next) => {
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(res, firm, api_key);
   const userId = req.id;
   const {
     service_name,
@@ -159,7 +170,7 @@ const payForShortlet = async (req, res, next) => {
       const commission_amount = (commission_percent / 100) * amount;
       const service_amount = amount - commission_amount;
       const newPayment = new Payment({
-        owner: userId,
+        owner: user.email,
         service_name,
         payer_name: `${user.first_name} ${user.last_name}`,
         payer_email: user.email,
@@ -171,10 +182,21 @@ const payForShortlet = async (req, res, next) => {
         commission_amount,
         transaction_time: time,
       });
+      const newSale = new SaleRecord({
+        purchasing_firm: firm,
+        sale_reference: booking_reference,
+        service: service_name,
+        service_provider: process.env.SHORTLET_SERVICE_PROVIDER.toLowerCase(),
+        total_paid: amount,
+        service_cost: service_amount,
+        profit: commission_amount,
+        status: "completed",
+      });
       booking.payment_status = "paid";
       booking.status = "paid";
       await booking.save();
       await newPayment.save();
+      await newSale.save();
 
       const check_in_date = dateFormatter(booking.check_in_date);
       const check_out_date = dateFormatter(booking.check_out_date);
@@ -194,6 +216,7 @@ const payForShortlet = async (req, res, next) => {
 
       next();
     } catch (error) {
+      console.log("error", error);
       return sendError(res, `Unable to record your payment. Error - ${error}`);
     }
   } catch (error) {

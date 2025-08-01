@@ -24,7 +24,7 @@ const shortletBookingSchema = new Schema({
     required: true,
   },
   apartment_img: {
-    type: String,
+    type: Object,
     required: true,
   },
   gps_location: {
