@@ -62,7 +62,6 @@ router.post(
 );
 router.get(
   "/flight-booking-details/:booking_reference",
-  verifyUserLoginToken,
   fetchFlightTicketDetails
 );
 
