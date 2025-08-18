@@ -279,24 +279,33 @@ const bookingSuccessfulTemp = (
                   margin-bottom: 25px;
                 "
               >
+                A representative from our customer support team will reach out shortly to verify your booking information.
+              </span>
+
+              <span
+                style="
+                  display: block;
+                  margin-bottom: 25px;
+                "
+              >
                 You can view or manage your booking
                 anytime at
                 <a
-                  href="borderless.com/my-bookings"
+                  href="borderless.travel/my-bookings"
                   style="
                     text-decoration: none;
                     color: #660476;
                   "
-                  >borderless.com/my-bookings</a
+                  >borderless.travel/my-bookings</a
                 >. Need assistance? Our 24/7 support team
                 is here at
                 <a
-                  href="mailto:support@borderless.com"
+                  href="mailto:support@borderless.travel"
                   style="
                     text-decoration: none;
                     color: #660476;
                   "
-                  >support@borderless.com</a
+                  >support@borderless.travel</a
                 >.
               </span>
               <span
