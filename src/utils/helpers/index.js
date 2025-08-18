@@ -51,7 +51,11 @@ exports.generateOTP = () => {
 };
 
 exports.formatCurrency = (value) => {
-  return value.toLocaleString("en-US", { style: "currency", currency: "NGN" });
+  const fm = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "NGN",
+  });
+  return fm.format(value);
 };
 
 exports.shuffleArray = (array) => {

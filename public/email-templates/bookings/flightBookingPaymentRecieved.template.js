@@ -205,21 +205,11 @@ const flightBookingPaymentRecievedTemp = (
                                       <span
                                         style="display: block; min-height: 90px"
                                       >
-                                        <img
-                                          src=""
-                                          alt=""
-                                          style="
-                                            width: 80px;
-                                            height: 80px;
-                                            background-color: #00000030;
-                                            float: left;
-                                            border-radius: 10px;
-                                          "
-                                        />
+                                        
                                         <span
                                           style="
                                             display: block;
-                                            width: calc(100% - 100px);
+                                            width: calc(100%);
                                             margin-left: auto;
                                             font-size: 14px;
                                             margin-bottom: 5px;
@@ -238,7 +228,7 @@ const flightBookingPaymentRecievedTemp = (
                                         <span
                                           style="
                                             display: block;
-                                            width: calc(100% - 100px);
+                                            width: calc(100%);
                                             margin-left: auto;
                                             font-size: 14px;
                                             margin-bottom: 5px;
@@ -258,7 +248,7 @@ const flightBookingPaymentRecievedTemp = (
                                         <span
                                           style="
                                             display: block;
-                                            width: calc(100% - 100px);
+                                            width: calc(100%);
                                             margin-left: auto;
                                             font-size: 14px;
                                             margin-bottom: 5px;
@@ -277,7 +267,7 @@ const flightBookingPaymentRecievedTemp = (
                                         <span
                                           style="
                                             display: block;
-                                            width: calc(100% - 100px);
+                                            width: calc(100%);
                                             margin-left: auto;
                                             font-size: 14px;
                                             margin-bottom: 5px;
@@ -305,12 +295,12 @@ const flightBookingPaymentRecievedTemp = (
                                       a confirmation soon. For assistance, reach
                                       out to our 24/7 support at
                                       <a
-                                        href="mailto:support@borderless.com"
+                                        href="mailto:support@borderless.travel"
                                         style="
                                           text-decoration: none;
                                           color: #660476;
                                         "
-                                        >support@borderless.com</a
+                                        >support@borderless.travel</a
                                       >.
                                     </span>
                                     <span
