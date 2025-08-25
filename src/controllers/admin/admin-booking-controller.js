@@ -113,38 +113,39 @@ const issueFlightTicket = async (req, res, next) => {
       res,
       "Unable to complete this request at this time. Please try again."
     );
-  }
-  if (response?.status === 200) {
-    try {
-      const booking = await FlightBooking.findOne({ booking_reference });
-      booking.status = "issued";
-      booking.action_by = adminId ? adminId : api_key;
-      await booking.save();
-
-      const date = dateFormatter(booking?.departure_time);
-      const time = timeFormatter(booking?.departure_time);
-      req.body = {
-        first_name: booking.client_name.split(" ")[0],
-        email: booking.client_email,
-        booking_reference,
-        flight: booking.airline,
-        destination: booking.destination,
-        route: `${booking.origin} - ${booking.destination}`,
-        date,
-        time,
-      };
-
-      next();
-    } catch (error) {
-      console.log("Issue ticket action error: ", error);
-      return sendError(
-        res,
-        "Ticket issued successfully. But the system could not update the booking record with new status",
-        204
-      );
-    }
   } else {
-    return sendError(res, response?.data.message, response?.status);
+    if (response?.status === 200) {
+      try {
+        const booking = await FlightBooking.findOne({ booking_reference });
+        booking.status = "issued";
+        booking.action_by = adminId ? adminId : api_key;
+        await booking.save();
+
+        const date = dateFormatter(booking?.departure_time);
+        const time = timeFormatter(booking?.departure_time);
+        req.body = {
+          first_name: booking.client_name.split(" ")[0],
+          email: booking.client_email,
+          booking_reference,
+          flight: booking.airline,
+          destination: booking.destination,
+          route: `${booking.origin} - ${booking.destination}`,
+          date,
+          time,
+        };
+
+        next();
+      } catch (error) {
+        console.log("Issue ticket action error: ", error);
+        return sendError(
+          res,
+          "Ticket issued successfully. But the system could not update the booking record with new status",
+          204
+        );
+      }
+    } else {
+      return sendError(res, response?.data.message, response?.status);
+    }
   }
 };
 

@@ -53,7 +53,7 @@ router.post(
   resetPassword,
   passwordUpdatedEmail
 );
-router.post("/login", validateLoginType, login, loginSuccessfulEmail);
+router.post("/login", validateLoginType, login);
 router.get("/check-session", isUserLogin);
 router.post("/logout", logout);
 router.post("/check-email", isEmailRegistered);

@@ -267,12 +267,12 @@ const apartmentAvailableTemp = (
                 Secure your stay now by completing your
                 booking at
                 <a
-                  href="https://borderless.com/shortlet-booking"
+                  href="https://borderless.travel/shortlet-booking"
                   style="
                     color: #660476;
                     text-decoration: none;
                   "
-                  >borderless.com/shortlet-booking</a
+                  >borderless.travel/shortlet-booking</a
                 >. This listing is in high demand, so
                 don't wait!
               </span>
@@ -284,12 +284,12 @@ const apartmentAvailableTemp = (
               >
                 Questions? Contact our 24/7 support at
                 <a
-                  href="mailto:support@borderless.com"
+                  href="mailto:support@borderless.travel"
                   style="
                     text-decoration: none;
                     color: #660476;
                   "
-                  >support@borderless.com</a
+                  >support@borderless.travel</a
                 >.
               </span>
               <span

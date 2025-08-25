@@ -172,12 +172,12 @@ const passwordUpdatedTemp = (firstName) => {
                   reach out to our 24/7 support team
                   immediately at
                   <a
-                    href="mailto:support@borderless.com"
+                    href="mailto:support@borderless.travel"
                     style="
                       color: #660476;
                       text-decoration: none;
                     "
-                    >support@borderless.com</a
+                    >support@borderless.travel</a
                   >.
                 </span>
                 <span

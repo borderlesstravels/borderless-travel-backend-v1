@@ -366,21 +366,21 @@ const shortletBookingCompletedTemp = (
             >
               You can view your booking details at
               <a
-                href="borderless.com/my-bookings"
+                href="borderless.travel/my-bookings"
                 style="
                   color: #660476;
                   text-decoration: none;
                 "
-                >borderless.com/my-bookings</a
+                >borderless.travel/my-bookings</a
               >. Need help? Reach out to our 24/7
               support at
               <a
-                href="mailto:support@borderless.com"
+                href="mailto:support@borderless.travel"
                 style="
                   text-decoration: none;
                   color: #660476;
                 "
-                >support@borderless.com</a
+                >support@borderless.travel</a
               >.
             </span>
             <span
@@ -391,12 +391,12 @@ const shortletBookingCompletedTemp = (
             >
               Questions? Contact our 24/7 support at
               <a
-                href="mailto:support@borderless.com"
+                href="mailto:support@borderless.travel"
                 style="
                   text-decoration: none;
                   color: #660476;
                 "
-                >support@borderless.com</a
+                >support@borderless.travel</a
               >.
             </span>
             <span

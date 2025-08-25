@@ -222,21 +222,21 @@ const flightTicketCancelledTemp = (
                 Let's find another option! Explore
                 alternative flights at
                 <a
-                  href="https://borderless.com/flights"
+                  href="https://borderless.travel/flights"
                   style="
                     text-decoration: none;
                     color: #660476;
                   "
-                  >borderless.com/flights</a
+                  >borderless.travel/flights</a
                 >
                 or contact our 24/7 support at
                 <a
-                  href="mailto:support@borderless.com"
+                  href="mailto:support@borderless.travel"
                   style="
                     text-decoration: none;
                     color: #660476;
                   "
-                  >support@borderless.com</a
+                  >support@borderless.travel</a
                 >
                 for assistance.
               </span>

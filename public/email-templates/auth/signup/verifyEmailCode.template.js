@@ -263,8 +263,8 @@ const verifyEmailCodeTemp = (
                   support at
                   <a
                     style="color: #670677"
-                    href="mailto:support@borderless.com"
-                    >support@borderless.com</a
+                    href="mailto:support@borderless.travel"
+                    >support@borderless.travel</a
                   >.
                 </span>
                 <span

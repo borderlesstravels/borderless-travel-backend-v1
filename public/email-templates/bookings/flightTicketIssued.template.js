@@ -368,7 +368,7 @@ const flightTicketIssuedTemp = (
                 "
               >
                 <a
-                  href="https://borderless.com/my-bookings"
+                  href="https://borderless.travel/my-bookings"
                   style="
                     padding: 7px 25px;
                     font-weight: 500;
@@ -392,20 +392,20 @@ const flightTicketIssuedTemp = (
               >
                 View or manage your booking at
                 <a
-                  href="https://borderless.com/my-bookings"
+                  href="https://borderless.travel/my-bookings"
                   style="
                     text-decoration: none;
                     color: #660476;
                   "
-                  >borderless.com/my-bookings</a
+                  >borderless.travel/my-bookings</a
                 >. Need help? Our 24/7 support is here at
                 <a
-                  href="mailto:support@borderless.com"
+                  href="mailto:support@borderless.travel"
                   style="
                     text-decoration: none;
                     color: #660476;
                   "
-                  >support@borderless.com</a
+                  >support@borderless.travel</a
                 >.
               </span>
               <span

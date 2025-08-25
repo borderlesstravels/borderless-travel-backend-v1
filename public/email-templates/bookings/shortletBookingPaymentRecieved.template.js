@@ -266,9 +266,9 @@ const shortletBookingPaymentRecievedTemp = (
               Your booking is being processed, and you'll receive a confirmation
               soon. For any questions, contact our 24/7 support at
               <a
-                href="mailto:support@borderless.com"
+                href="mailto:support@borderless.travel"
                 style="text-decoration: none; color: #660476"
-                >support@borderless.com</a
+                >support@borderless.travel</a
               >.
             </span>
             <span style="display: block; margin-bottom: 25px">

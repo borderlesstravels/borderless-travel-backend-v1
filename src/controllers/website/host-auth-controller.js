@@ -228,17 +228,19 @@ const loginHost = async (req, res, next) => {
   res.set("u-x-key", sessionId);
   res.header("Access-Control-Expose-Headers", "u-x-key");
 
-  req.body = {
+  return res.status(200).json({
+    success: true,
+    loginStatus: 2,
+    message: "Successfully logged in",
     user: {
-      _id: host._id,
-      email: host.email,
       first_name: host.first_name,
       last_name: host.last_name,
+      email: host.email,
+      id: host._id,
       email_verified: host.email_verified,
     },
     token,
-  };
-  next();
+  });
 };
 
 const verifyHostLoginToken = async (req, res, next) => {

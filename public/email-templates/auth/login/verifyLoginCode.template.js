@@ -256,8 +256,8 @@ const verifyLoginCodeTemp = (fName, optChar1, optChar2, optChar3, optChar4) => {
                 support at
                 <a
                   style="color: #670677"
-                  href="mailto:support@borderless.com"
-                  >support@borderless.com</a
+                  href="mailto:support@borderless.travel"
+                  >support@borderless.travel</a
                 >.
               </span>
               <span

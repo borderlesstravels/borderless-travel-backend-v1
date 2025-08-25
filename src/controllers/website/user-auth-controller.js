@@ -227,8 +227,19 @@ const login = async (req, res, next) => {
   );
   res.set("u-x-key", sessionId);
   res.header("Access-Control-Expose-Headers", "u-x-key");
-  req.body = { user, token };
-  next();
+  return res.status(200).json({
+    success: true,
+    loginStatus: 2,
+    message: "Successfully logged in",
+    user: {
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      id: user._id,
+      email_verified: user.email_verified,
+    },
+    token,
+  });
 };
 
 const isUserLogin = async (req, res) => {

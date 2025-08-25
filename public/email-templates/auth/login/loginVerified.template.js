@@ -215,9 +215,9 @@ const loginVerifiedTemp = (firstName) => {
                 If you don't recognize this login, please
                 contact our 24/7 support team at
                 <a
-                  href="mailto:support@borderless.com"
+                  href="mailto:support@borderless.travel"
                   style="color: #670677"
-                  >support@borderless.com</a
+                  >support@borderless.travel</a
                 >
                 or reset your password at
                 <a

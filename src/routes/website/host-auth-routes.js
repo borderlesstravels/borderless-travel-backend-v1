@@ -51,6 +51,6 @@ router.post(
   resetPasswordHost,
   passwordUpdatedEmail
 );
-router.post("/login", validateHostLoginType, loginHost, loginSuccessfulEmail);
+router.post("/login", validateHostLoginType, loginHost);
 
 module.exports = router;
