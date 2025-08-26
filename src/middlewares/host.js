@@ -56,42 +56,17 @@ const isHostPasswordResetTokenValid = async (req, res, next) => {
 const validateHostLoginType = async (req, res, next) => {
   const { loginId, password } = req.body;
 
-  let host;
-  let hostIdentity;
-
-  if (loginId.includes("@")) {
-    hostIdentity = loginId.toLowerCase();
-    try {
-      host = await Host.findOne({
-        email: hostIdentity,
-        // $or: [{ email: hostIdentity }, { contact_email: hostIdentity }],
-      });
-    } catch (err) {
-      return sendError(res, err.message, 500);
-    }
+  try {
+    const host = await Host.findOne({ email: loginId.toLowerCase() });
+    // $or: [{ account_name }, { contact_email: hostIdentity }]
     if (!host) {
       return sendError(res, "Email not registered. Signup instead.");
     }
-  } else if (loginId.charAt(0) === "+") {
-    try {
-      host = await Host.findOne({
-        phone: loginId,
-        // $or: [{ hotel_phone: loginId }, { contact_phone: loginId }],
-      });
-    } catch (err) {
-      return sendError(res, err.message, 500);
-    }
-    if (!host) {
-      return sendError(res, "Phone number not registered. Signup instead.");
-    }
+    req.body = { host, password };
+    next();
+  } catch (err) {
+    return sendError(res, err.message, 500);
   }
-
-  req.body = {
-    host,
-    password,
-  };
-
-  next();
 };
 
 module.exports = {

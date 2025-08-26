@@ -18,6 +18,12 @@ const {
   getHostReviews,
   getHostNotifications,
   openNotification,
+  getHostEarnings,
+  getHostWithdrawals,
+  makeWithdrawal,
+  getHostBalances,
+  addBankDetails,
+  getHostBankDetails,
 } = require("../../controllers/host/host-profile-controller");
 const {
   validateHostUpdateProfileParams,
@@ -30,6 +36,13 @@ const router = express.Router();
 // Profile
 router.get("/profile", verifyHostLoginToken, getHost);
 router.get("/reviews", verifyHostLoginToken, getHostReviews);
+
+router.get("/balances", verifyHostLoginToken, getHostBalances);
+router.get("/earnings", verifyHostLoginToken, getHostEarnings);
+router.get("/withdrawals", verifyHostLoginToken, getHostWithdrawals);
+router.post("/request-withdrawal", verifyHostLoginToken, makeWithdrawal);
+router.post("/add-bank-details", verifyHostLoginToken, addBankDetails);
+router.get("/bank-details", verifyHostLoginToken, getHostBankDetails);
 
 router.get("/notifications", verifyHostLoginToken, getHostNotifications);
 router.put("/open-notification/:id", verifyHostLoginToken, openNotification);

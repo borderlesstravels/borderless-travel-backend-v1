@@ -155,6 +155,7 @@ const bookStayAUth = async (req, res, next) => {
       check_out_date,
       check_in_time: req.body.check_in_time ? req.body.check_in_time : "",
       gps_location: req.body.gps_location ? req.body.gps_location : "",
+      number_of_days: difference_in_days,
       price,
       booking_reference,
     });

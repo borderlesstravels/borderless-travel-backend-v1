@@ -11,6 +11,9 @@ const SaleRecord = require("../../models/general/SaleRecord");
 const ShortletBooking = require("../../models/general/ShortletBooking");
 const Subscriber = require("../../models/general/Subscriber");
 const Waitlist = require("../../models/general/Waitlist");
+const Host = require("../../models/host/Host");
+const HostBalance = require("../../models/host/HostBalance");
+const HostEarning = require("../../models/host/HostEarning");
 const User = require("../../models/user/User");
 const {
   sendError,
@@ -166,6 +169,9 @@ const payForShortlet = async (req, res, next) => {
       if (booking.status !== "confirmed") {
         return badRequestError(res, "Apartment availability not yet confirmed");
       }
+      const hostBalanceAcc = await HostBalance.findById(
+        booking.apartment_owner
+      );
       const commission_percent = markup.commission;
       const commission_amount = (commission_percent / 100) * amount;
       const service_amount = amount - commission_amount;
@@ -192,11 +198,27 @@ const payForShortlet = async (req, res, next) => {
         profit: commission_amount,
         status: "completed",
       });
+      const hostEarning = new HostEarning({
+        owner: booking.apartment_owner,
+        purchasing_firm: firm,
+        transaction_id: transaction_reference,
+        property: booking.apartment_name,
+        amount: service_amount,
+        details: `Earning from property rented by ${booking.name} for ${booking.number_of_days} days`,
+      });
       booking.payment_status = "paid";
       booking.status = "paid";
+
+      const hostEarnings = hostBalanceAcc.total_earnings;
+      const hostBalance = hostBalanceAcc.available_balance;
+      hostBalanceAcc.total_earnings = hostEarnings + service_amount;
+      hostBalanceAcc.available_balance = hostBalance + service_amount;
+
       await booking.save();
       await newPayment.save();
       await newSale.save();
+      await hostEarning.save();
+      await hostBalanceAcc.save();
 
       const check_in_date = dateFormatter(booking.check_in_date);
       const check_out_date = dateFormatter(booking.check_out_date);

@@ -14,12 +14,17 @@ const {
   createLoginSession,
   verifyLoginSession,
 } = require("../../middlewares/general");
+const HostBalance = require("../../models/host/HostBalance");
 
 const signupHost = async (req, res, next) => {
   const salt = bcrypt.genSaltSync(10);
   req.body.password = bcrypt.hashSync(req.body.password, salt);
   const host = new Host(req.body);
   try {
+    const hostBal = new HostBalance({
+      owner: host._id,
+    });
+    await hostBal.save();
     await host.save();
     console.log("Host successfully signed up");
     req.body = {

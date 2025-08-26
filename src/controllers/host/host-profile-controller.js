@@ -9,6 +9,10 @@ const {
   uploadSingleImage,
 } = require("../../middlewares/general");
 const SessionStore = require("../../models/general/SessionStore");
+const HostEarning = require("../../models/host/HostEarning");
+const HostWithdrawal = require("../../models/host/HostWithdrawal");
+const HostBalance = require("../../models/host/HostBalance");
+const HostBankAccount = require("../../models/host/HostBankAccount");
 
 const getHost = async (req, res) => {
   const userId = req.id;
@@ -67,19 +71,130 @@ const openNotification = async (req, res) => {
 const getHostReviews = async (req, res) => {
   const userId = req.id;
   try {
-    const reviews = await Review.find();
-    if (!reviews.length) {
-      return sendSuccess(res, "No reviews record yet");
-    }
-    console.log({ reviews });
-    const hostReviews = reviews.filter((item) => item.property_owner == userId);
-    if (!hostReviews.length) {
-      return sendSuccess(res, "You have no reviews yet");
-    }
-    return sendSuccess(res, "Successfully fetched data", hostReviews);
+    const reviews = await Review.find({ property_owner: userId });
+    return sendSuccess(res, "Successfully fetched data", reviews);
   } catch (error) {
     console.log("error", error);
     return sendError(res, "Cannot fetch host's reviews", 500);
+  }
+};
+
+// **
+// **
+// Earnings and withdrawals
+const getHostBalances = async (req, res) => {
+  const userId = req.id;
+  try {
+    const balances = await HostBalance.findOne({ owner: userId });
+    return sendSuccess(res, "Successfully fetched data", balances);
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch host's balances", 500);
+  }
+};
+
+const getHostEarnings = async (req, res) => {
+  const userId = req.id;
+  try {
+    const earnings = await HostEarning.find({ owner: userId });
+    return sendSuccess(res, "Successfully fetched data", earnings);
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch host's earnings", 500);
+  }
+};
+
+const getHostWithdrawals = async (req, res) => {
+  const userId = req.id;
+  try {
+    const withdrawals = await HostWithdrawal.find({ owner: userId });
+    return sendSuccess(res, "Successfully fetched data", withdrawals);
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch host's withdrawals", 501);
+  }
+};
+
+const makeWithdrawal = async (req, res) => {
+  const { amount, bank_details } = req.body;
+  const userId = req.id;
+  try {
+    const hostBalAcc = await HostBalance.findOne({ owner: userId });
+    if (!hostBalAcc) {
+      return sendError(res, "Unable to verify balance");
+    } else {
+      const hostAvailableBal = hostBalAcc.available_balance;
+      if (amount > hostAvailableBal) {
+        return sendError(
+          res,
+          "Amount provided is more than your available balance"
+        );
+      }
+      const newWithdrawal = new HostWithdrawal({
+        owner: userId,
+        amount,
+        bank_details,
+      });
+
+      hostBalAcc.available_balance = hostAvailableBal - amount;
+
+      await newWithdrawal.save();
+      await hostBalAcc.save();
+      return sendSuccess(
+        res,
+        "Successfully submitted your withdrawal request. Kindly wait while we process your request",
+        newWithdrawal
+      );
+    }
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Unable to complete withdrawal request", 501);
+  }
+};
+
+const addBankDetails = async (req, res) => {
+  const { account_name, account_number, bank_name } = req.body;
+  const userId = req.id;
+  try {
+    const exixtingAccs = await HostBankAccount.find({ owner: userId });
+
+    const accountExists = exixtingAccs.filter(
+      (ele) =>
+        ele.account_name.toLowerCase() === account_name.toLowerCase() &&
+        ele.bank_name.toLowerCase() === bank_name.toLowerCase() &&
+        ele.account_number === account_number
+    );
+    console.log("accountExists", accountExists);
+    if (accountExists.length > 0) {
+      return sendError(res, "Account details already exists");
+    }
+
+    const newBankDetails = new HostBankAccount({
+      owner: userId,
+      account_name,
+      account_number,
+      bank_name,
+    });
+    await newBankDetails.save();
+    return sendSuccess(
+      res,
+      "Successfully added a new bank details",
+      newBankDetails
+    );
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Unable to complete withdrawal request", 501);
+  }
+};
+
+const getHostBankDetails = async (req, res) => {
+  const userId = req.id;
+  try {
+    const bankDetails = await HostBankAccount.find({ owner: userId });
+    return sendSuccess(res, "Successfully fetched data", bankDetails);
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch host's bank details", 501);
   }
 };
 
@@ -228,6 +343,13 @@ module.exports = {
   getHostNotifications,
   openNotification,
   getHostReviews,
+
+  getHostBalances,
+  getHostEarnings,
+  getHostWithdrawals,
+  makeWithdrawal,
+  addBankDetails,
+  getHostBankDetails,
 
   updateHostProfile,
   setHostProfileAvatar,

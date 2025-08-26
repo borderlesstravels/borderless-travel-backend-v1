@@ -1,0 +1,31 @@
+const mongoose = require("mongoose");
+const Double = require("@mongoosejs/double");
+const Schema = mongoose.Schema;
+
+const hostWithdrawalSchema = new Schema({
+  owner: {
+    type: String,
+    required: true,
+  },
+  transaction_id: {
+    type: String,
+  },
+  amount: {
+    type: Double,
+    required: true,
+  },
+  bank_details: {
+    type: Object,
+    required: true,
+  },
+  status: {
+    type: String,
+    default: "pending",
+  },
+  created_at: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+module.exports = mongoose.model("HostWithdrawal", hostWithdrawalSchema);

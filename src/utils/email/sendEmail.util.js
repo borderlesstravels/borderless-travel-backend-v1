@@ -28,7 +28,8 @@ const sendEmail = (subject, message, send_to, notitle = false) => {
       // throw new Error(err);
     }
     if (result) {
-      // console.log(`Successfully sent email. Email ID - ${result.messageId}`);
+      console.log(result);
+      console.log(`Successfully sent email. Email ID - ${result.messageId}`);
       return true;
     }
   });

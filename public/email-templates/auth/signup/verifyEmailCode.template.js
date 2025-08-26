@@ -58,7 +58,7 @@ const verifyEmailCodeTemp = (
               <span
                 ><span
                   >Verify Your Borderless Account
-                  Tunde</span
+                  </span
                 ></span
               >
             </h1>

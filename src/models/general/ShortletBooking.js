@@ -72,6 +72,10 @@ const shortletBookingSchema = new Schema({
   check_in_time: {
     type: String,
   },
+  number_of_days: {
+    type: String,
+    required: true,
+  },
   price: {
     type: Number,
     required: true,

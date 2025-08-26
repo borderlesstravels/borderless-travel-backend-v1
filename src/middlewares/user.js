@@ -53,54 +53,21 @@ const isPasswordResetTokenValid = async (req, res, next) => {
 const validateLoginType = async (req, res, next) => {
   const { loginId, password } = req.body;
 
-  let user;
-  let userIdentity;
-
-  if (!loginId) {
-    return sendLoginError(res, "loginId is missing", 1);
-  }
-
-  if (loginId.includes("@")) {
-    userIdentity = loginId.toLowerCase();
-    try {
-      user = await User.findOne({ email: userIdentity });
-    } catch (err) {
-      return sendLoginError(res, err.message, 1, 500);
+  try {
+    if (!loginId) {
+      return sendLoginError(res, "loginId is missing", 1);
     }
+
+    const user = await User.findOne({ email: loginId.toLowerCase() });
     if (!user) {
       return sendLoginError(res, "Email not registered. Signup instead.", 1);
     }
-  } else if (loginId.charAt(0) === "+") {
-    try {
-      user = await User.findOne({ phone: loginId });
-    } catch (err) {
-      return sendLoginError(res, err.message, 1, 500);
-    }
-    if (!user) {
-      return sendLoginError(
-        res,
-        "Phone number not registered. Signup instead.",
-        0
-      );
-    }
-  } else {
-    userIdentity = loginId.toLowerCase();
-    try {
-      user = await User.findOne({ username: userIdentity });
-    } catch (err) {
-      return sendLoginError(res, err.message, 1, 500);
-    }
-    if (!user) {
-      return sendLoginError(res, "Username not registered. Signup instead.", 0);
-    }
+
+    req.body = { user, password };
+    next();
+  } catch (err) {
+    return sendLoginError(res, err.message, 1, 501);
   }
-
-  req.body = {
-    user,
-    password,
-  };
-
-  next();
 };
 
 module.exports = {
