@@ -5,6 +5,7 @@ const Host = require("../../models/host/Host");
 const ShortLet = require("../../models/host/ShortLet");
 const Review = require("../../models/general/Review");
 const ShortletBooking = require("../../models/general/ShortletBooking");
+const HostWithdrawal = require("../../models/host/HostWithdrawal");
 
 const updateHostProfile = async (req, res) => {
   if (req.body.password) {
@@ -96,7 +97,9 @@ const fetchAllHosts = async (req, res) => {
   try {
     const hosts = await Host.find({
       ...others,
-    }).limit(req.query.limit);
+    })
+      .sort({ _id: "desc" })
+      .limit(req.query.limit);
     return sendSuccess(res, "Hosts fetched", hosts);
   } catch (error) {
     return sendError(res, "Unable to fetch the hosts data");
@@ -118,7 +121,9 @@ const fetchSingleHost = async (req, res, next) => {
 
 const getHostProperties = async (req, res) => {
   try {
-    const hostProperties = await ShortLet.find({ owner: req.params.id });
+    const hostProperties = await ShortLet.find({ owner: req.params.id })
+      .sort({ _id: "desc" })
+      .limit(req.query.limit);
     return sendSuccess(
       res,
       "Successfully fetched host's properties",
@@ -132,7 +137,9 @@ const getHostProperties = async (req, res) => {
 
 const getHostReviewsForAProperty = async (req, res) => {
   try {
-    const hostReviewws = await Review.find({ product_reviewed: req.params.id });
+    const hostReviewws = await Review.find({ product_reviewed: req.params.id })
+      .sort({ _id: "desc" })
+      .limit(req.query.limit);
     return sendSuccess(
       res,
       "Successfully fetched host's property's reviews",
@@ -148,7 +155,9 @@ const getHostBookingsForAProperty = async (req, res) => {
   try {
     const hostPropertyBookings = await ShortletBooking.find({
       apartment_id: req.params.id,
-    });
+    })
+      .sort({ _id: "desc" })
+      .limit(req.query.limit);
     return sendSuccess(
       res,
       "Successfully fetched host's property's bookings",
@@ -157,6 +166,37 @@ const getHostBookingsForAProperty = async (req, res) => {
   } catch (error) {
     console.log("error", error);
     return sendError(res, "Cannot fetch host's property's bookings", 500);
+  }
+};
+
+const getWithdrawalRequests = async (req, res) => {
+  try {
+    const withdrawalRequests = await HostWithdrawal.find()
+      .sort({ _id: "desc" })
+      .limit(req.query.limit);
+    return sendSuccess(res, "Successfully fetched data", withdrawalRequests);
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch withdrawal requests", 501);
+  }
+};
+
+const rejectWithdrawalRequest = async (req, res) => {
+  const adminId = req.id;
+  try {
+    const request = await HostWithdrawal.findById(req.params.id);
+    if (request.status === "rejected") {
+      return sendError(res, "Request already rejected");
+    }
+    request.status = "rejected";
+    request.action_by = adminId;
+    // Return amount back to host earning balance
+
+    await request.save();
+    return sendSuccess(res, "Action is successful!", request);
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch withdrawal requests", 501);
   }
 };
 
@@ -171,4 +211,7 @@ module.exports = {
   getHostProperties,
   getHostReviewsForAProperty,
   getHostBookingsForAProperty,
+
+  getWithdrawalRequests,
+  rejectWithdrawalRequest,
 };

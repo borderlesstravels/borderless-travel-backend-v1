@@ -77,6 +77,7 @@ const flightOfferSearch = async (req, res, next) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
   const response = await fetcher_tiqwa("/flight/search", req.body);
+  console.log("response", response);
   if (!response) {
     return sendError(
       res,

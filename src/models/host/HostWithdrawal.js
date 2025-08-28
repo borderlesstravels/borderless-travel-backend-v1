@@ -22,6 +22,9 @@ const hostWithdrawalSchema = new Schema({
     type: String,
     default: "pending",
   },
+  action_by: {
+    type: String,
+  },
   created_at: {
     type: Date,
     default: Date.now,

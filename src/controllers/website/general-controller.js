@@ -318,12 +318,42 @@ const saveWaitlist = async (req, res, next) => {
 };
 const fetchWaitlists = async (req, res) => {
   try {
-    const waitlists = await Waitlist.find().limit(req.query.limit);
+    const waitlists = await Waitlist.find()
+      .sort({ _id: "desc" })
+      .limit(req.query.limit);
     return sendSuccess(res, "Successfully fetched Waitlist data", waitlists);
   } catch (error) {
     return sendError(
       res,
       "Something went wrong. Could not fetch available waitlists.",
+      500
+    );
+  }
+};
+const fetchUsers = async (req, res) => {
+  try {
+    const users = await User.find()
+      .sort({ _id: "desc" })
+      .limit(req.query.limit);
+    return sendSuccess(res, "Successfully fetched users data", users);
+  } catch (error) {
+    return sendError(
+      res,
+      "Something went wrong. Could not fetch available users.",
+      500
+    );
+  }
+};
+const fetchHosts = async (req, res) => {
+  try {
+    const hosts = await Host.find()
+      .sort({ _id: "desc" })
+      .limit(req.query.limit);
+    return sendSuccess(res, "Successfully fetched hosts data", hosts);
+  } catch (error) {
+    return sendError(
+      res,
+      "Something went wrong. Could not fetch available hosts.",
       500
     );
   }
@@ -482,8 +512,11 @@ module.exports = {
   payForFlight,
   payForShortlet,
   saveSubscriber,
+
   saveWaitlist,
   fetchWaitlists,
+  fetchUsers,
+  fetchHosts,
 
   fetchJobPostings,
   fetchSingleJobPosting,

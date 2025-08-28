@@ -87,7 +87,9 @@ const unblockUser = async (req, res) => {
 const fetchUserFlightBookings = async (req, res) => {
   console.log("flightBookings");
   try {
-    const flightBookings = await FlightBooking.find({ owner: req.params.id });
+    const flightBookings = await FlightBooking.find({ owner: req.params.id })
+      .sort({ _id: "desc" })
+      .limit(req.query.limit);
     if (flightBookings.length < 1) {
       return sendSuccess(
         res,
@@ -104,7 +106,9 @@ const fetchUserShortletBooking = async (req, res) => {
   try {
     const shortletBooking = await ShortletBooking.find({
       owner: req.params.id,
-    });
+    })
+      .sort({ _id: "desc" })
+      .limit(req.query.limit);
     if (shortletBooking.length < 1) {
       return sendSuccess(
         res,
@@ -133,7 +137,10 @@ const deleteUser = async (req, res) => {
 
 const fetchAllUsers = async (req, res) => {
   try {
-    const users = await User.find().limit(req.query.limit);
+    const users = await User.find()
+      .limit(req.query.limit)
+      .sort({ _id: "desc" })
+      .limit(req.query.limit);
     return res.status(200).json({ success: true, data: users });
   } catch (error) {
     return sendError(res, "Unable to fetch the users data");

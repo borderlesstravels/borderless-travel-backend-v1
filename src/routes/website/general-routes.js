@@ -28,6 +28,8 @@ const {
   fetchAllBlogs,
   fetchPostCategories,
   fetchLatestTravelInfo,
+  fetchUsers,
+  fetchHosts,
 } = require("../../controllers/website/general-controller");
 const { careerAppDocUpload } = require("../../utils/helpers/files");
 const {
@@ -64,6 +66,8 @@ router.post(
   waitlistSubscribedEMail
 );
 router.get("/fetch-waitlists", fetchWaitlists);
+router.get("/fetch-users", fetchUsers);
+router.get("/fetch-hosts", fetchHosts);
 
 router.get("/jobs", fetchJobPostings);
 router.get("/single-job/:id", fetchSingleJobPosting);
