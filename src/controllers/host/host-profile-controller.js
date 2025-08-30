@@ -153,7 +153,7 @@ const makeWithdrawal = async (req, res) => {
 };
 
 const addBankDetails = async (req, res) => {
-  const { account_name, account_number, bank_name } = req.body;
+  const { account_name, account_number, bank_data } = req.body;
   const userId = req.id;
   try {
     const exixtingAccs = await HostBankAccount.find({ owner: userId });
@@ -161,7 +161,7 @@ const addBankDetails = async (req, res) => {
     const accountExists = exixtingAccs.filter(
       (ele) =>
         ele.account_name.toLowerCase() === account_name.toLowerCase() &&
-        ele.bank_name.toLowerCase() === bank_name.toLowerCase() &&
+        ele.bank_data.toLowerCase() === bank_data.toLowerCase() &&
         ele.account_number === account_number
     );
     console.log("accountExists", accountExists);
@@ -173,7 +173,7 @@ const addBankDetails = async (req, res) => {
       owner: userId,
       account_name,
       account_number,
-      bank_name,
+      bank_data,
     });
     await newBankDetails.save();
     return sendSuccess(

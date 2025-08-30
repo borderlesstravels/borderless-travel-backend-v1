@@ -14,8 +14,8 @@ const hostBankAccountSchema = new Schema({
     type: String,
     required: true,
   },
-  bank_name: {
-    type: String,
+  bank_data: {
+    type: Object,
     required: true,
   },
   created_at: {
