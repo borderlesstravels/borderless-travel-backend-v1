@@ -196,7 +196,7 @@ const rejectWithdrawalRequest = async (req, res) => {
     }
     const request = await HostWithdrawal.findById(req.params.id);
     if (request.status === "rejected") {
-      return sendError(res, "Request already rejected");
+      return sendError(res, "Request is already rejected");
     }
     request.status = "rejected";
     request.action_by = adminId;
@@ -232,13 +232,15 @@ const rejectWithdrawalRequest = async (req, res) => {
 
 const completeWithdrawalRequest = async (req, res) => {
   const adminId = req.id;
+  const { transaction_id } = req.body;
   try {
     const request = await HostWithdrawal.findById(req.params.id);
-    if (request.status === "rejected") {
-      return sendError(res, "Request already rejected");
+    if (request.status === "completed") {
+      return sendError(res, "Request is already completed");
     }
-    request.status = "rejected";
+    request.status = "completed";
     request.action_by = adminId;
+    request.transaction_id = transaction_id;
 
     const notifyUser = new Notification({
       owner: request.owner,
