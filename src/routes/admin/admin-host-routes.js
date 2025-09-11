@@ -15,6 +15,8 @@ const {
   getWithdrawalRequests,
   rejectWithdrawalRequest,
   completeWithdrawalRequest,
+  getSingleWithdrawalRequest,
+  getHostRecentBookings,
 } = require("../../controllers/admin/admin-host-controller");
 
 const router = express.Router();
@@ -59,6 +61,16 @@ router.put(
   "/approve-withdrawal-request/:id",
   verifyAdminLoginToken,
   completeWithdrawalRequest
+);
+router.get(
+  "/withdrawal-request-details/:id",
+  verifyAdminLoginToken,
+  getSingleWithdrawalRequest
+);
+router.get(
+  "/host-recent-bookings/:owner",
+  verifyAdminLoginToken,
+  getHostRecentBookings
 );
 
 module.exports = router;

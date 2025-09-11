@@ -259,6 +259,34 @@ const completeWithdrawalRequest = async (req, res) => {
   }
 };
 
+const getSingleWithdrawalRequest = async (req, res) => {
+  try {
+    const withdrawalRequest = await HostWithdrawal.findById(req.params.id);
+    return sendSuccess(res, "Successfully fetched data", withdrawalRequest);
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch withdrawal requests", 501);
+  }
+};
+
+const getHostRecentBookings = async (req, res) => {
+  try {
+    const hostPropertyBookings = await ShortletBooking.find({
+      owner: req.params.owner,
+    })
+      .sort({ _id: "desc" })
+      .limit(req.query.limit);
+    return sendSuccess(
+      res,
+      "Successfully fetched host's recent bookings",
+      hostPropertyBookings
+    );
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch host's property's bookings", 500);
+  }
+};
+
 module.exports = {
   updateHostProfile,
   blockHost,
@@ -274,4 +302,6 @@ module.exports = {
   getWithdrawalRequests,
   rejectWithdrawalRequest,
   completeWithdrawalRequest,
+  getSingleWithdrawalRequest,
+  getHostRecentBookings,
 };
