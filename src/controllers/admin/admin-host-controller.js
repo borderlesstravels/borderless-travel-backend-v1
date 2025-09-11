@@ -1,11 +1,17 @@
 const bcrypt = require("bcryptjs");
-const { sendError, sendSuccess } = require("../../utils/helpers");
+const {
+  sendError,
+  sendSuccess,
+  dateFormatter,
+} = require("../../utils/helpers");
 const { log } = require("console");
 const Host = require("../../models/host/Host");
 const ShortLet = require("../../models/host/ShortLet");
 const Review = require("../../models/general/Review");
 const ShortletBooking = require("../../models/general/ShortletBooking");
 const HostWithdrawal = require("../../models/host/HostWithdrawal");
+const HostBalance = require("../../models/host/HostBalance");
+const Notification = require("../../models/general/Notification");
 
 const updateHostProfile = async (req, res) => {
   if (req.body.password) {
@@ -183,6 +189,7 @@ const getWithdrawalRequests = async (req, res) => {
 
 const rejectWithdrawalRequest = async (req, res) => {
   const adminId = req.id;
+  const { reason } = req.body;
   try {
     const request = await HostWithdrawal.findById(req.params.id);
     if (request.status === "rejected") {
@@ -192,7 +199,60 @@ const rejectWithdrawalRequest = async (req, res) => {
     request.action_by = adminId;
     // Return amount back to host earning balance
 
+    const hostBalAcc = await HostBalance.findOne({ owner: request.owner });
+    if (!hostBalAcc) {
+      return sendError(res, "Unable to verify balance");
+    } else {
+      const hostAvailableBal = hostBalAcc.available_balance;
+      hostBalAcc.available_balance = hostAvailableBal + request.amount;
+      await hostBalAcc.save();
+      await request.save();
+
+      const notifyUser = new Notification({
+        owner: request.owner,
+        type: "booking",
+        title: `Your withdrawal request of ${request.amount} was rejected`,
+        description: `Your withdrawal request of ${
+          request.amount
+        } made on ${dateFormatter(
+          request.created_at
+        )} has been declined. Reason: ${reason}`,
+        apartment_id,
+        booking_id: newBooking._id,
+      });
+      await notifyUser.save();
+      return sendSuccess(res, "Action is successful!", request);
+    }
+  } catch (error) {
+    console.log("error", error);
+    return sendError(res, "Cannot fetch withdrawal requests", 501);
+  }
+};
+
+const completeWithdrawalRequest = async (req, res) => {
+  const adminId = req.id;
+  try {
+    const request = await HostWithdrawal.findById(req.params.id);
+    if (request.status === "rejected") {
+      return sendError(res, "Request already rejected");
+    }
+    request.status = "rejected";
+    request.action_by = adminId;
+
+    const notifyUser = new Notification({
+      owner: request.owner,
+      type: "booking",
+      title: `Your withdrawal request of ${request.amount} was approved`,
+      description: `Your withdrawal request of ${
+        request.amount
+      } made on ${dateFormatter(
+        request.created_at
+      )} has been approved. Kindly check your bank account to see the new balance.`,
+      apartment_id,
+      booking_id: newBooking._id,
+    });
     await request.save();
+    await notifyUser.save();
     return sendSuccess(res, "Action is successful!", request);
   } catch (error) {
     console.log("error", error);
@@ -214,4 +274,5 @@ module.exports = {
 
   getWithdrawalRequests,
   rejectWithdrawalRequest,
+  completeWithdrawalRequest,
 };

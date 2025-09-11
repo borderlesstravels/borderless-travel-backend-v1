@@ -14,6 +14,7 @@ const {
   getHostBookingsForAProperty,
   getWithdrawalRequests,
   rejectWithdrawalRequest,
+  completeWithdrawalRequest,
 } = require("../../controllers/admin/admin-host-controller");
 
 const router = express.Router();
@@ -53,6 +54,11 @@ router.put(
   "/reject-withdrawal-request/:id",
   verifyAdminLoginToken,
   rejectWithdrawalRequest
+);
+router.put(
+  "/approve-withdrawal-request/:id",
+  verifyAdminLoginToken,
+  completeWithdrawalRequest
 );
 
 module.exports = router;
