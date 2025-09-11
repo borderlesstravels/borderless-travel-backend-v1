@@ -191,6 +191,9 @@ const rejectWithdrawalRequest = async (req, res) => {
   const adminId = req.id;
   const { reason } = req.body;
   try {
+    if (!reason) {
+      return sendError(res, "Why is the request being rejected? Kindly state");
+    }
     const request = await HostWithdrawal.findById(req.params.id);
     if (request.status === "rejected") {
       return sendError(res, "Request already rejected");
@@ -217,8 +220,6 @@ const rejectWithdrawalRequest = async (req, res) => {
         } made on ${dateFormatter(
           request.created_at
         )} has been declined. Reason: ${reason}`,
-        apartment_id,
-        booking_id: newBooking._id,
       });
       await notifyUser.save();
       return sendSuccess(res, "Action is successful!", request);
@@ -248,8 +249,6 @@ const completeWithdrawalRequest = async (req, res) => {
       } made on ${dateFormatter(
         request.created_at
       )} has been approved. Kindly check your bank account to see the new balance.`,
-      apartment_id,
-      booking_id: newBooking._id,
     });
     await request.save();
     await notifyUser.save();
