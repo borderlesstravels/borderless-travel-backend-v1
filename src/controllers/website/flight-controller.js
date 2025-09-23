@@ -77,7 +77,6 @@ const flightOfferSearch = async (req, res, next) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
   const response = await fetcher_tiqwa("/flight/search", req.body);
-  console.log("response", response);
   if (!response) {
     return sendError(
       res,
@@ -96,7 +95,6 @@ const flightOfferSearch = async (req, res, next) => {
 const flightOfferSearchMultiCity = async (req, res, next) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
-  console.log("req.body", req.body.destinations[0]);
 
   const response = await sender_tiqwa(`/flight/multi_city/search`, req.body);
   if (!response) {
@@ -105,7 +103,6 @@ const flightOfferSearchMultiCity = async (req, res, next) => {
       "Unable to complete this request at this time. Please try again."
     );
   }
-  console.log({ response });
 
   if (response?.status === 200) {
     return res

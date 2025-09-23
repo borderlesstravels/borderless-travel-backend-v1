@@ -169,9 +169,9 @@ const payForShortlet = async (req, res, next) => {
       if (booking.status !== "confirmed") {
         return badRequestError(res, "Apartment availability not yet confirmed");
       }
-      const hostBalanceAcc = await HostBalance.findById(
-        booking.apartment_owner
-      );
+      const hostBalanceAcc = await HostBalance.findOne({
+        owner: booking.apartment_owner,
+      });
       const commission_percent = markup.commission;
       const commission_amount = (commission_percent / 100) * amount;
       const service_amount = amount - commission_amount;
