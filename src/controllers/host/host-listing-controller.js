@@ -307,7 +307,7 @@ const hostApproveShortletBooking = async (req, res) => {
 
     apartmentBooking.status = "confirmed";
 
-    const user = await User.findById(apartmentBooking.owner, "-password");
+    const user = await User.findOne({ email: apartmentBooking.owner });
     if (!user) {
       return sendError(res, "Sorry, booking request owner not found");
     }
@@ -365,7 +365,7 @@ const hostDeclineShortletBooking = async (req, res) => {
 
     apartmentBooking.status = "declined";
 
-    const user = await User.findById(apartmentBooking.owner, "-password");
+    const user = await User.findOne({ email: apartmentBooking.owner });
     if (!user) {
       return sendError(res, "Sorry, booking request owner not found");
     }
