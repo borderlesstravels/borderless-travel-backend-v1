@@ -321,8 +321,8 @@ const hostApproveShortletBooking = async (req, res) => {
 
     await apartmentBooking.save();
     await newNot.save();
-    const check_in_date = dateFormatter(check_in_date);
-    const check_out_date = dateFormatter(check_out_date);
+    const check_in_date = dateFormatter(apartmentBooking.check_in_date);
+    const check_out_date = dateFormatter(apartmentBooking.check_out_date);
 
     req.body = {
       email: user.email,
