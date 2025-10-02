@@ -286,9 +286,11 @@ const hostDeleteProperty = async (req, res) => {
   }
 };
 
-const hostApproveShortletBooking = async (req, res) => {
+const hostApproveShortletBooking = async (req, res, next) => {
   try {
-    const apartmentBooking = await ShortletBooking.findById(req.params.id);
+    const apartmentBooking = await ShortletBooking.findOne({
+      _id: req.params.id,
+    });
     console.log({ apartmentBooking });
 
     if (!apartmentBooking) {
@@ -342,9 +344,11 @@ const hostApproveShortletBooking = async (req, res) => {
   }
 };
 
-const hostDeclineShortletBooking = async (req, res) => {
+const hostDeclineShortletBooking = async (req, res, next) => {
   try {
-    const apartmentBooking = await ShortletBooking.findById(req.params.id);
+    const apartmentBooking = await ShortletBooking.findOne({
+      _id: req.params.id,
+    });
     if (apartmentBooking.apartment_owner !== req.id)
       return sendError(res, "Apartment is not owned by you!");
     if (apartmentBooking.status === "declined") {
