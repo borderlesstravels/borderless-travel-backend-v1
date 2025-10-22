@@ -25,3 +25,17 @@ exports.fetcher_ip_details = async () => {
     return error.response;
   }
 };
+
+exports.fetcher_paystack = async (url, params = {}) => {
+  try {
+    const response = await axios({
+      method: "get",
+      url: `${process.env.PAYSTACK_URL_BASE}${url}`,
+      headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET}` },
+      params,
+    });
+    return response;
+  } catch (error) {
+    return error.response;
+  }
+};

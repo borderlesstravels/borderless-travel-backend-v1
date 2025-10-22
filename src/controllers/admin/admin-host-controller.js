@@ -12,6 +12,11 @@ const ShortletBooking = require("../../models/general/ShortletBooking");
 const HostWithdrawal = require("../../models/host/HostWithdrawal");
 const HostBalance = require("../../models/host/HostBalance");
 const Notification = require("../../models/general/Notification");
+const { sender_paystack } = require("../../api/sender");
+const {
+  createPaystackRecipient,
+  createPaystackTransfer,
+} = require("../../api");
 
 const updateHostProfile = async (req, res) => {
   if (req.body.password) {
@@ -235,8 +240,35 @@ const completeWithdrawalRequest = async (req, res) => {
   const { transaction_id } = req.body;
   try {
     const request = await HostWithdrawal.findById(req.params.id);
+    if (!request) {
+      return sendError(res, "Withdrawal request does not exist. Check again");
+    }
     if (request.status === "completed") {
       return sendError(res, "Request is already completed");
+    }
+    const requestData = {
+      type: "nuban",
+      name: request.bank_details.account_name,
+      account_number: request.bank_details.account_number,
+      bank_code: request.bank_details.bank_data?.code,
+      currency: "NGN",
+    };
+    const payStackRecipient = await createPaystackRecipient(requestData);
+    if (!payStackRecipient.status) {
+      return sendError(res, "Unable to initialise transaction. Try again");
+    }
+    console.log("payStackRecipient", payStackRecipient);
+    const transferData = {
+      source: "balance",
+      amount: request.amount,
+      recipient: payStackRecipient?.data?.recipient_code,
+      reason: "Host withdrawal request",
+    };
+
+    const transfer = await createPaystackTransfer(transferData);
+    console.log("transfer", transfer);
+    if (!transfer.status || !transfer?.status?.toString()?.includes("20")) {
+      return sendError(res, transfer?.data?.message);
     }
     request.status = "completed";
     request.action_by = adminId;

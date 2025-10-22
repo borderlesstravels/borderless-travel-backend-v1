@@ -13,3 +13,17 @@ exports.sender_tiqwa = async (url, data) => {
     return error.response;
   }
 };
+
+exports.sender_paystack = async (url, data) => {
+  try {
+    const response = await axios({
+      method: "post",
+      url: `${process.env.PAYSTACK_URL_BASE}${url}`,
+      headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET}` },
+      data,
+    });
+    return response.data;
+  } catch (error) {
+    return error.response;
+  }
+};
