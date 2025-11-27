@@ -21,14 +21,19 @@ const bookingManagementRouter = require("./src/routes/admin/admin-booking-routes
 const contentManagementRouter = require("./src/routes/admin/admin-content-routes");
 const inventoryRouter = require("./src/routes/admin/admin-inventory-routes");
 const appSettingsRouter = require("./src/routes/admin/admin-app-settings-routes");
+const transferManagementsRouter = require("./src/routes/admin/admin-transfer-routes");
 
 const websiteRouter = require("./src/routes/website/general-routes");
 const flightRouter = require("./src/routes/website/flight-routes");
 const shortletRouter = require("./src/routes/website/shortlet-routes");
+const transferRouter = require("./src/routes/website/transfer-routes");
 
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const { connect } = require("./db");
+const {
+  verifyAdminLoginToken,
+} = require("./src/controllers/admin/admin-auth-controller");
 
 const app = express();
 app.use(
@@ -68,6 +73,11 @@ app.use("/api/v1/admin-app/host-management", hostManagementRouter);
 app.use("/api/v1/admin-app/email-subscription", emailSubManagementRouter);
 app.use("/api/v1/admin-app/career-management", careerManagementRouter);
 app.use("/api/v1/admin-app/shortlet-management", shortletManagementRouter);
+app.use(
+  "/api/v1/admin-app/transfer-management",
+  verifyAdminLoginToken,
+  transferManagementsRouter
+);
 app.use("/api/v1/admin-app/booking-management", bookingManagementRouter);
 app.use("/api/v1/admin-app/content-management", contentManagementRouter);
 app.use("/api/v1/admin-app/inventory-management", inventoryRouter);
@@ -76,6 +86,7 @@ app.use("/api/v1/admin-app/app-settings", appSettingsRouter);
 app.use("/api/v1/website", websiteRouter);
 app.use("/api/v1/flight", flightRouter);
 app.use("/api/v1/shortlet", shortletRouter);
+app.use("/api/v1/transfer", transferRouter);
 
 app.get("/", (req, res) => {
   res.send(

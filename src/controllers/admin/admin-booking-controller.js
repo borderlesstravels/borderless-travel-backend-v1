@@ -11,6 +11,7 @@ const FlightBooking = require("../../models/general/FlightBooking");
 const { fetcher_tiqwa } = require("../../api/fetcher");
 const Payment = require("../../models/general/Payment");
 const ShortletBooking = require("../../models/general/ShortletBooking");
+const TransferBooking = require("../../models/general/TransferBooking");
 
 //
 // Flight
@@ -254,6 +255,55 @@ const singleShortletBooking = async (req, res) => {
     return sendSuccess(res, "Successfully fetched booking", shortletBooking);
   } catch (error) {
     return sendError(res, "Cannot fetch shortlet bookings");
+  }
+};
+
+// TRANSFERS
+const confirmTransferBooking = async (req, res, next) => {
+  const adminId = req.id;
+  const { booking_reference } = req.params;
+
+  const { firm, api_key } = req.headers;
+  await verifyAPIToken(res, firm, api_key);
+  const booking = await TransferBooking.findOne({ booking_reference });
+  if (!booking)
+    return sendError(
+      res,
+      "Invalid booking reference provided. Booking doesn't exist"
+    );
+  if (booking.api_key !== api_key)
+    return sendError(
+      res,
+      "Unauthorised! You are not authorised to perform this request"
+    );
+
+  try {
+    const booking = await FlightBooking.findOne({ booking_reference });
+    booking.status = "confirmed";
+    booking.action_by = adminId ? adminId : api_key;
+    await booking.save();
+
+    const date = dateFormatter(booking?.departure_time);
+    const time = timeFormatter(booking?.departure_time);
+    req.body = {
+      first_name: booking.client_name.split(" ")[0],
+      email: booking.client_email,
+      booking_reference,
+      flight: booking.airline,
+      destination: booking.destination,
+      route: `${booking.origin} - ${booking.destination}`,
+      date,
+      time,
+    };
+
+    next();
+  } catch (error) {
+    console.log("Issue ticket action error: ", error);
+    return sendError(
+      res,
+      "Ticket issued successfully. But the system could not update the booking record with new status",
+      204
+    );
   }
 };
 

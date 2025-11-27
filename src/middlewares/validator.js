@@ -253,6 +253,55 @@ exports.validateShortletParams = [
     .isEmpty()
     .withMessage("Kindly provide the price!"),
 ];
+// TRANSFERS
+exports.validateAddVehicleParams = [
+  check("vehicle_provider")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Vehicle provider company name is missing!"),
+  check("vehicle_name")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Vehicle name is missing!"),
+  check("model")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Vehicle model is missing!"),
+  check("engine_type")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Vehicle engine type is missing!"),
+  check("doors")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Vehicle number of doors is missing!"),
+  check("max_passengers_allowed")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Maximum passengers allowed is missing!"),
+  check("max_baggages_allowed")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Maximum baggages allowed is missing!"),
+  check("vehicle_terms")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Vehicle terms is missing!"),
+  check("location").trim().not().isEmpty().withMessage("Location is missing!"),
+  check("minimum_price")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Starting price is missing!"),
+];
 
 // User
 exports.validateUserSignupParams = [
