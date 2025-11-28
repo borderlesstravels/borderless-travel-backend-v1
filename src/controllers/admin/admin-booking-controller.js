@@ -117,7 +117,6 @@ const issueFlightTicket = async (req, res, next) => {
   } else {
     if (response?.status === 200) {
       try {
-        const booking = await FlightBooking.findOne({ booking_reference });
         booking.status = "issued";
         booking.action_by = adminId ? adminId : api_key;
         await booking.save();
@@ -259,51 +258,76 @@ const singleShortletBooking = async (req, res) => {
 };
 
 // TRANSFERS
+const allTransferBookings = async (req, res) => {
+  try {
+    const data = await TransferBooking.find();
+    return sendSuccess(res, "Successfully fetched the data", data);
+  } catch (error) {
+    return sendError(res, "Cannot fetch vehicles data");
+  }
+};
+const singleTransferBooking = async (req, res) => {
+  try {
+    const data = await TransferBooking.findById(req.params.id);
+    if (!data) {
+      return sendSuccess(res, "No transfer booking record found");
+    }
+    return sendSuccess(res, "Successfully fetched booking", data);
+  } catch (error) {
+    return sendError(res, "Cannot fetch shortlet bookings");
+  }
+};
 const confirmTransferBooking = async (req, res, next) => {
   const adminId = req.id;
   const { booking_reference } = req.params;
-
-  const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
   const booking = await TransferBooking.findOne({ booking_reference });
-  if (!booking)
+  if (!booking) {
     return sendError(
       res,
       "Invalid booking reference provided. Booking doesn't exist"
     );
-  if (booking.api_key !== api_key)
-    return sendError(
-      res,
-      "Unauthorised! You are not authorised to perform this request"
-    );
+  }
 
   try {
-    const booking = await FlightBooking.findOne({ booking_reference });
     booking.status = "confirmed";
-    booking.action_by = adminId ? adminId : api_key;
+    booking.action_by = adminId;
     await booking.save();
-
-    const date = dateFormatter(booking?.departure_time);
-    const time = timeFormatter(booking?.departure_time);
-    req.body = {
-      first_name: booking.client_name.split(" ")[0],
-      email: booking.client_email,
-      booking_reference,
-      flight: booking.airline,
-      destination: booking.destination,
-      route: `${booking.origin} - ${booking.destination}`,
-      date,
-      time,
-    };
-
-    next();
+    // req.body = {
+    //   first_name: booking.client_name.split(" ")[0],
+    //   email: booking.client_email,
+    //   booking_reference,
+    //   flight: booking.airline,
+    //   destination: booking.destination,
+    //   route: `${booking.origin} - ${booking.destination}`,
+    //   date: booking.date,
+    //   time: booking.time,
+    // };
+    // next();
+    return sendSuccess(res, "Booking successfully confirmed!");
   } catch (error) {
-    console.log("Issue ticket action error: ", error);
+    console.log("Confirm booking error: ", error);
+    return sendError(res, "Unable to confirm booking!");
+  }
+};
+
+const cancelTransferBooking = async (req, res, next) => {
+  const adminId = req.id;
+  const { booking_reference } = req.params;
+  const booking = await TransferBooking.findOne({ booking_reference });
+  if (!booking) {
     return sendError(
       res,
-      "Ticket issued successfully. But the system could not update the booking record with new status",
-      204
+      "Invalid booking reference provided. Booking doesn't exist"
     );
+  }
+  try {
+    booking.status = "cancelled";
+    booking.action_by = adminId;
+    await booking.save();
+    return sendSuccess(res, "Booking has now been cancelled!");
+  } catch (error) {
+    console.log("Can booking error: ", error);
+    return sendError(res, "Unable to cancel booking!");
   }
 };
 
@@ -317,4 +341,9 @@ module.exports = {
 
   allShortletBookings,
   singleShortletBooking,
+
+  allTransferBookings,
+  singleTransferBooking,
+  confirmTransferBooking,
+  cancelTransferBooking,
 };

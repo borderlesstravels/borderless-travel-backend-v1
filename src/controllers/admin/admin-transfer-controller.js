@@ -161,15 +161,6 @@ const allLocations = async (req, res) => {
 };
 
 // BOOKINGS
-const transferBookings = async (req, res) => {
-  try {
-    const data = await TransferBooking.find();
-    return sendSuccess(res, "Successfully fetched the data", data);
-  } catch (error) {
-    return sendError(res, "Cannot fetch vehicles data");
-  }
-};
-
 const vehicleBookings = async (req, res) => {
   try {
     const data = await TransferBooking.find({
@@ -193,6 +184,5 @@ module.exports = {
   deleteLocationData,
   allLocations,
 
-  transferBookings,
   vehicleBookings,
 };

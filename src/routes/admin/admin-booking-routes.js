@@ -12,6 +12,10 @@ const {
   fetchBookingPayemnt,
   allShortletBookings,
   singleShortletBooking,
+  allTransferBookings,
+  singleTransferBooking,
+  confirmTransferBooking,
+  cancelTransferBooking,
 } = require("../../controllers/admin/admin-booking-controller");
 const {
   flightTicketIssuedEmail,
@@ -74,4 +78,23 @@ router.get(
   singleShortletBooking
 );
 
+// TRANSFERS
+router.get(
+  "/transfer/all-bookings",
+  verifyAdminLoginToken,
+  allTransferBookings
+);
+router.get(
+  "/transfer/single-booking/:id",
+  verifyAdminLoginToken,
+  singleTransferBooking
+);
+router.put(
+  "/transfer/confirm-booking/:booking_reference",
+  confirmTransferBooking
+);
+router.put(
+  "/transfer/cancel-booking/:booking_reference",
+  cancelTransferBooking
+);
 module.exports = router;

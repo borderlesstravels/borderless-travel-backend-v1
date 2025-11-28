@@ -15,7 +15,6 @@ const {
   updateLocationData,
   allLocations,
   deleteLocationData,
-  transferBookings,
   vehicleBookings,
 } = require("../../controllers/admin/admin-transfer-controller");
 const router = express.Router();
@@ -35,7 +34,6 @@ router.put("/edit-location/:id", updateLocationData);
 router.delete("/delete-location/:id", deleteLocationData);
 router.get("/fetch-locations", allLocations);
 
-router.get("/transfer-bookings", transferBookings);
 router.get("/transfer-bookings/:vehicle_id", vehicleBookings);
 
 module.exports = router;
