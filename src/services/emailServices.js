@@ -413,7 +413,7 @@ const flightBookingPaymentReceivedEmail = async (req, res) => {
   );
   const subject = "Payment Received for Your Flight Booking";
   const adminSubject = "New Flight Booking Received!";
-  const adminEMail = "support@borderless.travel";
+  const adminEMail = "ticketing@borderless.travel";
   const adminEmailBody = `<html><head></head>><body>
     Hello, we have just received a new flight booking.\n\n
     Route: ${route}\n\n
