@@ -1,6 +1,7 @@
 const axios = require("axios");
 
 exports.sender_tiqwa = async (url, data) => {
+  // console.log("data", data);
   try {
     const response = await axios({
       method: "post",
@@ -15,6 +16,7 @@ exports.sender_tiqwa = async (url, data) => {
 };
 
 exports.sender_tiqwa_json = async (url, data) => {
+  console.log("data", data);
   try {
     const response = await axios({
       method: "post",
@@ -26,7 +28,14 @@ exports.sender_tiqwa_json = async (url, data) => {
       data,
     });
 
-    console.log("response 111", JSON.parse(response?.config?.data));
+    let resp = response.config.data && JSON.parse(response.config.data);
+
+    // console.log("response", response);
+    // console.log("response data", resp && JSON.parse(resp.destinations));
+    // console.log(
+    //   "response data message",
+    //   JSON.parse(response.data.message.destinations),
+    // );
     return response;
   } catch (error) {
     return error.response;

@@ -76,9 +76,7 @@ const fetchAirlines = async (req, res) => {
 const flightOfferSearch = async (req, res, next) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
-  console.log("req.body", req.body);
   const response = await fetcher_tiqwa("/flight/search", req.body);
-  console.log("response", response);
   if (!response) {
     return sendError(
       res,
@@ -94,18 +92,18 @@ const flightOfferSearch = async (req, res, next) => {
   }
 };
 
-const flightOfferSearchMultiCity = async (req, res, next) => {
+const flightOfferSearchMultiCity = async (req, res) => {
   const { firm, api_key } = req.headers;
   const { destinations, cabin, adults, children, infants } = req.body;
-
-  console.log("req.body", req.body);
   await verifyAPIToken(res, firm, api_key);
 
-  const response = await sender_tiqwa_json(
-    `/flight/multi_city/search`,
-    { destinations, cabin, adults, children, infants },
-    // JSON.stringify(req.body),
-  );
+  const response = await sender_tiqwa(`/flight/multi_city/search`, {
+    destinations: destinations,
+    cabin: cabin,
+    adults: adults,
+    children: children,
+    infants: infants,
+  });
   if (!response) {
     return sendError(
       res,
@@ -113,16 +111,10 @@ const flightOfferSearchMultiCity = async (req, res, next) => {
     );
   }
 
-  // console.log(
-  //   "response",
-  //   JSON.stringify(response?.message?.destinations, null, 2),
-  // );
-
   if (response?.status === 200) {
-    const result = response && response?.config?.data?.destinations;
     return res.status(response.status).json({
       success: true,
-      data: result,
+      data: response.data,
     });
   } else {
     return sendError(res, response?.data, response?.status);
@@ -288,15 +280,12 @@ const bookFlight = async (req, res, next) => {
     if (response?.status === 200) {
       const outboundData = response.data.outbound;
       const destPicker = Number(outboundData.length - 1);
-
       const airline = outboundData[0].airline_details.name;
       const airline_logo = outboundData[0].airline_details.logo;
       const departure_time = outboundData[0].departure_time;
       const arrival_time = outboundData[destPicker].arrival_time;
-
       const origin_code = outboundData[0].airport_from;
       const destination_code = outboundData[destPicker].airport_to;
-
       const findAirports = await fetcher_tiqwa("/airports");
       if (!findAirports) {
         return sendError(
@@ -312,13 +301,11 @@ const bookFlight = async (req, res, next) => {
         const arrivalAirport = allAirports.filter(
           (airport) => airport.iata_code === destination_code,
         );
-
         const origin = departureAirport[0].city;
         const destination = arrivalAirport[0].city;
         const total_paid = response.data.amount;
         const service_cost = response.data.pricing.payable;
         const profit = response.data.pricing.markup.markup_value;
-
         try {
           const newBooking = new FlightBooking({
             owner: contact_details.c_email,
@@ -351,10 +338,8 @@ const bookFlight = async (req, res, next) => {
             profit,
           });
           await newSale.save();
-
           const date = dateFormatter(newBooking?.created_at);
           const time = dateFormatter(newBooking?.created_at);
-
           req.body = {
             first_name: contact_details.c_first_name,
             email: contact_details.c_email,

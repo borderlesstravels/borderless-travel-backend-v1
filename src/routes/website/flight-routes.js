@@ -29,7 +29,7 @@ router.post(
   "/travel-booking-request",
   validateBookingRequestParams,
   validate,
-  travelBookingRequest
+  travelBookingRequest,
 );
 router.get("/fetch-airports", fetchAirports);
 router.get("/fetch-airlines", fetchAirlines);
@@ -37,13 +37,13 @@ router.post(
   "/flight-offer-search",
   validateFlightOfferSearch,
   validate,
-  flightOfferSearch
+  flightOfferSearch,
 );
 router.post(
   "/multi-city-flight-offer-search",
-  validateMultiCityFlightOfferSearch,
-  validate,
-  flightOfferSearchMultiCity
+  // validateMultiCityFlightOfferSearch,
+  // validate,
+  flightOfferSearchMultiCity,
 );
 router.get("/confirm-price/:flight_id", confirmFlightPrice);
 router.post(
@@ -51,24 +51,24 @@ router.post(
   validateFlightBooking,
   validate,
   bookFlight,
-  bookingCreatedEmail
+  bookingCreatedEmail,
 );
 
 router.post(
   "/book-flight-tp/:flight_id",
   validateFlightBooking,
   validate,
-  bookFlightThirdParty
+  bookFlightThirdParty,
 );
 router.get(
   "/flight-booking-details/:booking_reference",
-  fetchFlightTicketDetails
+  fetchFlightTicketDetails,
 );
 
 // manilla
 router.get(
   "/flight-ticket-details/:booking_reference",
-  fetchFlightTicketDetails
+  fetchFlightTicketDetails,
 );
 
 // Provider webhook
