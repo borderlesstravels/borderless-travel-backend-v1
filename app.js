@@ -52,8 +52,9 @@ app.use(
       "https://borderless-waitlist-admin-frontend.onrender.com",
       "https://borderless-admin.onrender.com",
       "https://borderless-frontend-test.onrender.com",
+      "https://borderless-admin-test.onrender.com",
     ],
-  })
+  }),
 );
 app.use(requestIp.mw());
 app.use(cookieParser());
@@ -77,7 +78,7 @@ app.use("/api/v1/admin-app/shortlet-management", shortletManagementRouter);
 app.use(
   "/api/v1/admin-app/transfer-management",
   verifyAdminLoginToken,
-  transferManagementsRouter
+  transferManagementsRouter,
 );
 app.use("/api/v1/admin-app/booking-management", bookingManagementRouter);
 app.use("/api/v1/admin-app/content-management", contentManagementRouter);
@@ -91,7 +92,7 @@ app.use("/api/v1/transfer", transferRouter);
 
 app.get("/", (req, res) => {
   res.send(
-    "Hello, welcome to Borderless Travels app. Server is running with latest update in April 2025"
+    "Hello, welcome to Borderless Travels app. Server is running with latest update in April 2025",
   );
 });
 

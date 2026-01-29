@@ -14,6 +14,25 @@ exports.sender_tiqwa = async (url, data) => {
   }
 };
 
+exports.sender_tiqwa_json = async (url, data) => {
+  try {
+    const response = await axios({
+      method: "post",
+      url: `https://prod.tiqwa.com/v1/flight/multi_city/search`,
+      headers: {
+        // "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.TIQWA_BEARER_TOKEN}`,
+      },
+      data,
+    });
+
+    console.log("response 111", JSON.parse(response?.config?.data));
+    return response;
+  } catch (error) {
+    return error.response;
+  }
+};
+
 exports.sender_paystack = async (url, data) => {
   try {
     const response = await axios({

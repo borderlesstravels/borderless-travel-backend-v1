@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const { log } = require("console");
 const { fetcher_tiqwa } = require("../../api/fetcher");
-const { sender_tiqwa } = require("../../api/sender");
+const { sender_tiqwa, sender_tiqwa_json } = require("../../api/sender");
 const FlightBooking = require("../../models/general/FlightBooking");
 const {
   sendError,
@@ -23,7 +23,7 @@ const travelBookingRequest = async (req, res) => {
     return sendSuccess(
       res,
       "Your request has been successfully received. We will reach out to you soon.",
-      newBookingRequest
+      newBookingRequest,
     );
   } catch (error) {
     sendError(res, `Could not complete your requested. Error - ${error}`);
@@ -38,7 +38,7 @@ const fetchAirports = async (req, res) => {
   if (!response) {
     return sendError(
       res,
-      "Unable to complete this request at this time. Please try again."
+      "Unable to complete this request at this time. Please try again.",
     );
   }
   if (response?.status === 200) {
@@ -61,7 +61,7 @@ const fetchAirlines = async (req, res) => {
   if (!response) {
     return sendError(
       res,
-      "Unable to complete this request at this time. Please try again."
+      "Unable to complete this request at this time. Please try again.",
     );
   }
   if (response?.status === 200) {
@@ -76,11 +76,13 @@ const fetchAirlines = async (req, res) => {
 const flightOfferSearch = async (req, res, next) => {
   const { firm, api_key } = req.headers;
   await verifyAPIToken(res, firm, api_key);
+  console.log("req.body", req.body);
   const response = await fetcher_tiqwa("/flight/search", req.body);
+  console.log("response", response);
   if (!response) {
     return sendError(
       res,
-      "Unable to complete this request at this time. Please try again."
+      "Unable to complete this request at this time. Please try again.",
     );
   }
   if (response?.status === 200) {
@@ -94,22 +96,36 @@ const flightOfferSearch = async (req, res, next) => {
 
 const flightOfferSearchMultiCity = async (req, res, next) => {
   const { firm, api_key } = req.headers;
+  const { destinations, cabin, adults, children, infants } = req.body;
+
+  console.log("req.body", req.body);
   await verifyAPIToken(res, firm, api_key);
 
-  const response = await sender_tiqwa(`/flight/multi_city/search`, req.body);
+  const response = await sender_tiqwa_json(
+    `/flight/multi_city/search`,
+    { destinations, cabin, adults, children, infants },
+    // JSON.stringify(req.body),
+  );
   if (!response) {
     return sendError(
       res,
-      "Unable to complete this request at this time. Please try again."
+      "Unable to complete this request at this time. Please try again.",
     );
   }
 
+  // console.log(
+  //   "response",
+  //   JSON.stringify(response?.message?.destinations, null, 2),
+  // );
+
   if (response?.status === 200) {
-    return res
-      .status(response.status)
-      .json({ success: true, data: response.data });
+    const result = response && response?.config?.data?.destinations;
+    return res.status(response.status).json({
+      success: true,
+      data: result,
+    });
   } else {
-    return sendError(res, response?.data.Message, response?.status);
+    return sendError(res, response?.data, response?.status);
   }
 };
 
@@ -122,7 +138,7 @@ const confirmFlightPrice = async (req, res) => {
   if (!response) {
     return sendError(
       res,
-      "Unable to complete this request at this time.Please try again."
+      "Unable to complete this request at this time.Please try again.",
     );
   }
   if (response?.status === 200) {
@@ -151,7 +167,7 @@ const bookFlightAuth = async (req, res, next) => {
   if (user.email !== contact_details.c_email)
     return sendError(
       res,
-      "Sorry, kindly use your registered email address for easy circle backs"
+      "Sorry, kindly use your registered email address for easy circle backs",
     );
 
   try {
@@ -161,7 +177,7 @@ const bookFlightAuth = async (req, res, next) => {
     if (!response) {
       return sendError(
         res,
-        "Unable to complete this request at this time. Please try again."
+        "Unable to complete this request at this time. Please try again.",
       );
     }
     // console.log("response", response);
@@ -181,16 +197,16 @@ const bookFlightAuth = async (req, res, next) => {
       if (!findAirports) {
         return sendError(
           res,
-          "Unable to complete this request at this time. Please try again."
+          "Unable to complete this request at this time. Please try again.",
         );
       }
       if (findAirports?.status === 200) {
         const allAirports = findAirports.data;
         const departureAirport = allAirports.filter(
-          (airport) => airport.iata_code === origin_code
+          (airport) => airport.iata_code === origin_code,
         );
         const arrivalAirport = allAirports.filter(
-          (airport) => airport.iata_code === destination_code
+          (airport) => airport.iata_code === destination_code,
         );
         const origin = departureAirport[0].city;
         const destination = arrivalAirport[0].city;
@@ -247,7 +263,7 @@ const bookFlightAuth = async (req, res, next) => {
     console.log("book flight error:", error);
     return sendError(
       res,
-      `Unable to book your flight at this time. Error - ${error}`
+      `Unable to book your flight at this time. Error - ${error}`,
     );
   }
 };
@@ -257,6 +273,7 @@ const bookFlight = async (req, res, next) => {
   await verifyAPIToken(res, firm, api_key);
   const { flight_id } = req.params;
   const { contact_details, passenger_details } = req.body;
+  const { admin } = req.query;
 
   try {
     const response = await sender_tiqwa(`/flight/book/${flight_id}`, {
@@ -265,7 +282,7 @@ const bookFlight = async (req, res, next) => {
     if (!response) {
       return sendError(
         res,
-        "Unable to complete this request at this time. Please try again."
+        "Unable to complete this request at this time. Please try again.",
       );
     }
     if (response?.status === 200) {
@@ -284,16 +301,16 @@ const bookFlight = async (req, res, next) => {
       if (!findAirports) {
         return sendError(
           res,
-          "Unable to complete this request at this time. Please try again."
+          "Unable to complete this request at this time. Please try again.",
         );
       }
       if (findAirports?.status === 200) {
         const allAirports = findAirports.data;
         const departureAirport = allAirports.filter(
-          (airport) => airport.iata_code === origin_code
+          (airport) => airport.iata_code === origin_code,
         );
         const arrivalAirport = allAirports.filter(
-          (airport) => airport.iata_code === destination_code
+          (airport) => airport.iata_code === destination_code,
         );
 
         const origin = departureAirport[0].city;
@@ -318,6 +335,7 @@ const bookFlight = async (req, res, next) => {
             destination_code,
             origin,
             destination,
+            payment_status: admin?.length ? "paid" : "pending",
             price: total_paid,
             status: response?.data?.status,
             booking_reference: response?.data.reference,
@@ -353,20 +371,20 @@ const bookFlight = async (req, res, next) => {
         } catch (error) {
           console.log(
             `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error -`,
-            error
+            error,
           );
           return sendError(
             res,
-            `Ticket booked, but we are unable to save your data on our database. Kindly get in touch with us soon. Booking ID: ${response?.data.reference}`
+            `Ticket booked, but we are unable to save your data on our database. Kindly get in touch with us soon. Booking ID: ${response?.data.reference}`,
           );
         }
       } else {
         console.log(
-          `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error - Unable to locate airports`
+          `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error - Unable to locate airports`,
         );
         return sendError(
           res,
-          `Booking established but could not be completed. Kindly reach out to support with this booking ID: ${response?.data.reference}`
+          `Booking established but could not be completed. Kindly reach out to support with this booking ID: ${response?.data.reference}`,
         );
       }
     } else {
@@ -376,7 +394,7 @@ const bookFlight = async (req, res, next) => {
     console.log("Unable to complete flight booking. Error -", error);
     return sendError(
       res,
-      `Unable to book your flight at this time. Error - ${error}`
+      `Unable to book your flight at this time. Error - ${error}`,
     );
   }
 };
@@ -394,7 +412,7 @@ const bookFlightThirdParty = async (req, res, next) => {
     if (!response) {
       return sendError(
         res,
-        "Unable to complete this request at this time. Please try again."
+        "Unable to complete this request at this time. Please try again.",
       );
     }
     if (response?.status === 200) {
@@ -413,16 +431,16 @@ const bookFlightThirdParty = async (req, res, next) => {
       if (!findAirports) {
         return sendError(
           res,
-          "Unable to complete this request at this time. Please try again."
+          "Unable to complete this request at this time. Please try again.",
         );
       }
       if (findAirports?.status === 200) {
         const allAirports = findAirports.data;
         const departureAirport = allAirports.filter(
-          (airport) => airport.iata_code === origin_code
+          (airport) => airport.iata_code === origin_code,
         );
         const arrivalAirport = allAirports.filter(
-          (airport) => airport.iata_code === destination_code
+          (airport) => airport.iata_code === destination_code,
         );
 
         const origin = departureAirport[0].city;
@@ -468,20 +486,20 @@ const bookFlightThirdParty = async (req, res, next) => {
         } catch (error) {
           console.log(
             `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error -`,
-            error
+            error,
           );
           return sendError(
             res,
-            `Ticket booked, but we are unable to save your data on our database. Kindly get in touch with us soon. Booking ID: ${response?.data.reference}`
+            `Ticket booked, but we are unable to save your data on our database. Kindly get in touch with us soon. Booking ID: ${response?.data.reference}`,
           );
         }
       } else {
         console.log(
-          `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error - Unable to locate airports`
+          `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error - Unable to locate airports`,
         );
         return sendError(
           res,
-          `Booking established but could not be completed. Kindly reach out to support with this booking ID: ${response?.data.reference}`
+          `Booking established but could not be completed. Kindly reach out to support with this booking ID: ${response?.data.reference}`,
         );
       }
     } else {
@@ -491,7 +509,7 @@ const bookFlightThirdParty = async (req, res, next) => {
     console.log("Unable to complete flight booking. Error -", error);
     return sendError(
       res,
-      `Unable to book your flight at this time. Error - ${error}`
+      `Unable to book your flight at this time. Error - ${error}`,
     );
   }
 };
