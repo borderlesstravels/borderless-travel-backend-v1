@@ -803,6 +803,106 @@ exports.validateUpdatePasswordParams = [
     .withMessage("Password must be between 8 and 20 characters long"),
 ];
 
+const agentEducationLevels = [
+  "Secondary School",
+  "Diploma/OND",
+  "HND",
+  "Bachelor's Degree",
+  "Master's Degree",
+  "Doctorate",
+  "Other",
+];
+
+const agentApplicationStatuses = [
+  "pending",
+  "under_review",
+  "approved",
+  "rejected",
+  "suspended",
+];
+
+exports.validateAgentOnboardingParams = [
+  check("fullName")
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage("Full name must be between 2 and 100 characters"),
+  check("full_name")
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage("Full name must be between 2 and 100 characters"),
+  check("email")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Email address is missing!")
+    .isEmail()
+    .withMessage("Invalid email address provided")
+    .isLength({ max: 255 })
+    .withMessage("Email must not exceed 255 characters"),
+  check("phone")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Phone number is missing!")
+    .isLength({ min: 6, max: 30 })
+    .withMessage("Phone number must be between 6 and 30 characters"),
+  check("location")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Location is missing!")
+    .isLength({ min: 2, max: 120 })
+    .withMessage("Location must be between 2 and 120 characters"),
+  check("education")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Education level is missing!")
+    .isIn(agentEducationLevels)
+    .withMessage("Invalid education level provided"),
+  (req, res, next) => {
+    const fullName = (req.body.full_name || req.body.fullName || "").trim();
+    if (fullName.length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: "Full name must be between 2 and 100 characters",
+      });
+    }
+    next();
+  },
+];
+
+exports.validateAgentApplicationStatusParams = [
+  check("status")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Application status is missing!")
+    .isIn(agentApplicationStatuses)
+    .withMessage("Invalid application status provided"),
+];
+
+exports.validateAddAgentCommissionParams = [
+  check("agent_id")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Agent is required"),
+  check("amount")
+    .not()
+    .isEmpty()
+    .withMessage("Commission amount is required")
+    .isFloat({ min: 0.01 })
+    .withMessage("Commission amount must be greater than zero"),
+  check("booking_reference")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Booking reference is required"),
+];
+
 exports.validate = (req, res, next) => {
   const error = validationResult(req).array();
   if (!error.length) return next();

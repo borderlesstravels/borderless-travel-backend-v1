@@ -22,11 +22,13 @@ const contentManagementRouter = require("./src/routes/admin/admin-content-routes
 const inventoryRouter = require("./src/routes/admin/admin-inventory-routes");
 const appSettingsRouter = require("./src/routes/admin/admin-app-settings-routes");
 const transferManagementsRouter = require("./src/routes/admin/admin-transfer-routes");
+const agentManagementRouter = require("./src/routes/admin/admin-agent-routes");
 
 const websiteRouter = require("./src/routes/website/general-routes");
 const flightRouter = require("./src/routes/website/flight-routes");
 const shortletRouter = require("./src/routes/website/shortlet-routes");
 const transferRouter = require("./src/routes/website/transfer-routes");
+const agentOnboardingRouter = require("./src/routes/agent/agent-onboarding-routes");
 
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -48,7 +50,9 @@ app.use(
       "https://borderless-travel-admin-app.vercel.app",
       "https://borderless-website.onrender.com",
       "https://borderless-waitlist.onrender.com",
+      "https://borderless-agents.onrender.com",
       "https://borderless.travel",
+      "https://agent.borderless.travel",
       "https://borderless-waitlist-admin-frontend.onrender.com",
       "https://borderless-admin.onrender.com",
       "https://borderless-frontend-test.onrender.com",
@@ -84,11 +88,13 @@ app.use("/api/v1/admin-app/booking-management", bookingManagementRouter);
 app.use("/api/v1/admin-app/content-management", contentManagementRouter);
 app.use("/api/v1/admin-app/inventory-management", inventoryRouter);
 app.use("/api/v1/admin-app/app-settings", appSettingsRouter);
+app.use("/api/v1/admin-app/agent-management", agentManagementRouter);
 
 app.use("/api/v1/website", websiteRouter);
 app.use("/api/v1/flight", flightRouter);
 app.use("/api/v1/shortlet", shortletRouter);
 app.use("/api/v1/transfer", transferRouter);
+app.use("/api/v1/agent/onboarding", agentOnboardingRouter);
 
 app.get("/", (req, res) => {
   res.send(

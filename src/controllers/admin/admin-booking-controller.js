@@ -21,7 +21,7 @@ const allFlightBookings = async (req, res) => {
   await verifyAPIToken(res, firm, api_key);
   try {
     const flightBookings = await FlightBooking.find({ firm }).limit(
-      req.query.limit
+      req.query.limit,
     );
     if (!flightBookings) {
       return sendError(res, "Flight bookings not available at this time.");
@@ -29,7 +29,7 @@ const allFlightBookings = async (req, res) => {
       return sendSuccess(
         res,
         "Successfully fetched all flight bookings",
-        flightBookings
+        flightBookings,
       );
     }
   } catch (error) {
@@ -48,7 +48,7 @@ const singleFlightBooking = async (req, res) => {
     if (flightBooking.api_key !== api_key)
       return sendError(
         res,
-        "Unauthorised! You are not authorised to perform this request"
+        "Unauthorised! You are not authorised to perform this request",
       );
     return sendSuccess(res, "Successfully fetched booking", flightBooking);
   } catch (error) {
@@ -65,20 +65,19 @@ const fetchTicketDetails = async (req, res) => {
   if (!booking)
     return sendError(
       res,
-      "Invalid booking reference provided. Booking doesn't exist"
+      "Invalid booking reference provided. Booking doesn't exist",
     );
   if (booking.api_key !== api_key)
     return sendError(
       res,
-      "Unauthorised! You are not authorised to perform this request"
+      "Unauthorised! You are not authorised to perform this request",
     );
 
   const response = await fetcher_tiqwa(`/flight/${booking_reference}`);
-  log("response", response.data);
   if (!response) {
     return sendError(
       res,
-      "Unable to complete this request at this time. Please try again."
+      "Unable to complete this request at this time. Please try again.",
     );
   }
   if (response?.status === 200) {
@@ -100,19 +99,19 @@ const issueFlightTicket = async (req, res, next) => {
   if (!booking)
     return sendError(
       res,
-      "Invalid booking reference provided. Booking doesn't exist"
+      "Invalid booking reference provided. Booking doesn't exist",
     );
   if (booking.api_key !== api_key)
     return sendError(
       res,
-      "Unauthorised! You are not authorised to perform this request"
+      "Unauthorised! You are not authorised to perform this request",
     );
 
   const response = await sender_tiqwa(`/flight/pay/${booking_reference}`);
   if (!response) {
     return sendError(
       res,
-      "Unable to complete this request at this time. Please try again."
+      "Unable to complete this request at this time. Please try again.",
     );
   } else {
     if (response?.status === 200) {
@@ -140,7 +139,7 @@ const issueFlightTicket = async (req, res, next) => {
         return sendError(
           res,
           "Ticket issued successfully. But the system could not update the booking record with new status",
-          204
+          204,
         );
       }
     } else {
@@ -160,12 +159,12 @@ const cancelFlightTicket = async (req, res, next) => {
   if (!booking)
     return sendError(
       res,
-      "Invalid booking reference provided. Booking doesn't exist"
+      "Invalid booking reference provided. Booking doesn't exist",
     );
   if (booking.api_key !== api_key)
     return sendError(
       res,
-      "Unauthorised! You are not authorised to perform this request"
+      "Unauthorised! You are not authorised to perform this request",
     );
 
   try {
@@ -189,7 +188,7 @@ const cancelFlightTicket = async (req, res, next) => {
     return sendError(
       res,
       "Ticket canceled successfully. But the system could not update the booking record with new status",
-      204
+      204,
     );
   }
 };
@@ -206,7 +205,7 @@ const fetchBookingPayemnt = async (req, res) => {
     return sendSuccess(
       res,
       "Successfully fetched the booking payment details",
-      bookingPayment
+      bookingPayment,
     );
   } catch (error) {
     console.log(error);
@@ -222,7 +221,7 @@ const allShortletBookings = async (req, res) => {
   await verifyAPIToken(res, firm, api_key);
   try {
     const shortletBookings = await ShortletBooking.find({ firm }).limit(
-      req.query.limit
+      req.query.limit,
     );
     if (!shortletBookings) {
       return sendError(res, "Shortlet bookings not available at this time.");
@@ -230,7 +229,7 @@ const allShortletBookings = async (req, res) => {
       return sendSuccess(
         res,
         "Successfully fetched all shortlet bookings",
-        shortletBookings
+        shortletBookings,
       );
     }
   } catch (error) {
@@ -249,7 +248,7 @@ const singleShortletBooking = async (req, res) => {
     if (shortletBooking.api_key !== api_key)
       return sendError(
         res,
-        "Unauthorised! You are not authorised to perform this request"
+        "Unauthorised! You are not authorised to perform this request",
       );
     return sendSuccess(res, "Successfully fetched booking", shortletBooking);
   } catch (error) {
@@ -284,7 +283,7 @@ const confirmTransferBooking = async (req, res, next) => {
   if (!booking) {
     return sendError(
       res,
-      "Invalid booking reference provided. Booking doesn't exist"
+      "Invalid booking reference provided. Booking doesn't exist",
     );
   }
 
@@ -317,7 +316,7 @@ const cancelTransferBooking = async (req, res, next) => {
   if (!booking) {
     return sendError(
       res,
-      "Invalid booking reference provided. Booking doesn't exist"
+      "Invalid booking reference provided. Booking doesn't exist",
     );
   }
   try {
