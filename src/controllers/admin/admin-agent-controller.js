@@ -250,6 +250,73 @@ const addFlightAgentCommission = async (req, res) => {
   }
 };
 
+const addManualAgentCommission = async (req, res) => {
+  const {
+    agent_id,
+    amount,
+    booking_reference,
+    customer_name,
+    customer_email,
+    origin,
+    destination,
+  } = req.body;
+  const commissionAmount = Number(amount);
+
+  try {
+    const agent = await AgentApplication.findById(agent_id);
+    if (!agent) {
+      return badRequestError(res, "Agent not found");
+    }
+    if (!APPROVED_AGENT_STATUSES.includes(agent.status)) {
+      return badRequestError(
+        res,
+        "Commission can only be added for approved agents"
+      );
+    }
+
+    const existingEarning = await AgentEarning.findOne({
+      booking_reference,
+      service: "flight",
+    });
+    if (existingEarning) {
+      return badRequestError(
+        res,
+        "Commission has already been added for this booking"
+      );
+    }
+
+    const earning = new AgentEarning({
+      agent: agent_id,
+      booking_reference,
+      service: "flight",
+      amount: commissionAmount,
+      customer_name: customer_name.trim(),
+      customer_email: customer_email.trim(),
+      origin: origin.trim(),
+      destination: destination.trim(),
+      action_by: req.id,
+    });
+
+    await earning.save();
+
+    agent.available_balance = (agent.available_balance || 0) + commissionAmount;
+    await agent.save();
+
+    return sendSuccess(res, "Agent commission recorded successfully", {
+      earning,
+      agent,
+    });
+  } catch (err) {
+    if (err.code === 11000) {
+      return badRequestError(
+        res,
+        "Commission has already been added for this booking"
+      );
+    }
+    return sendError(res, "Unable to record agent commission", 500);
+  }
+};
+
 const checkFlightAgentCommission = async (req, res) => {
   const { booking_reference } = req.params;
 
@@ -278,4 +345,5 @@ module.exports = {
   deleteAgentApplication,
   checkFlightAgentCommission,
   addFlightAgentCommission,
+  addManualAgentCommission,
 };

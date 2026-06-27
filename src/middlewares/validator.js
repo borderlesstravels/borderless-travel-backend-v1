@@ -903,6 +903,47 @@ exports.validateAddAgentCommissionParams = [
     .withMessage("Booking reference is required"),
 ];
 
+exports.validateAddManualAgentCommissionParams = [
+  check("agent_id")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Agent is required"),
+  check("amount")
+    .not()
+    .isEmpty()
+    .withMessage("Commission amount is required")
+    .isFloat({ min: 0.01 })
+    .withMessage("Commission amount must be greater than zero"),
+  check("booking_reference")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Booking reference is required"),
+  check("customer_name")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Customer name is required"),
+  check("customer_email")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Customer email is required")
+    .isEmail()
+    .withMessage("A valid customer email is required"),
+  check("origin")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Flight origin is required"),
+  check("destination")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Flight destination is required"),
+];
+
 exports.validate = (req, res, next) => {
   const error = validationResult(req).array();
   if (!error.length) return next();

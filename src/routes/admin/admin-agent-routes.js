@@ -5,6 +5,7 @@ const {
 const {
   validateAgentApplicationStatusParams,
   validateAddAgentCommissionParams,
+  validateAddManualAgentCommissionParams,
   validate,
 } = require("../../middlewares/validator");
 const {
@@ -17,6 +18,7 @@ const {
   deleteAgentApplication,
   checkFlightAgentCommission,
   addFlightAgentCommission,
+  addManualAgentCommission,
 } = require("../../controllers/admin/admin-agent-controller");
 
 const router = express.Router();
@@ -56,6 +58,13 @@ router.post(
   validateAddAgentCommissionParams,
   validate,
   addFlightAgentCommission
+);
+router.post(
+  "/manual-commission",
+  verifyAdminLoginToken,
+  validateAddManualAgentCommissionParams,
+  validate,
+  addManualAgentCommission
 );
 router.get(
   "/flight-commission/:booking_reference",
