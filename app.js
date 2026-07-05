@@ -53,6 +53,7 @@ app.use(
       "https://borderless-agents.onrender.com",
       "https://borderless.travel",
       "https://agent.borderless.travel",
+      "https://admin.borderless.travel",
       "https://borderless-waitlist-admin-frontend.onrender.com",
       "https://borderless-admin.onrender.com",
       "https://borderless-frontend-test.onrender.com",
