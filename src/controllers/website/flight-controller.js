@@ -97,12 +97,20 @@ const flightOfferSearchMultiCity = async (req, res) => {
   const { destinations, cabin, adults, children, infants } = req.body;
   await verifyAPIToken(res, firm, api_key);
 
+  if (!Array.isArray(destinations) || destinations.length < 2) {
+    return sendError(
+      res,
+      "Add at least two flight legs for a multi-city search",
+      400,
+    );
+  }
+
   const response = await sender_tiqwa(`/flight/multi_city/search`, {
-    destinations: destinations,
-    cabin: cabin,
-    adults: adults,
-    children: children,
-    infants: infants,
+    destinations,
+    cabin: typeof cabin === "string" ? cabin.toLowerCase() : cabin,
+    adults: Number(adults),
+    children: Number(children),
+    infants: Number(infants),
   });
   if (!response) {
     return sendError(
@@ -116,9 +124,14 @@ const flightOfferSearchMultiCity = async (req, res) => {
       success: true,
       data: response.data,
     });
-  } else {
-    return sendError(res, response?.data, response?.status);
   }
+
+  const errorMessage =
+    response?.data?.Message ||
+    response?.data?.message ||
+    (typeof response?.data === "string" ? response.data : null) ||
+    "Unable to search multi-city flights";
+  return sendError(res, errorMessage, response?.status);
 };
 
 const confirmFlightPrice = async (req, res) => {
@@ -322,6 +335,12 @@ const bookFlight = async (req, res, next) => {
             destination_code,
             origin,
             destination,
+            is_multicity: Boolean(response?.data?.is_multicity),
+            trip_type: response?.data?.is_multicity
+              ? "multi-city"
+              : response?.data?.inbound?.length
+                ? "return"
+                : "one-way",
             payment_status: admin?.length ? "paid" : "pending",
             price: total_paid,
             status: response?.data?.status,

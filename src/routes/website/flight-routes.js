@@ -41,8 +41,8 @@ router.post(
 );
 router.post(
   "/multi-city-flight-offer-search",
-  // validateMultiCityFlightOfferSearch,
-  // validate,
+  validateMultiCityFlightOfferSearch,
+  validate,
   flightOfferSearchMultiCity,
 );
 router.get("/confirm-price/:flight_id", confirmFlightPrice);

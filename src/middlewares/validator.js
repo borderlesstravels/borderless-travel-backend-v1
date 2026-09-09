@@ -43,22 +43,32 @@ exports.validateFlightOfferSearch = [
 
 exports.validateMultiCityFlightOfferSearch = [
   check("destinations")
+    .isArray({ min: 2 })
+    .withMessage("Add at least two flight legs for a multi-city search"),
+  check("destinations.*.origin")
     .trim()
     .not()
     .isEmpty()
-    .withMessage("Origins or destinations missing!"),
-  check("adults")
+    .withMessage("Each leg needs an origin airport"),
+  check("destinations.*.destination")
     .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Each leg needs a destination airport"),
+  check("destinations.*.departure_date")
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage("Each leg needs a departure date"),
+  check("adults")
     .not()
     .isEmpty()
     .withMessage("How many adults are flying?"),
   check("children")
-    .trim()
     .not()
     .isEmpty()
     .withMessage("How many children are flying?"),
   check("infants")
-    .trim()
     .not()
     .isEmpty()
     .withMessage("How many infants are flying?"),

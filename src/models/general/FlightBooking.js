@@ -59,6 +59,14 @@ const flightBookingSchema = new Schema({
     type: String,
     required: true,
   },
+  trip_type: {
+    type: String,
+    enum: ["one-way", "return", "multi-city"],
+  },
+  is_multicity: {
+    type: Boolean,
+    default: false,
+  },
   price: {
     type: Double,
     required: true,
