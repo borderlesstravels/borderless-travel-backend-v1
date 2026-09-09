@@ -32,4 +32,4 @@ const dataSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("TransferLocation", dataSchema);
+module.exports = mongoose.models.TransferLocation || mongoose.model("TransferLocation", dataSchema);

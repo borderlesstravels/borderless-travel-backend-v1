@@ -26,4 +26,4 @@ const apiTokenSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("APIToken", apiTokenSchema);
+module.exports = mongoose.models.APIToken || mongoose.model("APIToken", apiTokenSchema);

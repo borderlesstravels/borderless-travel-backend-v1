@@ -51,4 +51,4 @@ const hostSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("Host", hostSchema);
+module.exports = mongoose.models.Host || mongoose.model("Host", hostSchema);

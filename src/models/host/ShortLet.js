@@ -270,4 +270,4 @@ const shortLetSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("ShortLet", shortLetSchema);
+module.exports = mongoose.models.ShortLet || mongoose.model("ShortLet", shortLetSchema);

@@ -22,4 +22,4 @@ const sessionStoreSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("SessionStore", sessionStoreSchema);
+module.exports = mongoose.models.SessionStore || mongoose.model("SessionStore", sessionStoreSchema);

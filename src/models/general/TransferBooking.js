@@ -71,4 +71,4 @@ const dataSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("TransferBooking", dataSchema);
+module.exports = mongoose.models.TransferBooking || mongoose.model("TransferBooking", dataSchema);

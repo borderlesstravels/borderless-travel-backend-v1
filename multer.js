@@ -1,19 +1,17 @@
 const multer = require("multer");
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/files/imgs/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
+/**
+ * Memory storage for Vercel (ephemeral filesystem).
+ * Controllers upload buffers to Cloudinary.
+ */
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   if (
     file.mimetype === "image/jpeg" ||
     file.mimetype === "image/jpg" ||
-    file.mimetype === "image/png"
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/webp"
   ) {
     cb(null, true);
   } else {
@@ -22,8 +20,9 @@ const fileFilter = (req, file, cb) => {
 };
 
 const fileUpload = multer({
-  storage: storage,
+  storage,
   limits: { fileSize: 1024 * 1024 * 7 },
+  fileFilter,
 });
 
 module.exports = fileUpload;

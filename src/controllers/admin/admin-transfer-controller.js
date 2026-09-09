@@ -38,7 +38,7 @@ const updateVehicleData = async (req, res) => {
   req.body.action_by = req.id;
   try {
     const vehicle = await TransferVehicle.findById(req.params.id);
-    if (req.files.length) {
+    if (req.files?.length) {
       const vehicle_image = await uploadSingleImage(
         req,
         res,

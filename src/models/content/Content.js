@@ -53,4 +53,4 @@ const contentSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("Content", contentSchema);
+module.exports = mongoose.models.Content || mongoose.model("Content", contentSchema);

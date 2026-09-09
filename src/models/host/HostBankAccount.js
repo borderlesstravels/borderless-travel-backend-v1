@@ -24,4 +24,4 @@ const hostBankAccountSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("HostBankAccount", hostBankAccountSchema);
+module.exports = mongoose.models.HostBankAccount || mongoose.model("HostBankAccount", hostBankAccountSchema);

@@ -84,4 +84,4 @@ const flightBookingSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("FlightBooking", flightBookingSchema);
+module.exports = mongoose.models.FlightBooking || mongoose.model("FlightBooking", flightBookingSchema);

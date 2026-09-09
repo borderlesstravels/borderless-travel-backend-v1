@@ -19,4 +19,4 @@ const adminLoginTokenSchema = new Schema({
     }
 });
 
-module.exports = mongoose.model('AdminLoginToken', adminLoginTokenSchema)
+module.exports = mongoose.models.AdminLoginToken || mongoose.model('AdminLoginToken', adminLoginTokenSchema);

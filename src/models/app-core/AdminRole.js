@@ -12,4 +12,4 @@ const adminRoleSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('AdminRole', adminRoleSchema);
+module.exports = mongoose.models.AdminRole || mongoose.model('AdminRole', adminRoleSchema);

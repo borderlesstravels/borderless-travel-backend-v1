@@ -73,7 +73,7 @@ const addPost = async (req, res) => {
 
 const editPost = async (req, res) => {
   const post = await Content.findById(req.params.id);
-  if (req.files.length) {
+  if (req.files?.length) {
     const cover_image = await uploadSingleImage(
       req,
       res,

@@ -19,4 +19,4 @@ const resetAdminPasswordTokenSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('ResetAdminPasswordToken', resetAdminPasswordTokenSchema);
+module.exports = mongoose.models.ResetAdminPasswordToken || mongoose.model('ResetAdminPasswordToken', resetAdminPasswordTokenSchema);

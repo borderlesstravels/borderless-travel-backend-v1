@@ -31,4 +31,4 @@ const hostWithdrawalSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("HostWithdrawal", hostWithdrawalSchema);
+module.exports = mongoose.models.HostWithdrawal || mongoose.model("HostWithdrawal", hostWithdrawalSchema);

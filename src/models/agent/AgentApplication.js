@@ -68,6 +68,7 @@ const agentApplicationSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("AgentApplication", agentApplicationSchema);
+const AgentApplication = mongoose.models.AgentApplication || mongoose.model("AgentApplication", agentApplicationSchema);
+module.exports = AgentApplication;
 module.exports.educationLevels = educationLevels;
 module.exports.applicationStatuses = applicationStatuses;

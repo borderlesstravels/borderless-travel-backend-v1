@@ -33,4 +33,4 @@ const markupSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('Markup', markupSchema);
+module.exports = mongoose.models.Markup || mongoose.model('Markup', markupSchema);

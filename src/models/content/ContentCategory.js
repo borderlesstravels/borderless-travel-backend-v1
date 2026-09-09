@@ -21,4 +21,4 @@ const contentCategorySchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('ContentCategory', contentCategorySchema);
+module.exports = mongoose.models.ContentCategory || mongoose.model('ContentCategory', contentCategorySchema);

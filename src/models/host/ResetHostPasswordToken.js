@@ -19,4 +19,4 @@ const resetHostPasswordTokenSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('ResetHostPasswordToken', resetHostPasswordTokenSchema);
+module.exports = mongoose.models.ResetHostPasswordToken || mongoose.model('ResetHostPasswordToken', resetHostPasswordTokenSchema);

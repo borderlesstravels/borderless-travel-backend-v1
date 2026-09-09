@@ -81,7 +81,7 @@ const hostAddProperty = async (req, res) => {
 const hostEditProperty = async (req, res) => {
   // let new_images = [];
   let current_images = req.body.current_images;
-  if (req.files.length) {
+  if (req.files?.length) {
     let new_images = await uploadMultipleImages(
       req,
       res,

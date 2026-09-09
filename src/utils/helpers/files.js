@@ -1,134 +1,112 @@
 const multer = require("multer");
 const path = require("path");
 
-const careerStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/files/docs/job-applications");
-  },
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      file.originalname.replace(/[^a-zA-Z0-9_.,]/g, "") +
-        "_" +
-        Date.now() +
-        path.extname(file.originalname)
-    );
-  },
-});
-const carUpload = multer({ storage: careerStorage });
-const careerAppDocUpload = carUpload.fields([{ name: "files", maxCount: 5 }]);
+/**
+ * Memory storage for serverless (Vercel). Files are uploaded to Cloudinary.
+ */
+const memoryStorage = multer.memoryStorage();
 
-const jobPostStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/files/docs/job-applications");
-  },
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      file.originalname.replace(/[^a-zA-Z0-9_.,]/g, "") +
-        "_" +
-        Date.now() +
-        path.extname(file.originalname)
-    );
-  },
-});
-const jobPostUpload = multer({ storage: jobPostStorage });
-const jobPostAppDocUpload = jobPostUpload.fields([
-  { name: "job_cover", maxCount: 1 },
-]);
+const sanitizeBase = (originalname) =>
+  originalname.replace(/[^a-zA-Z0-9_.,]/g, "");
 
-const postStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/files/imgs/posts");
-  },
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      file.originalname.replace(/[^a-zA-Z0-9_.,]/g, "") +
-        "_" +
-        Date.now() +
-        path.extname(file.originalname)
-    );
-  },
-});
-const postUpload = multer({ storage: postStorage });
-const postImageUpload = postUpload.fields([
-  { name: "cover_image", maxCount: 1 },
-]);
+const withFilename = (req, file, cb) => {
+  cb(
+    null,
+    sanitizeBase(file.originalname) +
+      "_" +
+      Date.now() +
+      path.extname(file.originalname),
+  );
+};
 
-// Admin avatar
-const adminStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/files/imgs/admins");
+// Attach a stable filename for controllers that still read file.filename
+const storage = {
+  _handleFile(req, file, cb) {
+    memoryStorage._handleFile(req, file, (err, info) => {
+      if (err) return cb(err);
+      withFilename(req, file, (_e, filename) => {
+        file.filename = filename;
+        cb(null, { ...info, filename });
+      });
+    });
   },
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      file.originalname.replace(/[^a-zA-Z0-9_.,]/g, "") +
-        "_" +
-        Date.now() +
-        path.extname(file.originalname)
-    );
+  _removeFile(req, file, cb) {
+    memoryStorage._removeFile(req, file, cb);
   },
-});
-const adminUpload = multer({ storage: adminStorage });
-const adminImageUpload = adminUpload.fields([{ name: "avatar", maxCount: 1 }]);
+};
 
-// User
-const userStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/files/imgs/users");
-  },
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      file.originalname.replace(/[^a-zA-Z0-9_.,]/g, "") +
-        "_" +
-        Date.now() +
-        path.extname(file.originalname)
-    );
-  },
-});
-const userUpload = multer({ storage: userStorage });
-const userImageUpload = userUpload.fields([{ name: "avatar", maxCount: 1 }]);
+const imageFilter = (req, file, cb) => {
+  if (
+    file.mimetype === "image/jpeg" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/webp"
+  ) {
+    cb(null, true);
+  } else {
+    cb(new Error("Unsupported image type"), false);
+  }
+};
 
-// Host avatar
-const hostStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/files/imgs/hosts");
-  },
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      file.originalname.replace(/[^a-zA-Z0-9_.,]/g, "") +
-        "_" +
-        Date.now() +
-        path.extname(file.originalname)
-    );
-  },
-});
-const hostUpload = multer({ storage: hostStorage });
-const hostImageUpload = hostUpload.fields([{ name: "avatar", maxCount: 1 }]);
+const docFilter = (req, file, cb) => {
+  const allowed = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+  ];
+  if (allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Unsupported document type"), false);
+  }
+};
 
-// Host shortlet
-const shortletStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/files/imgs/shortlets");
-  },
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      file.originalname.replace(/[^a-zA-Z0-9_.,]/g, "") +
-        "_" +
-        Date.now() +
-        path.extname(file.originalname)
-    );
-  },
-});
-const shortletUpload = multer({ storage: shortletStorage });
-const shortletImageUpload = shortletUpload.fields([
-  { name: "images", maxCount: 50 },
-]);
+const limits = { fileSize: 1024 * 1024 * 10 };
+
+const careerAppDocUpload = multer({
+  storage,
+  limits,
+  fileFilter: docFilter,
+}).fields([{ name: "files", maxCount: 5 }]);
+
+const jobPostAppDocUpload = multer({
+  storage,
+  limits,
+  fileFilter: imageFilter,
+}).fields([{ name: "job_cover", maxCount: 1 }]);
+
+const postImageUpload = multer({
+  storage,
+  limits,
+  fileFilter: imageFilter,
+}).fields([{ name: "cover_image", maxCount: 1 }]);
+
+const adminImageUpload = multer({
+  storage,
+  limits,
+  fileFilter: imageFilter,
+}).fields([{ name: "avatar", maxCount: 1 }]);
+
+const userImageUpload = multer({
+  storage,
+  limits,
+  fileFilter: imageFilter,
+}).fields([{ name: "avatar", maxCount: 1 }]);
+
+const hostImageUpload = multer({
+  storage,
+  limits,
+  fileFilter: imageFilter,
+}).fields([{ name: "avatar", maxCount: 1 }]);
+
+const shortletImageUpload = multer({
+  storage,
+  limits,
+  fileFilter: imageFilter,
+}).fields([{ name: "images", maxCount: 50 }]);
 
 module.exports = {
   careerAppDocUpload,

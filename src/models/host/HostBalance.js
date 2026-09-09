@@ -25,4 +25,4 @@ const hostBalanceSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("HostBalance", hostBalanceSchema);
+module.exports = mongoose.models.HostBalance || mongoose.model("HostBalance", hostBalanceSchema);

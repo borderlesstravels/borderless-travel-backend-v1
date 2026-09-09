@@ -37,4 +37,4 @@ const hostEarningSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("HostEarning", hostEarningSchema);
+module.exports = mongoose.models.HostEarning || mongoose.model("HostEarning", hostEarningSchema);

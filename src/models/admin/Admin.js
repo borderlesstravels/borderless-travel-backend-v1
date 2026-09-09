@@ -45,4 +45,4 @@ const adminSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('Admin', adminSchema);
+module.exports = mongoose.models.Admin || mongoose.model('Admin', adminSchema);

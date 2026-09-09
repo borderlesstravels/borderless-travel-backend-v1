@@ -87,37 +87,58 @@ const logoutSession = async (token, secrete) => {
   return result;
 };
 
-const uploadSingleImage = async (req) => {
-  if (req.files.length) {
-    const uploader = async (path) => await cloudinary.uploads(path, "Images");
-    const file = req.files[0];
-    const { path } = file;
-    const image = await uploader(path);
-    fs.unlinkSync(path);
-    return image;
-  } else {
-    return null;
+/**
+ * Normalize multer `array` (File[]) and `fields` ({ name: File[] }) shapes.
+ */
+const flattenMulterFiles = (files) => {
+  if (!files) return [];
+  if (Array.isArray(files)) return files;
+  return Object.values(files).flat().filter(Boolean);
+};
+
+const uploadFileToCloudinary = async (file, folder = "Images") => {
+  if (!file) return null;
+  if (file.buffer) {
+    return cloudinary.uploads(file, folder);
   }
+  if (file.path) {
+    const image = await cloudinary.uploads(file.path, folder);
+    try {
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+    } catch (_) {
+      /* ignore cleanup errors on ephemeral FS */
+    }
+    return image;
+  }
+  return null;
+};
+
+const uploadSingleImage = async (req) => {
+  const files = flattenMulterFiles(req.files);
+  if (!files.length) return null;
+  return uploadFileToCloudinary(files[0], "Images");
 };
 
 const uploadMultipleImages = async (req) => {
-  // if (!req.files.length) {
-  //   return sendError(res, errorMessage);
-  // }
-  if (req.files.length) {
-    const uploader = async (path) => await cloudinary.uploads(path, "Images");
-    const images = [];
-    const files = req.files;
-    for (const file of files) {
-      const { path } = file;
-      const newPath = await uploader(path);
-      images.push(newPath);
-      fs.unlinkSync(path);
-    }
-    return images;
-  } else {
-    return null;
+  const files = flattenMulterFiles(req.files);
+  if (!files.length) return null;
+  const images = [];
+  for (const file of files) {
+    const uploaded = await uploadFileToCloudinary(file, "Images");
+    if (uploaded) images.push(uploaded);
   }
+  return images.length ? images : null;
+};
+
+const uploadDocuments = async (files, folder = "Documents") => {
+  const list = flattenMulterFiles(files);
+  if (!list.length) return null;
+  const uploaded = [];
+  for (const file of list) {
+    const result = await uploadFileToCloudinary(file, folder);
+    if (result) uploaded.push(result);
+  }
+  return uploaded.length ? uploaded : null;
 };
 
 module.exports = {
@@ -129,6 +150,9 @@ module.exports = {
   verifyLoginSession,
   logoutSession,
 
+  flattenMulterFiles,
+  uploadFileToCloudinary,
   uploadSingleImage,
   uploadMultipleImages,
+  uploadDocuments,
 };

@@ -402,16 +402,17 @@ const applyForJob = async (req, res, next) => {
       return sendError(res, "The selected job does not exist");
     }
     req.body.jobId = jobId;
-    const rawFileArray = req.files["files"];
+    const { uploadDocuments } = require("../../middlewares/general");
+    const uploaded = await uploadDocuments(
+      req.files?.files || req.files,
+      "JobApplications",
+    );
 
-    if (!rawFileArray) {
+    if (!uploaded || !uploaded.length) {
       return badRequestError(res, "Resume missing!");
     }
 
-    const namedFiles = rawFileArray.map((a) => a.filename);
-    const stringnifiedFiles = JSON.stringify(namedFiles);
-    const formmatedFiles = stringnifiedFiles.replace(/[^a-zA-Z0-9_.,]/g, "");
-    const files = formmatedFiles.replace(/[,]/g, ", ");
+    const files = uploaded.map((f) => f.url).join(", ");
     console.log("files: ", files);
     req.body.files = files;
 

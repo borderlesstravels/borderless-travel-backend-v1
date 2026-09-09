@@ -104,15 +104,11 @@ const updateAdminProfile = async (req, res) => {
 };
 
 const setProfileAvatar = async (req, res) => {
-  const rawImagesArray = req.files["avatar"];
-  if (!rawImagesArray) {
+  const { uploadSingleImage } = require("../../middlewares/general");
+  const avatar = await uploadSingleImage(req, res);
+  if (!avatar) {
     return badRequestError(res, "Please add the image avatar to be uploaded");
   }
-  const namedImage = rawImagesArray.map((a) => a.filename);
-  const stringnifiedImages = JSON.stringify(namedImage);
-  const formmatedImages = stringnifiedImages.replace(/[^a-zA-Z0-9_.,]/g, "");
-  const avatar = formmatedImages.replace(/[,]/g, ", ");
-  console.log("avatar: ", avatar);
 
   try {
     const savedAdminProfile = await Admin.findByIdAndUpdate(req.params.id, {

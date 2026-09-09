@@ -33,4 +33,4 @@ const agentWithdrawalSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("AgentWithdrawal", agentWithdrawalSchema);
+module.exports = mongoose.models.AgentWithdrawal || mongoose.model("AgentWithdrawal", agentWithdrawalSchema);

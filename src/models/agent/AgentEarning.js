@@ -52,4 +52,4 @@ const agentEarningSchema = new Schema({
 
 agentEarningSchema.index({ agent: 1, booking_reference: 1 }, { unique: true });
 
-module.exports = mongoose.model("AgentEarning", agentEarningSchema);
+module.exports = mongoose.models.AgentEarning || mongoose.model("AgentEarning", agentEarningSchema);

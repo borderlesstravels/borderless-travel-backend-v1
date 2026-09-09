@@ -37,4 +37,4 @@ const bookingRequestSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("BookingRequest", bookingRequestSchema);
+module.exports = mongoose.models.BookingRequest || mongoose.model("BookingRequest", bookingRequestSchema);

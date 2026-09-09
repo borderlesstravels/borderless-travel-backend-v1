@@ -101,4 +101,4 @@ const shortletBookingSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("ShortletBooking", shortletBookingSchema);
+module.exports = mongoose.models.ShortletBooking || mongoose.model("ShortletBooking", shortletBookingSchema);

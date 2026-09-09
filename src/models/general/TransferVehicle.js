@@ -60,4 +60,4 @@ const dataSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("TransferVehicle", dataSchema);
+module.exports = mongoose.models.TransferVehicle || mongoose.model("TransferVehicle", dataSchema);

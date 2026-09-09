@@ -44,4 +44,4 @@ const saleRecordSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("SaleRecord", saleRecordSchema);
+module.exports = mongoose.models.SaleRecord || mongoose.model("SaleRecord", saleRecordSchema);

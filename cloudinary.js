@@ -7,13 +7,36 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-exports.uploads = (file, folder) => {
-  return new Promise((resolve) => {
-    cloudinary.uploader.upload(file, (error, result) => {
+/**
+ * Upload a local path, data URI, or multer memory file to Cloudinary.
+ * @param {string|object} file - path string, data URI, or { buffer, mimetype, originalname }
+ * @param {string} folder
+ */
+exports.uploads = (file, folder = "Images") => {
+  return new Promise((resolve, reject) => {
+    const options = { folder, resource_type: "auto" };
+
+    const finish = (error, result) => {
+      if (error || !result) {
+        return reject(error || new Error("Cloudinary upload failed"));
+      }
       resolve({
-        url: result.url,
+        url: result.secure_url || result.url,
         id: result.public_id,
       });
-    });
+    };
+
+    if (file && typeof file === "object" && Buffer.isBuffer(file.buffer)) {
+      const stream = cloudinary.uploader.upload_stream(options, finish);
+      stream.end(file.buffer);
+      return;
+    }
+
+    if (typeof file === "string") {
+      cloudinary.uploader.upload(file, options, finish);
+      return;
+    }
+
+    reject(new Error("Unsupported file payload for Cloudinary upload"));
   });
 };

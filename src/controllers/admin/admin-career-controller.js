@@ -8,16 +8,13 @@ const Job = require("../../models/general/Job");
 const JobApplication = require("../../models/general/JobApplication");
 
 const addNewJob = async (req, res) => {
-  const rawCoverArray = req.files["job_cover"];
-  if (!rawCoverArray) {
+  const { uploadDocuments } = require("../../middlewares/general");
+  const covers = await uploadDocuments(req.files?.job_cover || req.files, "Jobs");
+  if (!covers || !covers.length) {
     return badRequestError(res, "Please add a job cover image");
   }
-  const namedCover = rawCoverArray.map((a) => a.filename);
-  const stringnifiedCover = JSON.stringify(namedCover);
-  const formmatedCover = stringnifiedCover.replace(/[^a-zA-Z0-9_.,]/g, "");
-  const cover = formmatedCover.replace(/[,]/g, ", ");
-  console.log("cover: ", cover);
-  req.body.job_cover = cover;
+  req.body.job_cover = covers[0].url;
+  console.log("cover: ", req.body.job_cover);
 
   try {
     req.body.requirements = req.body.requirements.split(", ");
