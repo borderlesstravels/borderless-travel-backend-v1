@@ -16,6 +16,18 @@ const BookingRequest = require("../../models/general/BookingRequest");
 const jwt = require("jsonwebtoken");
 const SaleRecord = require("../../models/general/SaleRecord");
 
+const getFlightSegmentsFromBookingResponse = (data) => {
+  if (Array.isArray(data?.outbound) && data.outbound.length) {
+    return data.outbound;
+  }
+  if (Array.isArray(data?.routes) && data.routes.length) {
+    return data.routes.flatMap((route) =>
+      Array.isArray(route?.segments) ? route.segments : [],
+    );
+  }
+  return [];
+};
+
 const travelBookingRequest = async (req, res) => {
   const newBookingRequest = new BookingRequest(req.body);
   try {
@@ -291,7 +303,13 @@ const bookFlight = async (req, res, next) => {
       );
     }
     if (response?.status === 200) {
-      const outboundData = response.data.outbound;
+      const outboundData = getFlightSegmentsFromBookingResponse(response.data);
+      if (!outboundData.length) {
+        return sendError(
+          res,
+          "Booking response is missing flight segment details. Please try again.",
+        );
+      }
       const destPicker = Number(outboundData.length - 1);
       const airline = outboundData[0].airline_details.name;
       const airline_logo = outboundData[0].airline_details.logo;
@@ -314,8 +332,8 @@ const bookFlight = async (req, res, next) => {
         const arrivalAirport = allAirports.filter(
           (airport) => airport.iata_code === destination_code,
         );
-        const origin = departureAirport[0].city;
-        const destination = arrivalAirport[0].city;
+        const origin = departureAirport[0]?.city || origin_code;
+        const destination = arrivalAirport[0]?.city || destination_code;
         const total_paid = response.data.amount;
         const service_cost = response.data.pricing.payable;
         const profit = response.data.pricing.markup.markup_value;
