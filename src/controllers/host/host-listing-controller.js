@@ -33,7 +33,7 @@ const hostAddProperty = async (req, res) => {
 
     const host = await Host.findById(req.id);
     if (!host) {
-      sendError(
+      return sendError(
         res,
         "Unauthorised. Host account cannot ben found. Kindly try again."
       );
@@ -376,19 +376,17 @@ const hostDeclineShortletBooking = async (req, res, next) => {
 
     await apartmentBooking.save();
 
-    const notifyUser = await saveNotification(
+    await saveNotification(
       apartmentBooking.owner,
       "booking",
       `Apartment ${apartmentBooking.apartment_name} is unavailable`,
       `Your reservation for a shortlet apartment; ${apartmentBooking.apartment_name} in ${apartmentBooking.address}, ${apartmentBooking.lga} cannot continue due to unavailability. Please check for another apartment. Thank you for your understanding.`,
       user
     );
-    if (notifyUser) {
-      return sendSuccess(
-        res,
-        "Successfully verified apartment's unavailability"
-      );
-    }
+    return sendSuccess(
+      res,
+      "Successfully verified apartment's unavailability"
+    );
   } catch (error) {
     console.log(error);
     return sendError(

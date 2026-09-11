@@ -16,7 +16,7 @@ const {
 
 const fetchShortlets = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   try {
     const shortlets = await ShortLet.find({ status: "available" }).limit(
       req.query.limit
@@ -37,7 +37,7 @@ const fetchShortlets = async (req, res) => {
 
 const fetchShortletsMinified = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   try {
     const stlt = await ShortLet.find({ status: "available" });
     const shortlets = stlt.map((ele) => ({
@@ -65,7 +65,7 @@ const fetchShortletsMinified = async (req, res) => {
 
 const fetchSingleShortlet = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   try {
     const shortlet = await ShortLet.findById(req.params.id);
     // console.log("shortlet", shortlet);
@@ -120,13 +120,13 @@ const bookStayAUth = async (req, res, next) => {
   userBookings = userBookings + 1;
 
   const apartment = await ShortLet.findById(apartment_id);
-  if (!apartment) sendError(res, "Apartment does not or no longer exists");
+  if (!apartment) return sendError(res, "Apartment does not or no longer exists");
 
   const token = generateString(15);
   const booking_reference = `BT-${token}`;
 
   const host = await Host.findById(apartment.owner);
-  if (!host) sendError(res, "Apartment does not belong to anyone");
+  if (!host) return sendError(res, "Apartment does not belong to anyone");
   const hostGuestsCount = host.guests;
 
   let check_in_date = new Date(req.body.check_in_date);
@@ -181,36 +181,33 @@ const bookStayAUth = async (req, res, next) => {
     });
     await notifyUser.save();
 
-    if (notifyUser) {
-      const notifyHost = await saveNotification(
-        apartment.owner,
-        "booking",
-        `Someone requested reservation for ${apartment.apartment_name}`,
-        `Your apartment, ${apartment.apartment_name} located in ${apartment.address}, ${apartment.lga} has been requested for reservation. <a href="${process.env.USER_APP_URL}/login?redirect=/stay-reservation/${booking_id}">Take action action here</a>`,
-        host,
-        apartment_id,
-        booking_id
-      );
-      if (notifyHost) {
-        const date = dateFormatter(newBooking?.created_at);
-        const time = dateFormatter(newBooking?.created_at);
+    const date = dateFormatter(newBooking?.created_at);
+    const time = dateFormatter(newBooking?.created_at);
 
-        req.body = {
-          first_name: user.first_name,
-          email: newBooking.email,
-          category: "Shortlet",
-          booking_reference,
-          date,
-          time,
-          subject: `Your Booking Is Confirmed`,
-          responseMessage:
-            "Successfully created your shortlet booking. Please wait for feedback",
-          newBooking,
-        };
+    await saveNotification(
+      apartment.owner,
+      "booking",
+      `Someone requested reservation for ${apartment.apartment_name}`,
+      `Your apartment, ${apartment.apartment_name} located in ${apartment.address}, ${apartment.lga} has been requested for reservation. <a href="${process.env.USER_APP_URL}/login?redirect=/stay-reservation/${booking_id}">Take action action here</a>`,
+      host,
+      apartment_id,
+      booking_id
+    );
 
-        next();
-      }
-    }
+    req.body = {
+      first_name: user.first_name,
+      email: newBooking.email,
+      category: "Shortlet",
+      booking_reference,
+      date,
+      time,
+      subject: `Your Booking Is Confirmed`,
+      responseMessage:
+        "Successfully created your shortlet booking. Please wait for feedback",
+      newBooking,
+    };
+
+    return next();
   } catch (error) {
     console.log(error);
     return sendError(
@@ -222,18 +219,18 @@ const bookStayAUth = async (req, res, next) => {
 
 const bookStayThirdParty = async (req, res, next) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
 
   const { apartment_id } = req.params;
 
   const apartment = await ShortLet.findById(apartment_id);
-  if (!apartment) sendError(res, "Apartment does not or no longer exists");
+  if (!apartment) return sendError(res, "Apartment does not or no longer exists");
 
   const token = generateString(15);
   const booking_reference = `TP-${token}`;
 
   const host = await Host.findById(apartment.owner);
-  if (!host) sendError(res, "Apartment does not belong to anyone");
+  if (!host) return sendError(res, "Apartment does not belong to anyone");
 
   let check_in_date = new Date(req.body.check_in_date);
   let check_out_date = new Date(req.body.check_out_date);
@@ -266,24 +263,20 @@ const bookStayThirdParty = async (req, res, next) => {
     });
     await newBooking.save();
     const booking_id = newBooking._id;
-    if (booking_id) {
-      const notifyHost = await saveNotification(
-        apartment.owner,
-        "booking",
-        `Someone requested reservation for ${apartment.apartment_name}`,
-        `Your apartment, ${apartment.apartment_name} located in ${apartment.address}, ${apartment.lga} has been requested for reservation. <a href="${process.env.USER_APP_URL}/stay-booking-detail/${booking_id}">Take action action here</a>`,
-        host,
-        apartment_id,
-        booking_id
-      );
-      if (notifyHost) {
-        return sendSuccess(
-          res,
-          "Successfully created your shortlet booking. Please wait for feedback",
-          newBooking
-        );
-      }
-    }
+    await saveNotification(
+      apartment.owner,
+      "booking",
+      `Someone requested reservation for ${apartment.apartment_name}`,
+      `Your apartment, ${apartment.apartment_name} located in ${apartment.address}, ${apartment.lga} has been requested for reservation. <a href="${process.env.USER_APP_URL}/stay-booking-detail/${booking_id}">Take action action here</a>`,
+      host,
+      apartment_id,
+      booking_id
+    );
+    return sendSuccess(
+      res,
+      "Successfully created your shortlet booking. Please wait for feedback",
+      newBooking
+    );
   } catch (error) {
     console.log(error);
     return sendError(
@@ -295,7 +288,7 @@ const bookStayThirdParty = async (req, res, next) => {
 
 const fetchShortletsForLet = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   try {
     const shortlets = await ShortLet.find().limit(req.query.limit);
     const shuffledArrs = await shuffleArray(shortlets);
@@ -313,7 +306,7 @@ const fetchShortletsForLet = async (req, res) => {
 
 const fetchFavouriteShortlets = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   try {
     const shortlets = await ShortLet.find();
     const shuffledArrs = await shuffleArray(shortlets);

@@ -58,33 +58,26 @@ const createLoginSession = async (id, secrete) => {
 };
 
 const verifyLoginSession = async (token, secrete, req) => {
-  console.log("token", token);
-  let result;
-  jwt.verify(String(token), secrete, (err, user) => {
-    if (err) {
-      result = false;
+  try {
+    const user = jwt.verify(String(token), secrete);
+    if (!user?.id) {
+      return false;
     }
-    if (user) {
-      req.id = user.id;
-      result = true;
-    }
-  });
-  return result;
+    req.id = user.id;
+    return true;
+  } catch (err) {
+    return false;
+  }
 };
 
 const logoutSession = async (token, secrete) => {
-  let result;
-  jwt.verify(String(token), secrete, (err, user) => {
-    if (err) {
-      console.log("logout error:", err);
-      result = false;
-    }
-    if (user) {
-      result = true;
-    }
-  });
-  console.log("result", result);
-  return result;
+  try {
+    const user = jwt.verify(String(token), secrete);
+    return Boolean(user);
+  } catch (err) {
+    console.log("logout error:", err.message || err);
+    return false;
+  }
 };
 
 /**

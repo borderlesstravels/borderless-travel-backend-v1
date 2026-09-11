@@ -48,7 +48,7 @@ const fetchVehiclesByLocation = async (req, res) => {
 
 const bookTransfer = async (req, res, next) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   const {
     contact_details,
     passenger_details,

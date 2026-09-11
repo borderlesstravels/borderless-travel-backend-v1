@@ -135,6 +135,19 @@ function createApp() {
     res.json({ ok: true, ts: Date.now() });
   });
 
+  // Express 4 does not catch rejected promises from async route handlers.
+  // Forward them so Vercel does not hang an already-open request.
+  app.use((err, req, res, next) => {
+    if (res.headersSent) {
+      return next(err);
+    }
+    console.error("Unhandled route error:", err?.message || err);
+    return res.status(500).json({
+      success: false,
+      error: "Something went wrong. Please try again.",
+    });
+  });
+
   return app;
 }
 

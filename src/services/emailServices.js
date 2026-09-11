@@ -88,19 +88,9 @@ const waitlistSubscribedEMail = async (req, res) => {
   // }
 };
 
-// SignUp
+// SignUp - welcome mail is sent with the OTP mail below to avoid sequential SMTP latency on Vercel
 const successfulSignupEmail = async (req, res, next) => {
-  const { user, otp } = req.body;
-  const email = user.email;
-  const first_name = user.first_name;
-  const subject = "Welcome to Borderless - Your Journey Begins Here!";
-  const email_body = signedUpTemp(first_name);
-  try {
-    sendEmail(subject, email_body, email);
-    next();
-  } catch (error) {
-    return res.status(500).json(error.message);
-  }
+  return next();
 };
 const accountVerificationEmail = async (req, res) => {
   const { user, otp } = req.body;
@@ -118,15 +108,38 @@ const accountVerificationEmail = async (req, res) => {
     optChar3,
     optChar4
   );
+  const welcome_body = signedUpTemp(first_name);
   try {
-    sendEmail(subject, email_body, email);
+    const results = await Promise.allSettled([
+      sendEmail(
+        "Welcome to Borderless - Your Journey Begins Here!",
+        welcome_body,
+        email
+      ),
+      sendEmail(subject, email_body, email),
+    ]);
+    const otpResult = results[1];
+    if (otpResult.status === "rejected") {
+      throw otpResult.reason;
+    }
+    if (results[0].status === "rejected") {
+      console.error(
+        "Welcome email failed:",
+        results[0].reason?.message || results[0].reason
+      );
+    }
     return res.status(200).json({
       success: true,
       message: `Successfully signed up. Verification code has been sent to your submitted email - ${email}`,
       userId: user._id,
     });
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("OTP email failed:", error.message || error);
+    return res.status(500).json({
+      success: false,
+      message:
+        "Unable to send verification code right now. Please try again in a moment.",
+    });
   }
 };
 
@@ -134,7 +147,7 @@ const verificationEmailAutoSignup = async (req, res, next) => {
   const { email, first_name, signUpSubject } = req.body;
   const email_body = accountAutoCreatedTemp(first_name);
   try {
-    sendEmail(signUpSubject, email_body, email);
+    await sendEmail(signUpSubject, email_body, email);
     next();
   } catch (error) {
     return sendError(
@@ -153,9 +166,9 @@ const emailVerifiedEmail = async (req, res) => {
   const subject = `Your Email Has Been Verified`;
   const email_body = emailVerifiedTemp(firstName);
   try {
-    sendEmail(subject, email_body, send_to);
+    await sendEmail(subject, email_body, send_to);
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("Email verified notification failed:", error.message || error);
   }
   return res.status(200).json({
     success: true,
@@ -186,16 +199,20 @@ const resetPasswordEmail = async (req, res) => {
   const subject = `Reset Your Borderless Password`;
   const email_body = resetPasswordTemp(firstName, link);
   try {
-    sendEmail(subject, email_body, send_to);
+    await sendEmail(subject, email_body, send_to);
+    return res.status(200).json({
+      success: true,
+      email,
+      userId: user._id,
+      message: `Password reset link has been sent to your email - ${email}`,
+    });
   } catch (error) {
-    res.status(500).json(error.message);
+    console.error("Reset password email failed:", error.message || error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to send password reset email right now. Please try again.",
+    });
   }
-  return res.status(200).json({
-    success: true,
-    email,
-    userId: user._id,
-    message: `Password reset link has been sent to your email - ${email}`,
-  });
 };
 const passwordUpdatedEmail = async (req, res) => {
   const { user } = req.body;
@@ -205,9 +222,9 @@ const passwordUpdatedEmail = async (req, res) => {
   const subject = `Your Borderless Password Has Been Updated`;
   const email_body = passwordUpdatedTemp(firstName);
   try {
-    sendEmail(subject, email_body, send_to);
+    await sendEmail(subject, email_body, send_to);
   } catch (error) {
-    res.status(500).json(error.message);
+    console.error("Password updated email failed:", error.message || error);
   }
   return res.status(200).json({
     success: true,
@@ -233,14 +250,19 @@ const loginVerificationEmail = async (req, res) => {
     optChar4
   );
   try {
-    sendEmail(subject, email_body, email);
+    await sendEmail(subject, email_body, email);
     return res.status(200).json({
       success: true,
       message: `Login verification code sent to your email - ${email}`,
       adminId: user._id,
     });
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("OTP email failed:", error.message || error);
+    return res.status(500).json({
+      success: false,
+      message:
+        "Unable to send verification code right now. Please try again in a moment.",
+    });
   }
 };
 const loginSuccessfulEmail = async (req, res) => {
@@ -250,23 +272,23 @@ const loginSuccessfulEmail = async (req, res) => {
   const subject = `New Login to Your Borderless Account`;
   const email_body = loginVerifiedTemp(firstName);
   try {
-    sendEmail(subject, email_body, email);
-    return res.status(200).json({
-      success: true,
-      loginStatus: 2,
-      message: "Successfully logged in",
-      user: {
-        first_name: firstName,
-        last_name: user.last_name,
-        email,
-        id: user._id,
-        email_verified: user.email_verified,
-      },
-      token,
-    });
+    await sendEmail(subject, email_body, email);
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("Login notification email failed:", error.message || error);
   }
+  return res.status(200).json({
+    success: true,
+    loginStatus: 2,
+    message: "Successfully logged in",
+    user: {
+      first_name: firstName,
+      last_name: user.last_name,
+      email,
+      id: user._id,
+      email_verified: user.email_verified,
+    },
+    token,
+  });
 };
 
 // Website
@@ -277,13 +299,17 @@ const contactUsEmail = async (req, res) => {
   const subject = `Contact Message from Borderless Travel`;
   const email_body = contactUsEmailTemp(name, email, subj, company, message);
   try {
-    sendEmail(subject, email_body, send_to);
+    await sendEmail(subject, email_body, send_to);
     return sendSuccess(
       res,
       "Your message has been successfully received. We shall revert shortly."
     );
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("Email send failed:", error.message || error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to send email right now. Please try again in a moment.",
+    });
   }
 };
 
@@ -308,11 +334,11 @@ const bookingCreatedEmail = async (req, res) => {
     time
   );
   try {
-    sendEmail(subject, email_body, email);
-    return sendSuccess(res, responseMessage, { booking_reference, newBooking });
+    await sendEmail(subject, email_body, email);
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("Booking created email failed:", error.message || error);
   }
+  return sendSuccess(res, responseMessage, { booking_reference, newBooking });
 };
 
 const apartmentAvailableEmail = async (req, res) => {
@@ -326,13 +352,17 @@ const apartmentAvailableEmail = async (req, res) => {
   );
   const subject = "Your Shortlet Apartment is Ready to Book!";
   try {
-    sendEmail(subject, email_body, email);
+    await sendEmail(subject, email_body, email);
     return sendSuccess(
       res,
       "Successfully notified user on the apartment's availability"
     );
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("Email send failed:", error.message || error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to send email right now. Please try again in a moment.",
+    });
   }
 };
 const shortletBookingPaymentReceivedEmail = async (req, res, next) => {
@@ -355,11 +385,11 @@ const shortletBookingPaymentReceivedEmail = async (req, res, next) => {
   );
   const subject = "Shortlet Apartment Payment Received";
   try {
-    sendEmail(subject, email_body, email);
-    next();
+    await sendEmail(subject, email_body, email);
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("Shortlet payment email failed:", error.message || error);
   }
+  return next();
 };
 const shortletBookingCompletedEmail = async (req, res) => {
   const {
@@ -382,14 +412,14 @@ const shortletBookingCompletedEmail = async (req, res) => {
   );
   const subject = "Your Shortlet Booking is Confirmed and Completed!";
   try {
-    sendEmail(subject, email_body, email);
-    return sendSuccess(res, "Your payment has been successfully completed", {
-      booking_id,
-      booking_reference,
-    });
+    await sendEmail(subject, email_body, email);
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("Shortlet completed email failed:", error.message || error);
   }
+  return sendSuccess(res, "Your payment has been successfully completed", {
+    booking_id,
+    booking_reference,
+  });
 };
 
 const flightBookingPaymentReceivedEmail = async (req, res) => {
@@ -423,14 +453,21 @@ const flightBookingPaymentReceivedEmail = async (req, res) => {
     </html>
   `;
   try {
-    sendEmail(subject, email_body, email);
-    sendEmail(adminSubject, adminEmailBody, adminEMail);
+    await Promise.all([
+      sendEmail(subject, email_body, email),
+      sendEmail(adminSubject, adminEmailBody, adminEMail),
+    ]);
     return sendSuccess(res, "Your payment has been successfully completed", {
       booking_id,
       booking_reference,
     });
   } catch (error) {
-    res.status(500).json(error.message);
+    console.error(error);
+    // Payment already succeeded upstream - do not fail the client on mail errors
+    return sendSuccess(res, "Your payment has been successfully completed", {
+      booking_id,
+      booking_reference,
+    });
   }
 };
 
@@ -456,14 +493,18 @@ const flightTicketIssuedEmail = async (req, res) => {
   );
   const subject = "Your Flight Ticket is Issued!";
   try {
-    sendEmail(subject, email_body, email);
+    await sendEmail(subject, email_body, email);
     return sendSuccess(
       res,
       "Ticket has been successfully issued",
       booking_reference
     );
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("Email send failed:", error.message || error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to send email right now. Please try again in a moment.",
+    });
   }
 };
 
@@ -477,14 +518,18 @@ const flightTicketCancelledEmail = async (req, res) => {
   );
   const subject = "Update on Your Flight Booking!";
   try {
-    sendEmail(subject, email_body, email);
+    await sendEmail(subject, email_body, email);
     return sendSuccess(
       res,
       "Ticket has been successfully cancelled",
       booking_reference
     );
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("Email send failed:", error.message || error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to send email right now. Please try again in a moment.",
+    });
   }
 };
 
@@ -501,13 +546,17 @@ const profileUpdatedEmail = async (req, res) => {
   const subject = "Your Profile Has Been Updated - Prodox Exchange";
   const email_body = profileUpdatedTemp(fName);
   try {
-    sendEmail(subject, email_body, email);
+    await sendEmail(subject, email_body, email);
     return res.status(200).json({
       success: true,
       message: "Your password has been successfully updated",
     });
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("Email send failed:", error.message || error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to send email right now. Please try again in a moment.",
+    });
   }
 };
 

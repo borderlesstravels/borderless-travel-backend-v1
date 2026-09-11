@@ -20,14 +20,10 @@ exports.sendSuccess = (res, message, data = null, status = 200) => {
   return res.status(status).json({ success: true, message, data });
 };
 
-exports.createRandomBytes = (num) =>
-  new Promise((resolve, reject) => {
-    crypto.randomBytes(num, (err, buff) => {
-      if (err) reject(err);
-      const token = buff.toString("hex");
-      resolve(token);
-    });
-  });
+exports.createRandomBytes = async (num) => {
+  const buff = await crypto.promises.randomBytes(num);
+  return buff.toString("hex");
+};
 
 const characters =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -115,46 +111,53 @@ exports.saveNotification = async (
       booking_id,
     });
     const notificationSent = await newNot.save();
-    if (notificationSent) {
-      const email = user.email;
-      const firstName = user.first_name;
-      const send_to = email;
-      const email_body = notificationTemp(firstName, description);
+    if (!notificationSent) {
+      return false;
+    }
+
+    // In-app notification is the source of truth. Email is best-effort so
+    // Vercel SMTP failures do not hang booking/decline HTTP responses.
+    if (user?.email) {
       try {
-        sendEmail(title, email_body, send_to);
-        return true;
+        const email_body = notificationTemp(user.first_name, description);
+        await sendEmail(title, email_body, user.email);
       } catch (error) {
-        console.log(error);
+        console.error("Notification email failed:", error.message || error);
       }
     }
+    return true;
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return false;
   }
 };
 
 exports.verifyAPIToken = async (res, firm, api_key) => {
   if (!firm || !api_key) {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       error:
         "Credentials missing! You are not authorised to perform this request",
     });
+    return false;
   }
   const validateAPIKey = await APIToken.findOne({ firm });
   if (!validateAPIKey) {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       error: "Credential does not exist! Not authorised",
     });
+    return false;
   }
   if (validateAPIKey.api_key !== api_key) {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       error:
         "Invalid credentials! You are not authorised to perform this request",
     });
+    return false;
   }
+  return true;
 };
 
 exports.dateFormatter = (date) => {

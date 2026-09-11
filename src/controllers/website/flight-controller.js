@@ -38,13 +38,13 @@ const travelBookingRequest = async (req, res) => {
       newBookingRequest,
     );
   } catch (error) {
-    sendError(res, `Could not complete your requested. Error - ${error}`);
+    return sendError(res, `Could not complete your requested. Error - ${error}`);
   }
 };
 
 const fetchAirports = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
 
   const response = await fetcher_tiqwa("/airports");
   if (!response) {
@@ -65,7 +65,7 @@ const fetchAirports = async (req, res) => {
 
 const fetchAirlines = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
 
   console.log({ firm });
   console.log({ api_key });
@@ -87,7 +87,7 @@ const fetchAirlines = async (req, res) => {
 
 const flightOfferSearch = async (req, res, next) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   const response = await fetcher_tiqwa("/flight/search", req.body);
   if (!response) {
     return sendError(
@@ -107,7 +107,7 @@ const flightOfferSearch = async (req, res, next) => {
 const flightOfferSearchMultiCity = async (req, res) => {
   const { firm, api_key } = req.headers;
   const { destinations, cabin, adults, children, infants } = req.body;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
 
   if (!Array.isArray(destinations) || destinations.length < 2) {
     return sendError(
@@ -148,7 +148,7 @@ const flightOfferSearchMultiCity = async (req, res) => {
 
 const confirmFlightPrice = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
 
   const { flight_id } = req.params;
   const response = await fetcher_tiqwa(`/flight/confirm_price/${flight_id}`);
@@ -169,7 +169,7 @@ const confirmFlightPrice = async (req, res) => {
 
 const bookFlightAuth = async (req, res, next) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
 
   const { flight_id } = req.params;
   const userId = req.id;
@@ -287,7 +287,7 @@ const bookFlightAuth = async (req, res, next) => {
 
 const bookFlight = async (req, res, next) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   const { flight_id } = req.params;
   const { contact_details, passenger_details } = req.body;
   const { admin } = req.query;
@@ -423,7 +423,7 @@ const bookFlight = async (req, res, next) => {
 
 const bookFlightThirdParty = async (req, res, next) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   const { flight_id } = req.params;
   const { contact_details, passenger_details } = req.body;
 
@@ -538,7 +538,7 @@ const bookFlightThirdParty = async (req, res, next) => {
 
 const fetchFlightTicketDetails = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
 
   const { booking_reference } = req.params;
   const response = await fetcher_tiqwa(`/flight/${booking_reference}`);

@@ -50,7 +50,7 @@ const services = async (req, res) => {
 
 const payForFlight = async (req, res, next) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   const {
     service_name,
     booking_reference,
@@ -137,7 +137,7 @@ const payForFlight = async (req, res, next) => {
 
 const payForShortlet = async (req, res, next) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   const userId = req.id;
   const {
     service_name,
@@ -268,7 +268,7 @@ const saveSubscriber = async (req, res) => {
         newSubscriber
       );
     } catch (err) {
-      sendError(
+      return sendError(
         res,
         `Could not save your details to our subscription list. Eror - ${err}`
       );
@@ -304,7 +304,7 @@ const saveWaitlist = async (req, res, next) => {
       };
       next();
     } catch (err) {
-      sendError(
+      return sendError(
         res,
         `Could not save your details to our subscription list. Eror - ${err}`
       );

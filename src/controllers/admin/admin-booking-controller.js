@@ -18,7 +18,7 @@ const TransferBooking = require("../../models/general/TransferBooking");
 //
 const allFlightBookings = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   try {
     const flightBookings = await FlightBooking.find({ firm }).limit(
       req.query.limit,
@@ -39,7 +39,7 @@ const allFlightBookings = async (req, res) => {
 
 const singleFlightBooking = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   try {
     const flightBooking = await FlightBooking.findById(req.params.id);
     if (!flightBooking) {
@@ -59,7 +59,7 @@ const singleFlightBooking = async (req, res) => {
 const fetchTicketDetails = async (req, res) => {
   const { booking_reference } = req.params;
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
 
   const booking = await FlightBooking.findOne({ booking_reference });
   if (!booking)
@@ -94,7 +94,7 @@ const issueFlightTicket = async (req, res, next) => {
   const { booking_reference } = req.params;
 
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   const booking = await FlightBooking.findOne({ booking_reference });
   if (!booking)
     return sendError(
@@ -153,7 +153,7 @@ const cancelFlightTicket = async (req, res, next) => {
   const adminId = req.id;
 
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   const booking = await FlightBooking.findOne({ booking_reference });
 
   if (!booking)
@@ -218,7 +218,7 @@ const fetchBookingPayemnt = async (req, res) => {
 //
 const allShortletBookings = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   try {
     const shortletBookings = await ShortletBooking.find({ firm }).limit(
       req.query.limit,
@@ -239,7 +239,7 @@ const allShortletBookings = async (req, res) => {
 
 const singleShortletBooking = async (req, res) => {
   const { firm, api_key } = req.headers;
-  await verifyAPIToken(res, firm, api_key);
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
   try {
     const shortletBooking = await ShortletBooking.findById(req.params.id);
     if (!shortletBooking) {

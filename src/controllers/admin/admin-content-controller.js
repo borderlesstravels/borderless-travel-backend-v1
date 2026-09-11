@@ -105,17 +105,14 @@ const deletePost = async (req, res) => {
     if (post) {
       let post_cover = post.cover_image;
       const file_path = path.join("public/files/imgs/posts", post_cover?.url);
-      console.log(file_path);
-
-      fs.unlink(file_path, (err) => {
-        if (err) {
-          console.log(
-            "there was a problem deleting the post cover from folder."
-          );
-        } else {
-          console.log("post image deteled from folder");
-        }
-      });
+      try {
+        await fs.promises.unlink(file_path);
+      } catch (err) {
+        // Local files are usually absent on Vercel (Cloudinary URLs). Ignore.
+        console.log(
+          "there was a problem deleting the post cover from folder."
+        );
+      }
     }
     await Content.findByIdAndDelete(req.params.id);
     return sendSuccess(res, "Successfully deleted the post");
