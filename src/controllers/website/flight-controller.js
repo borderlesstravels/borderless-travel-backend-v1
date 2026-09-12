@@ -46,6 +46,11 @@ const fetchAirports = async (req, res) => {
   const { firm, api_key } = req.headers;
   if (!(await verifyAPIToken(res, firm, api_key))) return;
 
+  // Credentialed CORS responses must not be publicly cached - a cached ACAO for
+  // one origin breaks other apps (admin vs website) with "Failed to fetch".
+  res.set("Cache-Control", "private, no-store");
+  res.set("Vary", "Origin, Firm, api_key");
+
   const response = await fetcher_tiqwa("/airports");
   if (!response) {
     return sendError(
