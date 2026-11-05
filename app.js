@@ -27,6 +27,7 @@ app.use(
       'http://172.20.10.4:3000',
       'http://localhost:3001',
       'http://172.20.10.4:3001',
+      'https://www.borderless.travel',
     ],
   })
 );
