@@ -1,3 +1,4 @@
+
 require('dotenv').config();
 
 const express = require('express');
@@ -29,25 +30,52 @@ const bookingManagementRouter = require('./src/routes/admin/admin-booking-routes
 
 const app = express();
 
+// ==========================================
+// CORS CONFIGURATION
+// ==========================================
+
 const allowedOrigins = [
+  // Production domains
   'https://www.borderless.travel',
   'https://borderless.travel',
+
+  // Local development
   'http://localhost:3000',
   'http://localhost:3001',
+
+  // Local network development
   'http://172.20.10.4:3000',
   'http://172.20.10.4:3001',
 ];
 
 const corsOptions = {
-  origin(origin, callback) {
-    // Allow non-browser requests (no Origin) and allowlisted frontends
-    if (!origin || allowedOrigins.includes(origin)) {
+  origin: (origin, callback) => {
+    // Allow requests without Origin (server-to-server, curl, etc.)
+    if (!origin) {
       return callback(null, true);
     }
+
+    // Allow only trusted frontend origins
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn(`Blocked CORS request from: ${origin}`);
+
     return callback(new Error(`Not allowed by CORS: ${origin}`));
   },
+
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+
+  methods: [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
+  ],
+
   allowedHeaders: [
     'Content-Type',
     'Authorization',
@@ -59,52 +87,42 @@ const corsOptions = {
     'Pragma',
     'X-Requested-With',
   ],
+
   optionsSuccessStatus: 204,
 };
 
-/** Manually attach CORS on error responses (Vercel 500s often drop them) */
-function setCorsHeaders(req, res) {
-  const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader(
-      'Access-Control-Allow-Methods',
-      'GET,POST,PUT,PATCH,DELETE,OPTIONS'
-    );
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, Accept, api_key, firm, u-x-key, Cache-Control, Pragma, X-Requested-With'
-    );
-  }
-}
-
-// 1) CORS first
+// Apply CORS before all other middleware
 app.use(cors(corsOptions));
 
-// 2) Answer preflight immediately — do NOT hit MongoDB
-app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    setCorsHeaders(req, res);
-    return res.status(204).end();
-  }
-  next();
-});
+// Explicitly handle preflight requests before MongoDB
+app.options('*', cors(corsOptions));
 
-// General middleware
+// ==========================================
+// GENERAL MIDDLEWARE
+// ==========================================
+
 app.use(cookieParser());
+
 app.use(express.json());
+
 app.use(express.urlencoded({ extended: true }));
+
 app.use(express.static('public'));
 
-// 3) MongoDB only for real requests (not OPTIONS)
+// ==========================================
+// MONGODB CONNECTION
+// ==========================================
+
+// Connect only for actual API requests.
+// OPTIONS requests are handled before reaching this middleware.
+
 app.use(async (req, res, next) => {
   try {
     await connect();
     next();
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    setCorsHeaders(req, res);
+
     return res.status(500).json({
       success: false,
       message: 'Database connection failed',
@@ -112,52 +130,87 @@ app.use(async (req, res, next) => {
   }
 });
 
-// API routes
+// ==========================================
+// API ROUTES
+// ==========================================
+
+// Website authentication
 app.use('/api/v1/user-auth', userAuthRouter);
 app.use('/api/v1/host-auth', hostAuthRouter);
 
+// User routes
 app.use('/api/v1/user-profile', userProfileRouter);
+
+// Host routes
 app.use('/api/v1/host-profile', hostProfileRouter);
 
+// Admin routes
 app.use('/api/v1/admin-app/admin-auth', adminAuthRouter);
+
 app.use('/api/v1/admin-app/admin-management', adminManagementRouter);
+
 app.use('/api/v1/admin-app/user-management', userManagementRouter);
+
 app.use('/api/v1/admin-app/host-management', hostManagementRouter);
+
 app.use('/api/v1/admin-app/email-subscription', emailSubManagementRouter);
+
 app.use('/api/v1/admin-app/career-management', careerManagementRouter);
+
 app.use('/api/v1/admin-app/booking-management', bookingManagementRouter);
 
+// Flight routes
 app.use('/api/v1/flight', flightRouter);
+
+// General website routes
 app.use('/api/v1/website', websiteRouter);
 
-// Root route
+// ==========================================
+// ROOT ROUTE
+// ==========================================
+
 app.get('/', (req, res) => {
   res.status(200).send('Borderless Travel Backend is running!');
 });
 
-// 404
+// ==========================================
+// 404 HANDLER
+// ==========================================
+
 app.use((req, res) => {
-  setCorsHeaders(req, res);
   res.status(404).json({
     success: false,
     message: 'Route not found',
   });
 });
 
-// Global error handler — always include CORS
+// ==========================================
+// GLOBAL ERROR HANDLER
+// ==========================================
+
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  setCorsHeaders(req, res);
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
   res.status(err.status || 500).json({
     success: false,
     error: err.message || 'Something went wrong. Please try again.',
   });
 });
 
-// Export Express app for Vercel
+// ==========================================
+// EXPORT FOR VERCEL
+// ==========================================
+
 module.exports = app;
 
-// Start server locally only
+// ==========================================
+// LOCAL DEVELOPMENT SERVER
+// ==========================================
+
 if (require.main === module) {
   const PORT = process.env.APP_PORT || 7000;
 
