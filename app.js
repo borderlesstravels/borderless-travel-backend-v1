@@ -4,22 +4,17 @@ require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-
 const { connect } = require('./db');
 
-// Website routes
+// Routes
 const userAuthRouter = require('./src/routes/website/user-auth-routes');
 const hostAuthRouter = require('./src/routes/website/host-auth-routes');
 const flightRouter = require('./src/routes/website/flight-routes');
 const websiteRouter = require('./src/routes/website/general-routes');
 
-// User routes
 const userProfileRouter = require('./src/routes/user/user-profile-routes');
-
-// Host routes
 const hostProfileRouter = require('./src/routes/host/host-profile-routes');
 
-// Admin routes
 const adminAuthRouter = require('./src/routes/admin/admin-auth-routes');
 const adminManagementRouter = require('./src/routes/admin/admin-admin-routes');
 const userManagementRouter = require('./src/routes/admin/admin-user-routes');
@@ -34,93 +29,26 @@ const app = express();
 // CORS CONFIGURATION
 // ==========================================
 
-const allowedOrigins = [
-  // Production domains
-  'https://www.borderless.travel',
-  'https://borderless.travel',
+// Add production and development frontend URLs.
+// Additional URLs can be supplied through ALLOWED_ORIGINS.
 
-  // Local development
+const allowedOrigins = [
+  'https://borderless.travel',
+  'https://www.borderless.travel',
   'http://localhost:3000',
   'http://localhost:3001',
-
-  // Local network development
   'http://172.20.10.4:3000',
   'http://172.20.10.4:3001',
+  ...(process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean),
 ];
-
-const allowedHeaders = [
-  'Content-Type',
-  'Authorization',
-  'Accept',
-  'api_key',
-  'firm',
-  'u-x-key',
-  'Cache-Control',
-  'Pragma',
-  'X-Requested-With',
-];
-
-// ==========================================
-// HANDLE PREFLIGHT REQUESTS FIRST
-// ==========================================
-
-// IMPORTANT:
-// OPTIONS requests must not reach authentication,
-// MongoDB, or any protected API route.
-
-app.use((req, res, next) => {
-  if (req.method !== 'OPTIONS') {
-    return next();
-  }
-
-  const origin = req.headers.origin;
-
-  // Reject untrusted browser origins
-  if (!origin || !allowedOrigins.includes(origin)) {
-    console.warn('Blocked OPTIONS request from:', origin);
-
-    return res.status(403).json({
-      success: false,
-      message: 'Origin not allowed',
-    });
-  }
-
-  res.setHeader('Access-Control-Allow-Origin', origin);
-
-  res.setHeader(
-    'Access-Control-Allow-Credentials',
-    'true'
-  );
-
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET, POST, PUT, PATCH, DELETE, OPTIONS'
-  );
-
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    allowedHeaders.join(', ')
-  );
-
-  res.setHeader(
-    'Access-Control-Max-Age',
-    '86400'
-  );
-
-  res.setHeader('Vary', 'Origin');
-
-  console.log(`CORS preflight successful: ${origin}`);
-
-  return res.status(204).end();
-});
-
-// ==========================================
-// REGULAR CORS FOR ACTUAL REQUESTS
-// ==========================================
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow server-to-server requests
+    // Allow requests without an Origin header
+    // (e.g. server-to-server requests and some tools).
     if (!origin) {
       return callback(null, true);
     }
@@ -129,9 +57,12 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    console.warn('Blocked CORS origin:', origin);
+    console.warn(`[CORS BLOCKED] Origin: ${origin}`);
 
-    return callback(new Error('Not allowed by CORS'));
+    const error = new Error('Origin not allowed by CORS');
+    error.status = 403;
+
+    return callback(error);
   },
 
   credentials: true,
@@ -145,39 +76,38 @@ const corsOptions = {
     'OPTIONS',
   ],
 
-  allowedHeaders,
-
+  // Let the cors package reflect the browser's requested
+  // headers during preflight. This avoids missing custom headers.
   optionsSuccessStatus: 204,
+
+  maxAge: 86400,
 };
 
+// IMPORTANT: CORS must be the first middleware.
+// This also handles OPTIONS preflight requests automatically.
 app.use(cors(corsOptions));
 
 // ==========================================
 // GENERAL MIDDLEWARE
 // ==========================================
 
-app.use(cookieParser());
-
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
-
+app.use(cookieParser());
 app.use(express.static('public'));
 
 // ==========================================
-// MONGODB CONNECTION
+// DATABASE CONNECTION
 // ==========================================
-
-// OPTIONS requests never reach this middleware.
 
 app.use(async (req, res, next) => {
   try {
     await connect();
     next();
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    console.error('[DATABASE ERROR]', error);
 
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: 'Database connection failed',
     });
@@ -188,35 +118,21 @@ app.use(async (req, res, next) => {
 // API ROUTES
 // ==========================================
 
-// Website authentication
 app.use('/api/v1/user-auth', userAuthRouter);
 app.use('/api/v1/host-auth', hostAuthRouter);
 
-// User routes
 app.use('/api/v1/user-profile', userProfileRouter);
-
-// Host routes
 app.use('/api/v1/host-profile', hostProfileRouter);
 
-// Admin routes
 app.use('/api/v1/admin-app/admin-auth', adminAuthRouter);
-
 app.use('/api/v1/admin-app/admin-management', adminManagementRouter);
-
 app.use('/api/v1/admin-app/user-management', userManagementRouter);
-
 app.use('/api/v1/admin-app/host-management', hostManagementRouter);
-
 app.use('/api/v1/admin-app/email-subscription', emailSubManagementRouter);
-
 app.use('/api/v1/admin-app/career-management', careerManagementRouter);
-
 app.use('/api/v1/admin-app/booking-management', bookingManagementRouter);
 
-// Flight routes
 app.use('/api/v1/flight', flightRouter);
-
-// General website routes
 app.use('/api/v1/website', websiteRouter);
 
 // ==========================================
@@ -243,7 +159,7 @@ app.use((req, res) => {
 // ==========================================
 
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
+  console.error('[SERVER ERROR]', err);
 
   if (res.headersSent) {
     return next(err);
@@ -251,27 +167,29 @@ app.use((err, req, res, next) => {
 
   res.status(err.status || 500).json({
     success: false,
-    error: err.message || 'Something went wrong. Please try again.',
+    error: err.message || 'Something went wrong.',
   });
 });
 
 // ==========================================
-// EXPORT EXPRESS APP FOR VERCEL
+// EXPORT APP
 // ==========================================
 
 module.exports = app;
 
 // ==========================================
-// LOCAL DEVELOPMENT SERVER
+// LOCAL DEVELOPMENT
 // ==========================================
 
 if (require.main === module) {
   const PORT = process.env.APP_PORT || 7000;
 
   app.listen(PORT, async () => {
+    console.log(`Borderless Travel API running on port ${PORT}`);
+
     try {
       await connect();
-      console.log(`Server listening on port ${PORT}`);
+      console.log('MongoDB connected successfully');
     } catch (error) {
       console.error('MongoDB connection failed:', error);
     }
