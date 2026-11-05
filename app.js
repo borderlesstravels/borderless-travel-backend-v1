@@ -48,21 +48,90 @@ const allowedOrigins = [
   'http://172.20.10.4:3001',
 ];
 
+const allowedHeaders = [
+  'Content-Type',
+  'Authorization',
+  'Accept',
+  'api_key',
+  'firm',
+  'u-x-key',
+  'Cache-Control',
+  'Pragma',
+  'X-Requested-With',
+];
+
+// ==========================================
+// HANDLE PREFLIGHT REQUESTS FIRST
+// ==========================================
+
+// IMPORTANT:
+// OPTIONS requests must not reach authentication,
+// MongoDB, or any protected API route.
+
+app.use((req, res, next) => {
+  if (req.method !== 'OPTIONS') {
+    return next();
+  }
+
+  const origin = req.headers.origin;
+
+  // Reject untrusted browser origins
+  if (!origin || !allowedOrigins.includes(origin)) {
+    console.warn('Blocked OPTIONS request from:', origin);
+
+    return res.status(403).json({
+      success: false,
+      message: 'Origin not allowed',
+    });
+  }
+
+  res.setHeader('Access-Control-Allow-Origin', origin);
+
+  res.setHeader(
+    'Access-Control-Allow-Credentials',
+    'true'
+  );
+
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PUT, PATCH, DELETE, OPTIONS'
+  );
+
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    allowedHeaders.join(', ')
+  );
+
+  res.setHeader(
+    'Access-Control-Max-Age',
+    '86400'
+  );
+
+  res.setHeader('Vary', 'Origin');
+
+  console.log(`CORS preflight successful: ${origin}`);
+
+  return res.status(204).end();
+});
+
+// ==========================================
+// REGULAR CORS FOR ACTUAL REQUESTS
+// ==========================================
+
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests without Origin (server-to-server, curl, etc.)
+    // Allow server-to-server requests
     if (!origin) {
       return callback(null, true);
     }
 
-    // Allow only trusted frontend origins
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    console.warn(`Blocked CORS request from: ${origin}`);
+    console.warn('Blocked CORS origin:', origin);
 
-    return callback(new Error(`Not allowed by CORS: ${origin}`));
+    return callback(new Error('Not allowed by CORS'));
   },
 
   credentials: true,
@@ -76,26 +145,12 @@ const corsOptions = {
     'OPTIONS',
   ],
 
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Accept',
-    'api_key',
-    'firm',
-    'u-x-key',
-    'Cache-Control',
-    'Pragma',
-    'X-Requested-With',
-  ],
+  allowedHeaders,
 
   optionsSuccessStatus: 204,
 };
 
-// Apply CORS before all other middleware
 app.use(cors(corsOptions));
-
-// Explicitly handle preflight requests before MongoDB
-app.options('*', cors(corsOptions));
 
 // ==========================================
 // GENERAL MIDDLEWARE
@@ -113,8 +168,7 @@ app.use(express.static('public'));
 // MONGODB CONNECTION
 // ==========================================
 
-// Connect only for actual API requests.
-// OPTIONS requests are handled before reaching this middleware.
+// OPTIONS requests never reach this middleware.
 
 app.use(async (req, res, next) => {
   try {
@@ -202,7 +256,7 @@ app.use((err, req, res, next) => {
 });
 
 // ==========================================
-// EXPORT FOR VERCEL
+// EXPORT EXPRESS APP FOR VERCEL
 // ==========================================
 
 module.exports = app;
