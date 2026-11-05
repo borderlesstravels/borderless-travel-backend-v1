@@ -4,9 +4,14 @@ require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const path = require('path');
+
 const { connect } = require('./db');
 
-// Routes
+// ==========================================
+// ROUTES
+// ==========================================
+
 const userAuthRouter = require('./src/routes/website/user-auth-routes');
 const hostAuthRouter = require('./src/routes/website/host-auth-routes');
 const flightRouter = require('./src/routes/website/flight-routes');
@@ -29,35 +34,36 @@ const app = express();
 // CORS CONFIGURATION
 // ==========================================
 
-// Add production and development frontend URLs.
-// Additional URLs can be supplied through ALLOWED_ORIGINS.
-
 const allowedOrigins = [
   'https://borderless.travel',
   'https://www.borderless.travel',
+
   'http://localhost:3000',
   'http://localhost:3001',
+
   'http://172.20.10.4:3000',
   'http://172.20.10.4:3001',
+
   ...(process.env.ALLOWED_ORIGINS || '')
     .split(',')
-    .map(origin => origin.trim())
+    .map(origin => origin.trim().replace(/\/+$/, ''))
     .filter(Boolean),
 ];
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests without an Origin header
-    // (e.g. server-to-server requests and some tools).
+    // Allow requests without browser Origin headers.
     if (!origin) {
       return callback(null, true);
     }
 
-    if (allowedOrigins.includes(origin)) {
+    const normalizedOrigin = origin.replace(/\/+$/, '');
+
+    if (allowedOrigins.includes(normalizedOrigin)) {
       return callback(null, true);
     }
 
-    console.warn(`[CORS BLOCKED] Origin: ${origin}`);
+    console.error(`[CORS BLOCKED] ${origin}`);
 
     const error = new Error('Origin not allowed by CORS');
     error.status = 403;
@@ -76,25 +82,30 @@ const corsOptions = {
     'OPTIONS',
   ],
 
-  // Let the cors package reflect the browser's requested
-  // headers during preflight. This avoids missing custom headers.
+  // Reflect requested headers during preflight.
+  // Supports Authorization, api_key, firm, u-x-key, etc.
   optionsSuccessStatus: 204,
 
   maxAge: 86400,
 };
 
-// IMPORTANT: CORS must be the first middleware.
-// This also handles OPTIONS preflight requests automatically.
+// CORS MUST BE FIRST.
+// This middleware automatically handles OPTIONS requests.
 app.use(cors(corsOptions));
 
 // ==========================================
 // GENERAL MIDDLEWARE
 // ==========================================
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({
+  extended: true,
+  limit: '10mb',
+}));
+
 app.use(cookieParser());
-app.use(express.static('public'));
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ==========================================
 // DATABASE CONNECTION
@@ -102,12 +113,18 @@ app.use(express.static('public'));
 
 app.use(async (req, res, next) => {
   try {
+    // OPTIONS requests must never wait for MongoDB.
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+
     await connect();
+
     next();
   } catch (error) {
-    console.error('[DATABASE ERROR]', error);
+    console.error('[DATABASE CONNECTION ERROR]', error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Database connection failed',
     });
@@ -140,7 +157,9 @@ app.use('/api/v1/website', websiteRouter);
 // ==========================================
 
 app.get('/', (req, res) => {
-  res.status(200).send('Borderless Travel Backend is running!');
+  res.status(200).send(
+    'Borderless Travel Backend is running!'
+  );
 });
 
 // ==========================================
@@ -159,40 +178,49 @@ app.use((req, res) => {
 // ==========================================
 
 app.use((err, req, res, next) => {
-  console.error('[SERVER ERROR]', err);
+  console.error('[SERVER ERROR]', {
+    message: err.message,
+    method: req.method,
+    url: req.originalUrl,
+    stack: err.stack,
+  });
 
   if (res.headersSent) {
     return next(err);
   }
 
-  res.status(err.status || 500).json({
+  return res.status(err.status || 500).json({
     success: false,
     error: err.message || 'Something went wrong.',
   });
 });
 
 // ==========================================
-// EXPORT APP
+// EXPORT EXPRESS APP FOR VERCEL
 // ==========================================
 
 module.exports = app;
 
 // ==========================================
-// LOCAL DEVELOPMENT
+// LOCAL DEVELOPMENT SERVER
 // ==========================================
 
 if (require.main === module) {
   const PORT = process.env.APP_PORT || 7000;
 
   app.listen(PORT, async () => {
-    console.log(`Borderless Travel API running on port ${PORT}`);
+    console.log(
+      `Borderless Travel API running on port ${PORT}`
+    );
 
     try {
       await connect();
       console.log('MongoDB connected successfully');
     } catch (error) {
-      console.error('MongoDB connection failed:', error);
+      console.error(
+        'MongoDB connection failed:',
+        error
+      );
     }
   });
 }
-
