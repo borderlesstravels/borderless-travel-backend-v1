@@ -1,9 +1,7 @@
-
 require('dotenv').config();
 
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const cors = require('cors');
 const path = require('path');
 
 const { connect } = require('./db');
@@ -31,90 +29,72 @@ const bookingManagementRouter = require('./src/routes/admin/admin-booking-routes
 const app = express();
 
 // ==========================================
-// CORS CONFIGURATION
+// CORS — FIRST, BEFORE EVERYTHING ELSE
 // ==========================================
 
-const allowedOrigins = [
-  'https://borderless.travel',
-  'https://www.borderless.travel',
+const allowedOrigins = new Set(
+  [
+    'https://borderless.travel',
+    'https://www.borderless.travel',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://172.20.10.4:3000',
+    'http://172.20.10.4:3001',
+    ...(process.env.ALLOWED_ORIGINS || '').split(','),
+  ]
+    .map((origin) => origin.trim().replace(/\/+$/, ''))
+    .filter(Boolean)
+);
 
-  'http://localhost:3000',
-  'http://localhost:3001',
+function isAllowed(origin) {
+  if (!origin) return true;
+  return allowedOrigins.has(origin.trim().replace(/\/+$/, ''));
+}
 
-  'http://172.20.10.4:3000',
-  'http://172.20.10.4:3001',
+function applyCors(req, res) {
+  const origin = req.headers.origin;
+  if (!origin || !isAllowed(origin)) return false;
 
-  ...(process.env.ALLOWED_ORIGINS || '')
-    .split(',')
-    .map(origin => origin.trim().replace(/\/+$/, ''))
-    .filter(Boolean),
-];
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+  );
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, Api_key, api_key, Firm, firm, Cache-Control, Pragma, U-X-Key, u-x-key'
+  );
+  res.setHeader('Access-Control-Expose-Headers', 'u-x-key, a-x-key');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  return true;
+}
 
-// Remove accidental duplicates.
-const uniqueAllowedOrigins = [...new Set(allowedOrigins)];
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  applyCors(req, res);
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests without an Origin header,
-    // such as server-to-server requests.
-    if (!origin) {
-      return callback(null, true);
-    }
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(origin && isAllowed(origin) ? 204 : 403);
+  }
 
-    const normalizedOrigin = origin.trim().replace(/\/+$/, '');
-
-    if (uniqueAllowedOrigins.includes(normalizedOrigin)) {
-      return callback(null, true);
-    }
-
-    console.error('[CORS BLOCKED]', {
-      origin: normalizedOrigin,
-      allowedOrigins: uniqueAllowedOrigins,
+  if (origin && !isAllowed(origin)) {
+    console.error('[CORS BLOCKED]', { origin, allowedOrigins: [...allowedOrigins] });
+    return res.status(403).json({
+      success: false,
+      message: 'Origin not allowed',
     });
+  }
 
-    const error = new Error(
-      `Origin not allowed by CORS: ${normalizedOrigin}`
-    );
-
-    error.status = 403;
-
-    return callback(error);
-  },
-
-  credentials: true,
-
-  methods: [
-    'GET',
-    'POST',
-    'PUT',
-    'PATCH',
-    'DELETE',
-    'OPTIONS',
-  ],
-
-  // If allowedHeaders is omitted, the cors package
-  // reflects the headers requested by the browser.
-  // This supports api_key, firm, u-x-key,
-  // Authorization, Content-Type, and other custom headers.
-
-  optionsSuccessStatus: 204,
-
-  maxAge: 86400,
-};
-
-// ==========================================
-// CORS MUST BE FIRST
-// ==========================================
-
-app.use(cors(corsOptions));
+  return next();
+});
 
 // ==========================================
 // GENERAL MIDDLEWARE
 // ==========================================
 
-app.use(express.json({
-  limit: '10mb',
-}));
+app.use(express.json({ limit: '10mb' }));
 
 app.use(express.urlencoded({
   extended: true,
@@ -131,14 +111,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(async (req, res, next) => {
   try {
-    // The CORS middleware above handles OPTIONS requests.
-    // Never wait for MongoDB for a preflight request.
     if (req.method === 'OPTIONS') {
       return res.sendStatus(204);
     }
 
     await connect();
-
     return next();
   } catch (error) {
     console.error('[DATABASE CONNECTION ERROR]', {
@@ -146,6 +123,8 @@ app.use(async (req, res, next) => {
       url: req.originalUrl,
       method: req.method,
     });
+
+    applyCors(req, res);
 
     return res.status(500).json({
       success: false,
@@ -159,29 +138,19 @@ app.use(async (req, res, next) => {
 // ==========================================
 
 app.use('/api/v1/user-auth', userAuthRouter);
-
 app.use('/api/v1/host-auth', hostAuthRouter);
-
 app.use('/api/v1/user-profile', userProfileRouter);
-
 app.use('/api/v1/host-profile', hostProfileRouter);
 
 app.use('/api/v1/admin-app/admin-auth', adminAuthRouter);
-
 app.use('/api/v1/admin-app/admin-management', adminManagementRouter);
-
 app.use('/api/v1/admin-app/user-management', userManagementRouter);
-
 app.use('/api/v1/admin-app/host-management', hostManagementRouter);
-
 app.use('/api/v1/admin-app/email-subscription', emailSubManagementRouter);
-
 app.use('/api/v1/admin-app/career-management', careerManagementRouter);
-
 app.use('/api/v1/admin-app/booking-management', bookingManagementRouter);
 
 app.use('/api/v1/flight', flightRouter);
-
 app.use('/api/v1/website', websiteRouter);
 
 // ==========================================
@@ -235,6 +204,8 @@ app.use((err, req, res, next) => {
   if (res.headersSent) {
     return next(err);
   }
+
+  applyCors(req, res);
 
   return res.status(err.status || 500).json({
     success: false,
