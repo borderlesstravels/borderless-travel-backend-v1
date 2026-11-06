@@ -34,8 +34,6 @@ const app = express();
 
 const allowedOrigins = new Set(
   [
-    'https://borderless.travel',
-    'https://www.borderless.travel',
     'http://localhost:3000',
     'http://localhost:3001',
     'http://172.20.10.4:3000',
