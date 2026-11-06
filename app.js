@@ -50,22 +50,32 @@ const allowedOrigins = [
     .filter(Boolean),
 ];
 
+// Remove accidental duplicates.
+const uniqueAllowedOrigins = [...new Set(allowedOrigins)];
+
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests without browser Origin headers.
+    // Allow requests without an Origin header,
+    // such as server-to-server requests.
     if (!origin) {
       return callback(null, true);
     }
 
-    const normalizedOrigin = origin.replace(/\/+$/, '');
+    const normalizedOrigin = origin.trim().replace(/\/+$/, '');
 
-    if (allowedOrigins.includes(normalizedOrigin)) {
+    if (uniqueAllowedOrigins.includes(normalizedOrigin)) {
       return callback(null, true);
     }
 
-    console.error(`[CORS BLOCKED] ${origin}`);
+    console.error('[CORS BLOCKED]', {
+      origin: normalizedOrigin,
+      allowedOrigins: uniqueAllowedOrigins,
+    });
 
-    const error = new Error('Origin not allowed by CORS');
+    const error = new Error(
+      `Origin not allowed by CORS: ${normalizedOrigin}`
+    );
+
     error.status = 403;
 
     return callback(error);
@@ -82,22 +92,30 @@ const corsOptions = {
     'OPTIONS',
   ],
 
-  // Reflect requested headers during preflight.
-  // Supports Authorization, api_key, firm, u-x-key, etc.
+  // If allowedHeaders is omitted, the cors package
+  // reflects the headers requested by the browser.
+  // This supports api_key, firm, u-x-key,
+  // Authorization, Content-Type, and other custom headers.
+
   optionsSuccessStatus: 204,
 
   maxAge: 86400,
 };
 
-// CORS MUST BE FIRST.
-// This middleware automatically handles OPTIONS requests.
+// ==========================================
+// CORS MUST BE FIRST
+// ==========================================
+
 app.use(cors(corsOptions));
 
 // ==========================================
 // GENERAL MIDDLEWARE
 // ==========================================
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+}));
+
 app.use(express.urlencoded({
   extended: true,
   limit: '10mb',
@@ -113,16 +131,21 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(async (req, res, next) => {
   try {
-    // OPTIONS requests must never wait for MongoDB.
+    // The CORS middleware above handles OPTIONS requests.
+    // Never wait for MongoDB for a preflight request.
     if (req.method === 'OPTIONS') {
       return res.sendStatus(204);
     }
 
     await connect();
 
-    next();
+    return next();
   } catch (error) {
-    console.error('[DATABASE CONNECTION ERROR]', error);
+    console.error('[DATABASE CONNECTION ERROR]', {
+      message: error.message,
+      url: req.originalUrl,
+      method: req.method,
+    });
 
     return res.status(500).json({
       success: false,
@@ -136,20 +159,29 @@ app.use(async (req, res, next) => {
 // ==========================================
 
 app.use('/api/v1/user-auth', userAuthRouter);
+
 app.use('/api/v1/host-auth', hostAuthRouter);
 
 app.use('/api/v1/user-profile', userProfileRouter);
+
 app.use('/api/v1/host-profile', hostProfileRouter);
 
 app.use('/api/v1/admin-app/admin-auth', adminAuthRouter);
+
 app.use('/api/v1/admin-app/admin-management', adminManagementRouter);
+
 app.use('/api/v1/admin-app/user-management', userManagementRouter);
+
 app.use('/api/v1/admin-app/host-management', hostManagementRouter);
+
 app.use('/api/v1/admin-app/email-subscription', emailSubManagementRouter);
+
 app.use('/api/v1/admin-app/career-management', careerManagementRouter);
+
 app.use('/api/v1/admin-app/booking-management', bookingManagementRouter);
 
 app.use('/api/v1/flight', flightRouter);
+
 app.use('/api/v1/website', websiteRouter);
 
 // ==========================================
@@ -157,9 +189,22 @@ app.use('/api/v1/website', websiteRouter);
 // ==========================================
 
 app.get('/', (req, res) => {
-  res.status(200).send(
-    'Borderless Travel Backend is running!'
-  );
+  return res.status(200).json({
+    success: true,
+    message: 'Borderless Travel Backend is running!',
+  });
+});
+
+// ==========================================
+// HEALTH CHECK
+// ==========================================
+
+app.get('/health', (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: 'API is healthy',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // ==========================================
@@ -167,9 +212,10 @@ app.get('/', (req, res) => {
 // ==========================================
 
 app.use((req, res) => {
-  res.status(404).json({
+  return res.status(404).json({
     success: false,
     message: 'Route not found',
+    path: req.originalUrl,
   });
 });
 
@@ -182,6 +228,7 @@ app.use((err, req, res, next) => {
     message: err.message,
     method: req.method,
     url: req.originalUrl,
+    status: err.status || 500,
     stack: err.stack,
   });
 
@@ -191,7 +238,7 @@ app.use((err, req, res, next) => {
 
   return res.status(err.status || 500).json({
     success: false,
-    error: err.message || 'Something went wrong.',
+    message: err.message || 'Something went wrong.',
   });
 });
 
@@ -209,18 +256,13 @@ if (require.main === module) {
   const PORT = process.env.APP_PORT || 7000;
 
   app.listen(PORT, async () => {
-    console.log(
-      `Borderless Travel API running on port ${PORT}`
-    );
+    console.log(`Borderless Travel API running on port ${PORT}`);
 
     try {
       await connect();
       console.log('MongoDB connected successfully');
     } catch (error) {
-      console.error(
-        'MongoDB connection failed:',
-        error
-      );
+      console.error('MongoDB connection failed:', error);
     }
   });
 }
