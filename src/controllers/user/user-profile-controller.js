@@ -33,9 +33,12 @@ const updateUserProfile = async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(
       userId,
-      { $set: req.body },
+      { $set: {
+        first_name: req.body.first_name, last_name: req.body.last_name,
+        username: req.body.username, phone: req.body.phone,
+      } },
       { new: true }
-    );
+    ).select("-password");
     return sendSuccess(
       res,
       "Your profile contact data has been successfully updated",
@@ -112,7 +115,9 @@ const updateUserPassword = async (req, res, next) => {
 const updateUserEmailAlert = async (req, res) => {
   const userId = req.id;
   try {
-    const user = await User.findByIdAndUpdate(userId, { $set: req.body });
+    const user = await User.findByIdAndUpdate(userId, { $set: {
+      priceAlert: req.body.priceAlert, travelAlert: req.body.travelAlert,
+    } }).select("-password");
     return sendSuccess(res, "You have updated your alert settings", user);
   } catch (error) {
     console.log(error);
@@ -165,14 +170,16 @@ const userFlightBookings = async (req, res) => {
 
 const userSingleFlightBooking = async (req, res) => {
   try {
-    const flightBooking = await FlightBooking.findById(req.params.id).select([
+    const user = await User.findById(req.id).select("email");
+    if (!user) return sendError(res, "Your user account cannot be found", 401);
+    const flightBooking = await FlightBooking.findOne({ _id: req.params.id, owner: user.email }).select([
       "-action_by",
       "-firm",
       "-api_key",
       "-passenger_details.documents",
     ]);
     if (!flightBooking) {
-      return sendSuccess(res, "No flight booking record found");
+      return sendError(res, "Booking not found", 404);
     }
     return sendSuccess(res, "Successfully fetched booking", flightBooking);
   } catch (error) {
@@ -227,9 +234,12 @@ const userPaymentHistory = async (req, res) => {
 
 const userSingleShortletBooking = async (req, res) => {
   try {
-    const shortletBooking = await ShortletBooking.findById(req.params.id);
+    const user = await User.findById(req.id).select("email");
+    if (!user) return sendError(res, "Your user account cannot be found", 401);
+    const shortletBooking = await ShortletBooking.findOne({ _id: req.params.id, owner: user.email })
+      .select("-firm -api_key -action_by");
     if (!shortletBooking) {
-      return sendSuccess(res, "No shortlet booking record found");
+      return sendError(res, "Booking not found", 404);
     }
     return sendSuccess(res, "Successfully fetched booking", shortletBooking);
   } catch (error) {
@@ -271,11 +281,14 @@ const createReview = async (req, res) => {
 
 const updateReview = async (req, res) => {
   try {
-    const user = await Review.findByIdAndUpdate(
-      req.params.review_id,
-      { $set: req.body },
-      { new: true }
+    const owner = await User.findById(req.id).select("email");
+    if (!owner) return sendError(res, "Your user account cannot be found", 401);
+    const user = await Review.findOneAndUpdate(
+      { _id: req.params.review_id, reviewer_id: owner.email },
+      { $set: { review: req.body.review, rating: req.body.rating } },
+      { new: true, runValidators: true }
     );
+    if (!user) return sendError(res, "Review not found", 404);
     return sendSuccess(res, "Your review has been successfully updated", user);
   } catch (error) {
     console.log(error);
@@ -329,7 +342,7 @@ const userReviews = async (req, res) => {
 const getUserNotifications = async (req, res) => {
   const userId = req.id;
   try {
-    const notifications = await Notification.find();
+    const notifications = await Notification.find({ owner: userId });
     if (!notifications.length) {
       return sendSuccess(res, "No notifications record yet");
     }

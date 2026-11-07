@@ -6,6 +6,7 @@ const express = require("express");
 const requestIp = require("request-ip");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const { forwardAsyncErrors } = require("./async-routes");
 
 const userAuthRouter = require("../src/routes/website/user-auth-routes");
 const hostAuthRouter = require("../src/routes/website/host-auth-routes");
@@ -63,6 +64,10 @@ function parseExtraOrigins() {
 
 function createApp() {
   const app = express();
+  app.use((req, res, next) => {
+    res.set("Cache-Control", "private, no-store");
+    return next();
+  });
   const allowedOrigins = [...DEFAULT_ORIGINS, ...parseExtraOrigins()];
 
   app.use(
@@ -88,7 +93,9 @@ function createApp() {
 
   app.use(requestIp.mw());
   app.use(cookieParser());
-  app.use(express.json({ limit: "10mb" }));
+  app.use(express.json({ limit: "10mb", verify(req, res, buffer) {
+    if (req.path === "/api/v1/website/paystack-webhook") req.rawBody = buffer;
+  } }));
   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
   // Email HTML templates only (uploads go to Cloudinary on Vercel)
@@ -121,6 +128,11 @@ function createApp() {
   app.use("/api/v1/shortlet", shortletRouter);
   app.use("/api/v1/transfer", transferRouter);
   app.use("/api/v1/agent/onboarding", agentOnboardingRouter);
+
+  // Express 4 does not forward async rejections by itself.
+  for (const layer of app._router.stack) {
+    if (layer.handle?.stack) forwardAsyncErrors(layer.handle);
+  }
 
   app.get("/", (req, res) => {
     res.json({
