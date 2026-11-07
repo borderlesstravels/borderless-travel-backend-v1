@@ -15,6 +15,7 @@ const APIToken = require("../../models/app-core/APIToken");
 const BookingRequest = require("../../models/general/BookingRequest");
 const jwt = require("jsonwebtoken");
 const SaleRecord = require("../../models/general/SaleRecord");
+const { findReadableFlight } = require("../../services/booking-access");
 
 const getFlightSegmentsFromBookingResponse = (data) => {
   if (Array.isArray(data?.outbound) && data.outbound.length) {
@@ -293,136 +294,23 @@ const bookFlightAuth = async (req, res, next) => {
 const bookFlight = async (req, res, next) => {
   const { firm, api_key } = req.headers;
   if (!(await verifyAPIToken(res, firm, api_key))) return;
-  const { flight_id } = req.params;
-  const { contact_details, passenger_details } = req.body;
-  const { admin } = req.query;
-
   try {
-    const response = await sender_tiqwa(`/flight/book/${flight_id}`, {
-      passengers: passenger_details,
+    const { createFlightBooking } = require("../../services/create-flight-booking");
+    const newBooking = await createFlightBooking({
+      firm, apiKey: api_key, offer: req.params.flight_id, body: req.body,
     });
-    if (!response) {
-      return sendError(
-        res,
-        "Unable to complete this request at this time. Please try again.",
-      );
-    }
-    if (response?.status === 200) {
-      const outboundData = getFlightSegmentsFromBookingResponse(response.data);
-      if (!outboundData.length) {
-        return sendError(
-          res,
-          "Booking response is missing flight segment details. Please try again.",
-        );
-      }
-      const destPicker = Number(outboundData.length - 1);
-      const airline = outboundData[0].airline_details.name;
-      const airline_logo = outboundData[0].airline_details.logo;
-      const departure_time = outboundData[0].departure_time;
-      const arrival_time = outboundData[destPicker].arrival_time;
-      const origin_code = outboundData[0].airport_from;
-      const destination_code = outboundData[destPicker].airport_to;
-      const findAirports = await fetcher_tiqwa("/airports");
-      if (!findAirports) {
-        return sendError(
-          res,
-          "Unable to complete this request at this time. Please try again.",
-        );
-      }
-      if (findAirports?.status === 200) {
-        const allAirports = findAirports.data;
-        const departureAirport = allAirports.filter(
-          (airport) => airport.iata_code === origin_code,
-        );
-        const arrivalAirport = allAirports.filter(
-          (airport) => airport.iata_code === destination_code,
-        );
-        const origin = departureAirport[0]?.city || origin_code;
-        const destination = arrivalAirport[0]?.city || destination_code;
-        const total_paid = response.data.amount;
-        const service_cost = response.data.pricing.payable;
-        const profit = response.data.pricing.markup.markup_value;
-        try {
-          const newBooking = new FlightBooking({
-            owner: contact_details.c_email,
-            firm: firm,
-            api_key: api_key,
-            contact_details: contact_details,
-            passenger_details: passenger_details,
-            contact_relationship: contact_details.c_relationship_to_p,
-            airline,
-            airline_logo,
-            departure_time,
-            arrival_time,
-            origin_code,
-            destination_code,
-            origin,
-            destination,
-            is_multicity: Boolean(response?.data?.is_multicity),
-            trip_type: response?.data?.is_multicity
-              ? "multi-city"
-              : response?.data?.inbound?.length
-                ? "return"
-                : "one-way",
-            payment_status: admin?.length ? "paid" : "pending",
-            price: total_paid,
-            status: response?.data?.status,
-            booking_reference: response?.data.reference,
-          });
-          await newBooking.save();
-          const newSale = new SaleRecord({
-            purchasing_firm: firm,
-            sale_reference: response?.data?.reference,
-            service: process.env.FLIGHT_SERVICE_NAME.toLowerCase(),
-            service_provider: process.env.FLIGHT_SERVICE_PROVIDER.toLowerCase(),
-            total_paid,
-            service_cost,
-            profit,
-          });
-          await newSale.save();
-          const date = dateFormatter(newBooking?.created_at);
-          const time = dateFormatter(newBooking?.created_at);
-          req.body = {
-            first_name: contact_details.c_first_name,
-            email: contact_details.c_email,
-            category: "Flight",
-            booking_reference: newBooking.booking_reference,
-            date,
-            time,
-            subject: `Your Booking Is Confirmed. Let's Travel`,
-            signUpSubject: "Welcome to Boardless Travels!",
-            responseMessage: "Booking successfully created!",
-            newBooking,
-          };
-          next();
-        } catch (error) {
-          console.log(
-            `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error -`,
-            error,
-          );
-          return sendError(
-            res,
-            `Ticket booked, but we are unable to save your data on our database. Kindly get in touch with us soon. Booking ID: ${response?.data.reference}`,
-          );
-        }
-      } else {
-        console.log(
-          `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error - Unable to locate airports`,
-        );
-        return sendError(
-          res,
-          `Booking established but could not be completed. Kindly reach out to support with this booking ID: ${response?.data.reference}`,
-        );
-      }
-    } else {
-      return sendError(res, response?.statusText, response?.status);
-    }
+    const contact = newBooking.contact_details;
+    req.body = {
+      first_name: contact.c_first_name, email: contact.c_email, category: "Flight",
+      booking_reference: newBooking.booking_reference,
+      date: dateFormatter(newBooking.created_at), time: timeFormatter(newBooking.created_at),
+      subject: "Your flight reservation has been created",
+      responseMessage: "Flight reservation created. Payment and ticket issuance are separate steps.",
+      newBooking,
+    };
+    return next();
   } catch (error) {
-    console.log("Unable to complete flight booking. Error -", error);
-    return sendError(
-      res,
-      `Unable to book your flight at this time. Error - ${error}`,
-    );
+    return sendError(res, error.status ? error.message : "Booking requires reconciliation. Contact support before retrying.", error.status || 503);
   }
 };
 
@@ -542,12 +430,16 @@ const bookFlightThirdParty = async (req, res, next) => {
 };
 
 const fetchFlightTicketDetails = async (req, res) => {
+  res.set("Cache-Control", "private, no-store");
   const { firm, api_key } = req.headers;
   if (!(await verifyAPIToken(res, firm, api_key))) return;
 
   const { booking_reference } = req.params;
+  if (!(await findReadableFlight(req, booking_reference))) {
+    return sendError(res, "Booking not found", 404);
+  }
   const response = await fetcher_tiqwa(`/flight/${booking_reference}`);
-  log("response", response.data);
+  if (!response) return sendError(res, "Ticket details are temporarily unavailable", 502);
   if (response?.status === 200) {
     return res
       .status(response.status)
@@ -559,25 +451,28 @@ const fetchFlightTicketDetails = async (req, res) => {
 
 const flightProviderWebHook = async (req, res) => {
   const { event, data } = req.body;
-  console.log("event", event);
-  console.log("data", data);
   try {
-    if (!event) {
-      return sendError(res, "Field 'event' is missing", 400);
+    if (!["ticket.issued", "ticket.booked"].includes(event)) {
+      return sendSuccess(res, "Event ignored");
     }
-    if (!data) {
-      return sendError(res, "Field 'data' is missing", 400);
+    if (typeof data?.reference !== "string" || !data.reference || data.reference.length > 200) {
+      return sendError(res, "Invalid booking reference", 400);
     }
+    // The callback is only a hint. Never trust its claimed status; obtain the
+    // authoritative record using our server-side Tiqwa credential.
     const booking = await FlightBooking.findOne({
-      booking_reference: data?.reference,
+      booking_reference: data.reference,
     });
     if (booking) {
-      if (event == "ticket.issued") {
-        booking.status = "issued";
-      } else if (event == "ticket.booked") {
-        booking.status = "booked";
+      const verified = await fetcher_tiqwa(`/flight/${encodeURIComponent(data.reference)}`);
+      if (verified?.status !== 200 || verified.data?.reference !== data.reference) {
+        return sendError(res, "Unable to verify provider notification", 502);
       }
-      await booking.save();
+      const status = verified.data.status;
+      if (!["booked", "issued"].includes(status)) return sendSuccess(res, "No applicable status change");
+      // A late booked callback must never overwrite an issued/cancelled ticket.
+      await FlightBooking.updateOne({ _id: booking._id, status: { $in: ["pending", "reserved", "booked"] } },
+        { $set: { status } });
     }
     return sendSuccess(res, "Successfully completed operation");
   } catch (error) {

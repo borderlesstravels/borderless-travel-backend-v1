@@ -4,6 +4,8 @@ exports.fetcher_tiqwa = async (url, params = {}) => {
   try {
     const response = await axios({
       method: "get",
+      timeout: 15000,
+      maxRedirects: 0,
       url: `${process.env.TIQWA_FLIGHT_API}${url}`,
       headers: { Authorization: `Bearer ${process.env.TIQWA_BEARER_TOKEN}` },
       params,
