@@ -14,7 +14,7 @@
   "author": "Tee King",
   "license": "ISC",
   "engines": {
-    "node": ">=18.18.0"
+    "node": "22.x"
   },
   "dependencies": {
     "@mongoosejs/double": "^0.3.0",
