@@ -27,7 +27,6 @@ const verifyEmail = async (req, res, next) => {
   if (!isValidObjectId(userId)) return sendError(res, "Invalid user id");
 
   const admin = await Admin.findById(userId, "-password");
-  console.log(admin);
   if (!admin) return sendError(res, "Sorry, user not found");
 
   if (admin.email_verified)
@@ -165,7 +164,6 @@ const generateAdminLoginToken = async (req, res, next) => {
   });
   try {
     await adminLoginToken.save();
-    console.log("OTP saved", otp);
     req.body = {
       user: admin,
       otp,
@@ -216,7 +214,6 @@ const logAdminIn = async (req, res, next) => {
 
 const isAdminLogin = async (req, res) => {
   const tokenKey = req.headers["a-x-key"];
-  console.log(tokenKey);
   try {
     if (!tokenKey) {
       return sendError(res, "Unauthorised. No headers key");
@@ -238,7 +235,6 @@ const isAdminLogin = async (req, res) => {
 
 const verifyAdminLoginToken = async (req, res, next) => {
   const tokenKey = req.headers["a-x-key"];
-  console.log(tokenKey);
 
   try {
     if (!tokenKey) {
@@ -305,7 +301,6 @@ const logoutAdmin = async (req, res) => {
         const deleteData = await SessionStore.findByIdAndDelete(
           sessionToken._id
         );
-        console.log("deleteData", deleteData);
         if (deleteData) {
           return sendSuccess(res, "Successfully logged out");
         }

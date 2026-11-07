@@ -115,7 +115,6 @@ const verifyEmail = async (req, res, next) => {
   if (!isValidObjectId(userId)) return sendError(res, "Invalid user id");
 
   const user = await User.findById(userId, "-password");
-  console.log(user);
   if (!user) return sendError(res, "Sorry, user not found");
 
   if (user.email_verified)
@@ -244,7 +243,6 @@ const login = async (req, res, next) => {
 
 const isUserLogin = async (req, res) => {
   const tokenKey = req.headers["u-x-key"];
-  console.log(tokenKey);
   try {
     if (!tokenKey) {
       return sendError(res, "Unauthorised. No headers key");
@@ -255,6 +253,10 @@ const isUserLogin = async (req, res) => {
         return sendError(res, "Session token expired");
       }
       if (sessionToken) {
+        const identity = {};
+        if (!(await verifyLoginSession(sessionToken.value, process.env.JWT_USER_SECRET_KEY, identity))) {
+          return sendError(res, "Session token expired");
+        }
         return sendSuccess(res, "You are a logged in user");
       }
     }
@@ -266,7 +268,6 @@ const isUserLogin = async (req, res) => {
 
 const verifyUserLoginToken = async (req, res, next) => {
   const tokenKey = req.headers["u-x-key"];
-  console.log(tokenKey);
   try {
     if (!tokenKey) {
       return sendError(res, "Unauthorised. No headers key");
@@ -277,14 +278,12 @@ const verifyUserLoginToken = async (req, res, next) => {
         return sendError(res, "Authorization token expired");
       }
       if (sessionToken) {
-        console.log("sessionToken", sessionToken);
         const token = sessionToken.value;
         const checkSession = await verifyLoginSession(
           token,
           process.env.JWT_USER_SECRET_KEY,
           req
         );
-        console.log("checkSession", checkSession);
         if (!checkSession) {
           return sendError(res, "Invalid Token");
         } else {
@@ -320,7 +319,6 @@ const logout = async (req, res) => {
         const deleteData = await SessionStore.findByIdAndDelete(
           sessionToken._id
         );
-        console.log("deleteData", deleteData);
         if (deleteData) {
           return sendSuccess(res, "Successfully logged out");
         }
@@ -337,7 +335,6 @@ const logout = async (req, res) => {
 const isEmailRegistered = async (req, res) => {
   const { email } = req.body;
   const user = await checkUserEmailReg(email);
-  console.log(user);
   if (user) {
     return sendSuccess(res, "Email is registered", user);
   } else {
