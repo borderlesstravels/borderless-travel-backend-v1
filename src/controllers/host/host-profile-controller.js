@@ -32,7 +32,7 @@ const getHost = async (req, res) => {
 const getHostNotifications = async (req, res) => {
   const userId = req.id;
   try {
-    const notifications = await Notification.find();
+    const notifications = await Notification.find({ owner: userId });
     if (!notifications.length) {
       return sendSuccess(res, "No notifications record yet");
     }
@@ -51,9 +51,9 @@ const getHostNotifications = async (req, res) => {
 
 const openNotification = async (req, res) => {
   try {
-    const notification = await Notification.findById(req.params.id);
+    const notification = await Notification.findOne({ _id: req.params.id, owner: req.id });
     if (!notification) {
-      return sendSuccess(res, "Invalid notification id supplied");
+      return sendError(res, "Notification not found", 404);
     }
     notification.status = "opened";
     await notification.save();
@@ -116,42 +116,14 @@ const getHostWithdrawals = async (req, res) => {
 };
 
 const makeWithdrawal = async (req, res) => {
-  const { amount, bank_details } = req.body;
-  const userId = req.id;
   try {
-    const hostBalAcc = await HostBalance.findOne({ owner: userId });
-    if (!hostBalAcc) {
-      return sendError(res, "Unable to verify balance");
-    } else {
-      const hostAvailableBal = hostBalAcc.available_balance;
-      if (amount > hostAvailableBal) {
-        return sendError(
-          res,
-          "Amount provided is more than your available balance"
-        );
-      }
-      const newWithdrawal = new HostWithdrawal({
-        owner: userId,
-        amount,
-        bank_details,
-      });
-
-      hostBalAcc.available_balance = hostAvailableBal - amount;
-
-      await newWithdrawal.save();
-      await hostBalAcc.save();
-      return sendSuccess(
-        res,
-        "Successfully submitted your withdrawal request. Kindly wait while we process your request",
-        newWithdrawal
-      );
-    }
+    const { requestHostWithdrawal } = require("../../services/request-host-withdrawal");
+    const withdrawal = await requestHostWithdrawal(req.id, req.body.amount, req.body.bank_details);
+    return sendSuccess(res, "Successfully submitted your withdrawal request. Kindly wait while we process your request", withdrawal);
   } catch (error) {
-    console.log("error", error);
-    return sendError(res, "Unable to complete withdrawal request", 501);
+    return sendError(res, error.status ? error.message : "Unable to complete withdrawal request", error.status || 503);
   }
 };
-
 const addBankDetails = async (req, res) => {
   const { account_name, account_number, bank_data } = req.body;
   const userId = req.id;
@@ -204,11 +176,16 @@ const getHostBankDetails = async (req, res) => {
 const updateHostProfile = async (req, res) => {
   const userId = req.id;
   try {
+    const changes = {};
+    for (const key of ["first_name", "last_name", "phone", "gender"]) {
+      if (typeof req.body[key] === "string") changes[key] = req.body[key].trim();
+    }
     const host = await Host.findByIdAndUpdate(
       userId,
-      { $set: req.body },
-      { new: true }
-    );
+      { $set: changes },
+      { new: true, runValidators: true }
+    ).select("-password");
+    if (!host) return sendError(res, "Profile not found", 404);
     return sendSuccess(
       res,
       "Your profile data has been successfully updated",

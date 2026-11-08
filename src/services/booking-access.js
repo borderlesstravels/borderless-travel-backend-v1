@@ -5,7 +5,11 @@ const { getSessionToken, verifyLoginSession } = require("../middlewares/general"
 
 function issueBookingAccess(booking) {
   if (!process.env.JWT_USER_SECRET_KEY) throw new Error("Booking access signing unavailable");
-  return jwt.sign({ booking_reference: booking.booking_reference }, process.env.JWT_USER_SECRET_KEY, {
+  if (typeof booking.firm !== "string" || !booking.firm ||
+      typeof booking.booking_reference !== "string" || !booking.booking_reference) {
+    throw new Error("Booking access requires a firm and reference");
+  }
+  return jwt.sign({ booking_reference: booking.booking_reference, firm: booking.firm }, process.env.JWT_USER_SECRET_KEY, {
     algorithm: "HS256", audience: "borderless-booking-receipt", expiresIn: "1d",
   });
 }
@@ -17,7 +21,8 @@ async function canReadBooking(req, booking) {
       const claims = jwt.verify(bearer.slice(7), process.env.JWT_USER_SECRET_KEY, {
         algorithms: ["HS256"], audience: "borderless-booking-receipt",
       });
-      if (claims.booking_reference === booking.booking_reference) return true;
+      if (typeof claims.firm === "string" && claims.firm &&
+          claims.booking_reference === booking.booking_reference && claims.firm === booking.firm) return true;
     } catch { /* An invalid receipt never grants access. */ }
   }
   if (req.headers["u-x-key"]) {

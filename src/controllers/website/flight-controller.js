@@ -314,121 +314,22 @@ const bookFlight = async (req, res, next) => {
   }
 };
 
-const bookFlightThirdParty = async (req, res, next) => {
+const bookFlightThirdParty = async (req, res) => {
   const { firm, api_key } = req.headers;
   if (!(await verifyAPIToken(res, firm, api_key))) return;
-  const { flight_id } = req.params;
-  const { contact_details, passenger_details } = req.body;
-
   try {
-    const response = await sender_tiqwa(`/flight/book/${flight_id}`, {
-      passengers: passenger_details,
+    const { createFlightBooking } = require("../../services/create-flight-booking");
+    const { issueBookingAccess } = require("../../services/booking-access");
+    const { booking, providerResponse } = await createFlightBooking({
+      firm, apiKey: api_key, offer: req.params.flight_id, body: req.body,
+      returnProviderResponse: true,
     });
-    if (!response) {
-      return sendError(
-        res,
-        "Unable to complete this request at this time. Please try again.",
-      );
-    }
-    if (response?.status === 200) {
-      const outboundData = response.data.outbound;
-      const destPicker = Number(outboundData.length - 1);
-
-      const airline = outboundData[0].airline_details.name;
-      const airline_logo = outboundData[0].airline_details.logo;
-      const departure_time = outboundData[0].departure_time;
-      const arrival_time = outboundData[destPicker].arrival_time;
-
-      const origin_code = outboundData[0].airport_from;
-      const destination_code = outboundData[destPicker].airport_to;
-
-      const findAirports = await fetcher_tiqwa("/airports");
-      if (!findAirports) {
-        return sendError(
-          res,
-          "Unable to complete this request at this time. Please try again.",
-        );
-      }
-      if (findAirports?.status === 200) {
-        const allAirports = findAirports.data;
-        const departureAirport = allAirports.filter(
-          (airport) => airport.iata_code === origin_code,
-        );
-        const arrivalAirport = allAirports.filter(
-          (airport) => airport.iata_code === destination_code,
-        );
-
-        const origin = departureAirport[0].city;
-        const destination = arrivalAirport[0].city;
-        const total_paid = response.data.amount;
-        const service_cost = response.data.pricing.payable;
-        const profit = response.data.pricing.markup.markup_value;
-
-        try {
-          const newBooking = new FlightBooking({
-            owner: contact_details.c_email,
-            firm: firm,
-            api_key: api_key,
-            contact_details: contact_details,
-            passenger_details: passenger_details,
-            contact_relationship: contact_details.c_relationship_to_p,
-            airline,
-            airline_logo,
-            departure_time,
-            arrival_time,
-            origin_code,
-            destination_code,
-            origin,
-            destination,
-            price: total_paid,
-            status: response?.data?.status,
-            booking_reference: response?.data.reference,
-          });
-          await newBooking.save();
-          const newSale = new SaleRecord({
-            purchasing_firm: firm,
-            sale_reference: response?.data?.reference,
-            service: process.env.FLIGHT_SERVICE_NAME.toLowerCase(),
-            service_provider: process.env.FLIGHT_SERVICE_PROVIDER.toLowerCase(),
-            total_paid,
-            service_cost,
-            profit,
-          });
-          await newSale.save();
-          return res
-            .status(response.status)
-            .json({ success: true, data: response.data });
-        } catch (error) {
-          console.log(
-            `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error -`,
-            error,
-          );
-          return sendError(
-            res,
-            `Ticket booked, but we are unable to save your data on our database. Kindly get in touch with us soon. Booking ID: ${response?.data.reference}`,
-          );
-        }
-      } else {
-        console.log(
-          `Flight booked but unable to save booking details. Booking ID: ${response?.data.reference}. \n Error - Unable to locate airports`,
-        );
-        return sendError(
-          res,
-          `Booking established but could not be completed. Kindly reach out to support with this booking ID: ${response?.data.reference}`,
-        );
-      }
-    } else {
-      return sendError(res, response?.statusText, response?.status);
-    }
+    return res.status(200).json({ success: true, data: providerResponse,
+      booking_access_token: issueBookingAccess(booking) });
   } catch (error) {
-    console.log("Unable to complete flight booking. Error -", error);
-    return sendError(
-      res,
-      `Unable to book your flight at this time. Error - ${error}`,
-    );
+    return sendError(res, error.status ? error.message : "Booking requires reconciliation. Contact support before retrying.", error.status || 503);
   }
 };
-
 const fetchFlightTicketDetails = async (req, res) => {
   res.set("Cache-Control", "private, no-store");
   const { firm, api_key } = req.headers;

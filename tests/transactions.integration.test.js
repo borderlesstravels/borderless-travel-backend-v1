@@ -15,8 +15,12 @@ const Attempt = require("../src/models/general/BookingAttempt");
 const User = require("../src/models/user/User");
 const Session = require("../src/models/general/SessionStore");
 const jwt = require("jsonwebtoken");
+const Host = require("../src/models/host/Host");
+const Notification = require("../src/models/general/Notification");
+const BankAccount = require("../src/models/host/HostBankAccount");
+const Withdrawal = require("../src/models/host/HostWithdrawal");
 const { recordPayment } = require("../src/services/record-payment");
-let repl, originalGet, originalSender, providerCalls;
+let repl, originalGet, originalSender, originalFetcher, providerCalls;
 const flightData = (ref = "TW-example") => ({ owner: "owner@example.test", firm: "site", api_key: "test-public",
   contact_details: { c_first_name: "First", c_last_name: "Last", c_email: "owner@example.test", c_relationship_to_p: "self" },
   passenger_details: [{ first_name: "First" }], contact_relationship: "self", airline: "Example", airline_logo: "example-logo",
@@ -27,14 +31,17 @@ test.before(async () => {
   // Ephemeral loopback-only replica set. Never connects to DB_URI/production.
   repl = await MongoMemoryReplSet.create({ binary: { version: "7.0.14" }, replSet: { count: 1, storageEngine: "wiredTiger" } });
   await mongoose.connect(repl.getUri(), { dbName: "security-regression" });
-  await Promise.all([Flight, Shortlet, Payment, Receipt, Sale, Markup, HostBalance, HostEarning, Attempt, User, Session].map(model => model.init()));
+  await Promise.all([Flight, Shortlet, Payment, Receipt, Sale, Markup, HostBalance, HostEarning, Attempt, User, Session, Host, Notification, BankAccount, Withdrawal].map(model => model.init()));
   process.env.PAYSTACK_SECRET = "test-secret";
   process.env.JWT_USER_SECRET_KEY = "test-session-secret";
+  process.env.JWT_HOST_SECRET_KEY = "test-host-session-secret";
   originalGet = axios.get;
   axios.get = async url => ({ data: { status: true, data: { status: "success", reference: url.split("/").at(-1),
     amount: 100000, currency: "NGN", customer: { email: "owner@example.test" },
     metadata: { booking_reference: "TW-example" }, paid_at: "2026-11-07T10:00:00Z" } } });
   const sender = require("../src/api/sender"); originalSender = sender.sender_tiqwa;
+  const fetcher = require("../src/api/fetcher"); originalFetcher = fetcher.fetcher_tiqwa;
+  fetcher.fetcher_tiqwa = async () => ({ status: 200, data: { reference: "TW-example", status: "booked" } });
   sender.sender_tiqwa = async () => { providerCalls++; return { status: 200, data: {
     reference: "TW-example", amount: 1000, status: "booked", currency: "NGN",
     pricing: { payable: 900, markup: { markup_value: 100 } }, outbound: [{
@@ -46,6 +53,7 @@ test.before(async () => {
 test.after(async () => {
   if (originalGet) axios.get = originalGet;
   if (originalSender) require("../src/api/sender").sender_tiqwa = originalSender;
+  if (originalFetcher) require("../src/api/fetcher").fetcher_tiqwa = originalFetcher;
   await mongoose.disconnect(); if (repl) await repl.stop();
 });
 test.beforeEach(async () => {
@@ -125,6 +133,64 @@ test("real replica set: uncertain provider attempt is not automatically retried"
   assert.equal(providerCalls, 0);
 });
 
+test("real replica set: partner response survives local failure and concurrent retries without rebooking", async () => {
+  const { createFlightBooking } = require("../src/services/create-flight-booking");
+  const request = { firm: "partner", apiKey: "partner-key", offer: "partner-offer", returnProviderResponse: true,
+    body: { contact_details: flightData().contact_details, passenger_details: flightData().passenger_details } };
+  const create = Sale.create;
+  Sale.create = async () => { throw new Error("Local ledger unavailable"); };
+  try { await assert.rejects(createFlightBooking(request)); } finally { Sale.create = create; }
+  assert.equal(await Flight.countDocuments(), 0);
+  const [first, second] = await Promise.all([createFlightBooking(request), createFlightBooking(request)]);
+  assert.equal(providerCalls, 1);
+  assert.equal(await Flight.countDocuments(), 1);
+  assert.equal(await Sale.countDocuments(), 1);
+  assert.equal(String(first.booking._id), String(second.booking._id));
+  assert.deepEqual(first.providerResponse, second.providerResponse);
+  assert.equal(first.providerResponse.reference, "TW-example");
+  assert.equal(first.providerResponse.outbound[0].airport_from, "LOS");
+  assert.equal(first.booking.payment_status, "pending");
+  assert.equal((await Attempt.findOne()).state, "completed");
+});
+
+test("HTTP: partner booking returns a scoped receipt and preserves its response on retry", async () => {
+  const APIToken = require("../src/models/app-core/APIToken");
+  await APIToken.create({ firm: "partner", api_key: "partner-key", action_by: "test-admin" });
+  const { createApp } = require("../server/createApp");
+  const server = createApp().listen(0, "127.0.0.1");
+  await new Promise(resolve => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api/v1/flight`;
+  const headers = { firm: "partner", api_key: "partner-key", "Content-Type": "application/json" };
+  const body = JSON.stringify({
+    contact_details: { ...flightData().contact_details, c_phone_number: "123456789" },
+    passenger_details: [{ passenger_type: "adult", first_name: "First", last_name: "Last", dob: "1990-01-01",
+      gender: "male", title: "Mr", email: "owner@example.test", phone_number: "123456789" }],
+  });
+  try {
+    for (let i = 0; i < 2; i++) {
+      const response = await fetch(`${base}/book-flight-tp/partner-offer`, { method: "POST", headers, body });
+      assert.equal(response.status, 200);
+      const result = await response.json();
+      assert.equal(result.data.reference, "TW-example");
+      const claims = jwt.verify(result.booking_access_token, process.env.JWT_USER_SECRET_KEY, {
+        algorithms: ["HS256"], audience: "borderless-booking-receipt",
+      });
+      assert.equal(claims.firm, "partner");
+      assert.equal(claims.booking_reference, "TW-example");
+      // The public partner key alone must not reveal passenger/ticket data.
+      const denied = await fetch(`${base}/flight-ticket-details/TW-example`, { headers });
+      assert.equal(denied.status, 404);
+      const allowed = await fetch(`${base}/flight-ticket-details/TW-example`, {
+        headers: { ...headers, Authorization: `Bearer ${result.booking_access_token}` },
+      });
+      assert.equal(allowed.status, 200);
+    }
+    assert.equal(providerCalls, 1);
+    assert.equal(await Flight.countDocuments(), 1);
+    assert.equal(await Sale.countDocuments(), 1);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
 test("HTTP: authenticated user cannot read another user's booking or change account security fields", async () => {
   const { createApp } = require("../server/createApp");
   const user = await User.create({ first_name: "First", last_name: "Last", email: "signed-in@example.test", password: "test-password", email_verified: true });
@@ -150,6 +216,82 @@ test("HTTP: authenticated user cannot read another user's booking or change acco
       assert.equal((await fetch(`${base}/website/${endpoint}`)).status, 401);
     }
   } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test("HTTP: host cannot change approval/security fields or open another host's notification", async () => {
+  const host = await Host.create({ first_name: "First", last_name: "Last", email: "host@example.test", password: "unchanged-password" });
+  const owner = String(host._id);
+  await Session.create({ owner, key: "host-session", value: jwt.sign({ id: owner }, process.env.JWT_HOST_SECRET_KEY, { expiresIn: "1h" }) });
+  const own = await Notification.create({ owner, type: "booking", title: "Own", description: "Own notification" });
+  const foreign = await Notification.create({ owner: "other-host", type: "booking", title: "Private", description: "Private notification" });
+  const { createApp } = require("../server/createApp");
+  const server = createApp().listen(0, "127.0.0.1");
+  await new Promise(resolve => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api/v1/host-app/profile`;
+  const headers = { "u-x-key": "host-session", "Content-Type": "application/json" };
+  try {
+    const changed = await fetch(`${base}/update-profile`, { method: "PUT", headers, body: JSON.stringify({
+      first_name: "Updated", email: "hijacked@example.test", password: "hijacked-password", email_verified: true,
+      status: "Approved", properties: 100, guests: 100,
+    }) });
+    assert.equal(changed.status, 200);
+    assert.equal((await changed.json()).data.password, undefined);
+    const saved = await Host.findById(owner);
+    assert.equal(saved.first_name, "Updated"); assert.equal(saved.email, "host@example.test");
+    assert.equal(saved.password, "unchanged-password"); assert.equal(saved.email_verified, false);
+    assert.equal(saved.status, "Pending"); assert.equal(saved.properties, 0); assert.equal(saved.guests, 0);
+    const notifications = await (await fetch(`${base}/notifications`, { headers })).json();
+    assert.equal(notifications.data.length, 1);
+    assert.equal(notifications.data[0]._id, String(own._id));
+    const denied = await fetch(`${base}/open-notification/${foreign._id}`, { method: "PUT", headers });
+    assert.equal(denied.status, 404);
+    assert.equal((await Notification.findById(foreign._id)).status, "pending");
+    assert.equal((await fetch(`${base}/open-notification/${own._id}`, { method: "PUT", headers })).status, 200);
+    assert.equal((await Notification.findById(own._id)).status, "opened");
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+async function seedWithdrawal() {
+  await HostBalance.create({ owner: "host", available_balance: 1000 });
+  return BankAccount.create({ owner: "host", account_name: "Saved Name", account_number: "1234567890", bank_data: { code: "123", name: "Saved Bank" } });
+}
+const withdrawalBank = { account_name: "Client Override", account_number: "1234567890", bank_data: { code: "123", name: "Client Override" } };
+
+test("real replica set: invalid withdrawals and foreign bank accounts cannot change balances", async () => {
+  const { requestHostWithdrawal } = require("../src/services/request-host-withdrawal");
+  await seedWithdrawal();
+  for (const amount of [-100, 0, NaN, Infinity, "100", {}, 0.001, 1.234, Number.MAX_SAFE_INTEGER]) {
+    await assert.rejects(requestHostWithdrawal("host", amount, withdrawalBank), e => e.status === 400);
+  }
+  await BankAccount.updateOne({ owner: "host" }, { $set: { owner: "other-host" } });
+  await assert.rejects(requestHostWithdrawal("host", 100, withdrawalBank), e => e.status === 404);
+  assert.equal(Number((await HostBalance.findOne()).available_balance), 1000);
+  assert.equal(await Withdrawal.countDocuments(), 0);
+});
+
+test("real replica set: competing withdrawals cannot overspend and bank details come from storage", async () => {
+  const { requestHostWithdrawal } = require("../src/services/request-host-withdrawal");
+  await seedWithdrawal();
+  const results = await Promise.allSettled([
+    requestHostWithdrawal("host", 700, withdrawalBank), requestHostWithdrawal("host", 700, withdrawalBank),
+  ]);
+  assert.equal(results.filter(r => r.status === "fulfilled").length, 1);
+  assert.equal(results.find(r => r.status === "rejected").reason.status, 409);
+  assert.equal(Number((await HostBalance.findOne()).available_balance), 300);
+  assert.equal(await Withdrawal.countDocuments(), 1);
+  const saved = await Withdrawal.findOne();
+  assert.equal(saved.bank_details.account_name, "Saved Name");
+  assert.equal(saved.bank_details.bank_data.name, "Saved Bank");
+});
+
+test("real replica set: withdrawal record failure rolls back the balance debit", async () => {
+  const { requestHostWithdrawal } = require("../src/services/request-host-withdrawal");
+  await seedWithdrawal();
+  const create = Withdrawal.create;
+  Withdrawal.create = async () => { throw new Error("Withdrawal storage unavailable"); };
+  try { await assert.rejects(requestHostWithdrawal("host", 100, withdrawalBank)); } finally { Withdrawal.create = create; }
+  assert.equal(Number((await HostBalance.findOne()).available_balance), 1000);
+  assert.equal(await Withdrawal.countDocuments(), 0);
 });
 
 test("HTTP: signed Paystack notification records once; unsigned or modified payloads are denied", async () => {

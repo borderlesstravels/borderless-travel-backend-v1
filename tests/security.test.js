@@ -16,7 +16,7 @@ function load(relative, mocks = {}) {
 }
 
 const integrity = load("src/services/payment-integrity.js", { axios: {} });
-const booking = { price: 1000, currency: "NGN", booking_reference: "TW-example", contact_details: { c_email: "owner@example.test" } };
+const booking = { price: 1000, currency: "NGN", firm: "site", booking_reference: "TW-example", contact_details: { c_email: "owner@example.test" } };
 const good = () => ({ status: "success", reference: "payment-1", amount: 100000, currency: "NGN",
   metadata: { booking_reference: "TW-example" }, customer: { email: "owner@example.test" }, paid_at: "2026-11-07T10:00:00Z" });
 
@@ -149,6 +149,14 @@ test("receipt grants access only to its exact booking", async () => {
   const service = access(); const token = service.issueBookingAccess(booking);
   assert.equal(await service.canReadBooking({ headers: { authorization: `Bearer ${token}` } }, booking), true);
   assert.equal(await service.canReadBooking({ headers: { authorization: `Bearer ${token}` } }, { booking_reference: "other" }), false);
+});
+
+test("receipt cannot cross firms even when booking references match", async () => {
+  const service = access(); const token = service.issueBookingAccess(booking);
+  assert.equal(await service.canReadBooking({ headers: { authorization: `Bearer ${token}` } }, { ...booking, firm: "another-partner" }), false);
+  assert.throws(() => service.issueBookingAccess({ ...booking, firm: undefined }));
+  const legacy = jwt.sign({ booking_reference: booking.booking_reference }, "test-session-secret", { audience: "borderless-booking-receipt", expiresIn: "1h" });
+  assert.equal(await service.canReadBooking({ headers: { authorization: `Bearer ${legacy}` } }, booking), false);
 });
 test("expired, wrong-audience, unsigned, and tampered receipts are refused", async () => {
   const service = access();

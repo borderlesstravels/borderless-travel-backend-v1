@@ -18,7 +18,14 @@ function attemptKey(firm, offer, body) {
   return crypto.createHash("sha256").update(JSON.stringify(canonical({ firm, offer, body }))).digest("hex");
 }
 
-async function createFlightBooking({ firm, apiKey, offer, body }) {
+async function createFlightBooking({ firm, apiKey, offer, body, returnProviderResponse = false }) {
+  const result = (booking, attempt) => {
+    if (!returnProviderResponse) return booking;
+    if (!attempt.provider_result?.response) {
+      throw new PaymentError("Booking response requires reconciliation. Contact support.", 409);
+    }
+    return { booking, providerResponse: attempt.provider_result.response };
+  };
   const key = attemptKey(firm, offer, body);
   let attempt;
   try {
@@ -29,7 +36,7 @@ async function createFlightBooking({ firm, apiKey, offer, body }) {
     if (attempt?.state === "completed") {
       const booking = await FlightBooking.findById(attempt.booking_id);
       if (!booking) throw new PaymentError("Booking requires reconciliation. Contact support.", 409);
-      return booking;
+      return result(booking, attempt);
     }
     if (attempt?.state !== "provider_confirmed") {
       throw new PaymentError("This booking is processing or its provider result is uncertain. Contact support before retrying.", 409);
@@ -48,7 +55,9 @@ async function createFlightBooking({ firm, apiKey, offer, body }) {
     attempt.provider_reference = p.reference;
     attempt.provider_result = { segments, amount: p.amount, pricing: p.pricing,
       currency: p.currency || "NGN", status: p.status,
-      is_multicity: Boolean(p.is_multicity), has_inbound: Boolean(p.inbound?.length) };
+      is_multicity: Boolean(p.is_multicity), has_inbound: Boolean(p.inbound?.length),
+      // Preserve the partner response across local-write recovery and retries.
+      response: p };
     attempt.state = "provider_confirmed";
     await attempt.save();
   }
@@ -91,7 +100,7 @@ async function createFlightBooking({ firm, apiKey, offer, body }) {
       current.booking_id = booking._id;
       await current.save({ session });
     });
-    return booking;
+    return result(booking, attempt);
   } finally { await session.endSession(); }
 }
 
