@@ -84,26 +84,25 @@ const generateAdminEmailVerificationToken = async (req, res, next) => {
 };
 
 const updateAdminProfile = async (req, res) => {
-  if (req.body.password) {
-    req.body.password = bcrypt.hashSync(req.body.password);
-  }
   try {
-    const savedAdminProfile = await Admin.findByIdAndUpdate(
-      req.params.id,
-      { $set: req.body },
-      { new: true, runValidators: true }
-    ).select("-password");
-    return res.status(200).json({
-      success: true,
-      message: "Successfully updated the admin profile",
-      data: savedAdminProfile,
-    });
+    const changes = {};
+    for (const key of ["first_name", "last_name", "email", "phone", "username", "nationality", "role"]) {
+      if (typeof req.body[key] === "string") changes[key] = req.body[key].trim();
+    }
+    if (changes.email) { changes.email = changes.email.toLowerCase(); changes.email_verified = false; }
+    if (req.body.password !== undefined) {
+      if (typeof req.body.password !== "string" || req.body.password.length < 8 || req.body.password.length > 20) {
+        return sendError(res, "Password must be between 8 and 20 characters", 400);
+      }
+      changes.password = bcrypt.hashSync(req.body.password, 10);
+    }
+    const credentialChange = ["email", "password", "role"].some(key => Object.hasOwn(changes, key));
+    const admin = await require("../../services/admin-credentials").updateAdminAccount(req.params.id, changes, credentialChange);
+    return sendSuccess(res, "Successfully updated the admin profile", admin);
   } catch (error) {
-    console.log(error);
-    return sendError(res, "Unable to update the admin profile");
+    return sendError(res, error.status ? error.message : "Unable to update the admin profile", error.status || 503);
   }
 };
-
 const setProfileAvatar = async (req, res) => {
   const { uploadSingleImage } = require("../../middlewares/general");
   const avatar = await uploadSingleImage(req, res);

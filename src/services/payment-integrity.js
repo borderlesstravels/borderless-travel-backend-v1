@@ -11,7 +11,8 @@ const asNumber = (value) => Number(value?.value ?? value);
 const minorUnits = (value) => {
   const amount = asNumber(value);
   const minor = Math.round(amount * 100);
-  if (!Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(minor)) {
+  if (!Number.isFinite(amount) || amount <= 0 || minor < 1 || !Number.isSafeInteger(minor) ||
+      Math.abs(amount * 100 - minor) > 1e-7) {
     throw new PaymentError("Invalid stored booking amount", 409);
   }
   return minor;

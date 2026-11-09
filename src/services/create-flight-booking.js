@@ -4,7 +4,7 @@ const Attempt = require("../models/general/BookingAttempt");
 const FlightBooking = require("../models/general/FlightBooking");
 const SaleRecord = require("../models/general/SaleRecord");
 const { sender_tiqwa } = require("../api/sender");
-const { PaymentError, asNumber } = require("./payment-integrity");
+const { PaymentError, asNumber, minorUnits } = require("./payment-integrity");
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
@@ -65,6 +65,13 @@ async function createFlightBooking({ firm, apiKey, offer, body, returnProviderRe
   const first = provider.segments?.[0];
   const last = provider.segments?.at(-1);
   if (!first || !last) throw new PaymentError(`Booking requires reconciliation. Reference: ${attempt.provider_reference}`, 409);
+  const totalMinor = minorUnits(provider.amount);
+  const cost = asNumber(provider.pricing?.payable);
+  const costMinor = Math.round(cost * 100);
+  if (!Number.isFinite(cost) || cost < 0 || !Number.isSafeInteger(costMinor) ||
+      Math.abs(cost * 100 - costMinor) > 1e-7 || costMinor > totalMinor) {
+    throw new PaymentError("Provider pricing requires reconciliation before local booking completion", 409);
+  }
   const session = await mongoose.startSession();
   let booking;
   try {
@@ -87,14 +94,14 @@ async function createFlightBooking({ firm, apiKey, offer, body, returnProviderRe
         origin: first.airport_from, destination: last.airport_to,
         trip_type: provider.is_multicity ? "multi-city" : provider.has_inbound ? "return" : "one-way",
         is_multicity: provider.is_multicity, payment_status: "pending",
-        currency: provider.currency, price: asNumber(provider.amount),
+        currency: provider.currency, price: totalMinor / 100,
         status: provider.status, booking_reference: current.provider_reference,
       }], { session });
       await SaleRecord.create([{
         purchasing_firm: firm, sale_reference: current.provider_reference,
         service: "flight", service_provider: process.env.FLIGHT_SERVICE_PROVIDER || "tiqwa",
-        total_paid: asNumber(provider.amount), service_cost: asNumber(provider.pricing?.payable),
-        profit: asNumber(provider.pricing?.markup?.markup_value),
+        total_paid: totalMinor / 100, service_cost: costMinor / 100,
+        profit: (totalMinor - costMinor) / 100,
       }], { session });
       current.state = "completed";
       current.booking_id = booking._id;

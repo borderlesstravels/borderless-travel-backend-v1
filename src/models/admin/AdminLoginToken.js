@@ -3,6 +3,9 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const adminLoginTokenSchema = new Schema({
+    challenge_hash: String,
+    credential_digest: String,
+    expires_at: Date,
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Admin',

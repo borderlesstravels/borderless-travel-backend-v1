@@ -72,7 +72,7 @@ router.post(
 
 router.get("/get-admin", verifyAdminLoginToken, getAdmin);
 
-router.get("/check-session", isAdminLogin);
+router.get("/check-session", verifyAdminLoginToken, isAdminLogin);
 router.post("/logout", logoutAdmin);
 
 module.exports = router;

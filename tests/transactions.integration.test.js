@@ -25,9 +25,11 @@ const transferGateway = require("../src/services/paystack-transfers");
 const originalTransferGateway = { ...transferGateway };
 const RateBucket = require("../src/models/general/AuthRateBucket");
 const AdminLoginToken = require("../src/models/admin/AdminLoginToken");
+const AdminReset = require("../src/models/admin/ResetAdminPasswordToken");
+const TicketAttempt = require("../src/models/general/TicketIssueAttempt");
 let transferCalls, transferStatus;
 const { recordPayment } = require("../src/services/record-payment");
-let repl, originalGet, originalSender, originalFetcher, providerCalls;
+let repl, originalGet, originalSender, originalFetcher, providerCalls, providerPricing;
 const flightData = (ref = "TW-example") => ({ owner: "owner@example.test", firm: "site", api_key: "test-public",
   contact_details: { c_first_name: "First", c_last_name: "Last", c_email: "owner@example.test", c_relationship_to_p: "self" },
   passenger_details: [{ first_name: "First" }], contact_relationship: "self", airline: "Example", airline_logo: "example-logo",
@@ -38,7 +40,7 @@ test.before(async () => {
   // Ephemeral loopback-only replica set. Never connects to DB_URI/production.
   repl = await MongoMemoryReplSet.create({ binary: { version: "7.0.14" }, replSet: { count: 1, storageEngine: "wiredTiger" } });
   await mongoose.connect(repl.getUri(), { dbName: "security-regression" });
-  await Promise.all([Flight, Shortlet, Payment, Receipt, Sale, Markup, HostBalance, HostEarning, Attempt, User, Session, Host, Notification, BankAccount, Withdrawal, Listing, Admin, RateBucket, AdminLoginToken].map(model => model.init()));
+  await Promise.all([Flight, Shortlet, Payment, Receipt, Sale, Markup, HostBalance, HostEarning, Attempt, User, Session, Host, Notification, BankAccount, Withdrawal, Listing, Admin, RateBucket, AdminLoginToken, AdminReset, TicketAttempt].map(model => model.init()));
   process.env.PAYSTACK_SECRET = "test-secret";
   process.env.JWT_USER_SECRET_KEY = "test-session-secret";
   process.env.JWT_HOST_SECRET_KEY = "test-host-session-secret";
@@ -52,7 +54,7 @@ test.before(async () => {
   fetcher.fetcher_tiqwa = async () => ({ status: 200, data: { reference: "TW-example", status: "booked" } });
   sender.sender_tiqwa = async () => { providerCalls++; return { status: 200, data: {
     reference: "TW-example", amount: 1000, status: "booked", currency: "NGN",
-    pricing: { payable: 900, markup: { markup_value: 100 } }, outbound: [{
+    pricing: providerPricing, outbound: [{
       airline_details: { name: "Example", logo: "example-logo" }, departure_time: "2026-12-12", arrival_time: "2026-12-13",
       airport_from: "LOS", airport_to: "LHR",
     }],
@@ -67,6 +69,7 @@ test.after(async () => {
 });
 test.beforeEach(async () => {
   providerCalls = 0;
+  providerPricing = { payable: 900, markup: { markup_value: 100 } };
   transferCalls = 0; transferStatus = "success";
   transferGateway.createRecipient = async () => ({ recipient_code: "RCP_test" });
   transferGateway.initiateTransfer = async () => { transferCalls++; return { status: "pending" }; };
@@ -401,9 +404,9 @@ test("HTTP: listing and booking routes require host ownership and exclude partne
 });
 
 test("HTTP: admin payout routes deny missing, deleted and mismatched administrator sessions", async () => {
-  const admin = await Admin.create({ first_name: "Admin", last_name: "Person", email: "admin@example.test", password: "test-password" });
+  const admin = await Admin.create({ first_name: "Admin", last_name: "Person", email: "admin@example.test", email_verified: true, password: "test-password" });
   const owner = String(admin._id);
-  await Session.create({ owner, key: "admin-session", value: jwt.sign({ id: owner }, process.env.JWT_ADMIN_SECRET_KEY, { expiresIn: "1h" }) });
+  await Session.create({ owner, key: "admin-session", value: jwt.sign({ id: owner, auth_version: 0 }, process.env.JWT_ADMIN_SECRET_KEY, { expiresIn: "1h" }) });
   const request = await seedReview();
   const { createApp } = require("../server/createApp");
   const server = createApp().listen(0, "127.0.0.1");
@@ -449,11 +452,11 @@ test("real replica set: failed rejection transaction cannot release funds withou
 });
 
 test("HTTP: admin directory and profile responses never return password hashes", async () => {
-  const admin = await Admin.create({ first_name: "Admin", last_name: "Person", email: "admin@example.test", password: "private-admin-hash" });
+  const admin = await Admin.create({ first_name: "Admin", last_name: "Person", email: "admin@example.test", email_verified: true, password: "private-admin-hash" });
   const host = await Host.create({ first_name: "First", last_name: "Last", email: "host@example.test", password: "private-host-hash" });
   const user = await User.create({ first_name: "First", last_name: "Last", email: "user@example.test", password: "private-user-hash" });
   const owner = String(admin._id);
-  await Session.create({ owner, key: "directory-admin", value: jwt.sign({ id: owner }, process.env.JWT_ADMIN_SECRET_KEY, { expiresIn: "1h" }) });
+  await Session.create({ owner, key: "directory-admin", value: jwt.sign({ id: owner, auth_version: 0 }, process.env.JWT_ADMIN_SECRET_KEY, { expiresIn: "1h" }) });
   const { createApp } = require("../server/createApp");
   const server = createApp().listen(0, "127.0.0.1");
   await new Promise(resolve => server.once("listening", resolve));
@@ -526,19 +529,323 @@ test("HTTP: login throttles a resolved account and returns Retry-After", async (
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 
-test("real replica set: a concurrent admin OTP verification has one winner; expired tokens are refused before TTL deletion", async () => {
-  const controller = require("../src/controllers/admin/admin-auth-controller");
-  const admin = await Admin.create({ first_name: "Admin", last_name: "Person", email: "admin@example.test", password: "test-password" });
-  const token = await AdminLoginToken.create({ owner: admin._id, token: require("bcryptjs").hashSync("123456", 4) });
-  const response = () => ({ statusCode: 200, status(code) { this.statusCode = code; return this; }, json() { return this; } });
-  let accepted = 0;
-  await Promise.all(Array.from({ length: 2 }, () => controller.verifyLoginAttempt({ body: { userId: String(admin._id), otp: "123456" } }, response(), () => { accepted++; })));
-  assert.equal(accepted, 1); assert.equal(await AdminLoginToken.countDocuments(), 0);
-  await AdminLoginToken.collection.insertOne({ owner: admin._id, token: token.token, createdAt: new Date(Date.now() - 3601000) });
-  await controller.verifyLoginAttempt({ body: { userId: String(admin._id), otp: "123456" } }, response(), () => { accepted++; });
-  assert.equal(accepted, 1);
+test("real replica set: concurrent admin challenge verification has one winner; expired challenges fail before TTL deletion", async () => {
+  const { startAdminChallenge, consumeAdminChallenge } = require("../src/services/admin-login-challenge");
+  const admin = await Admin.create({ first_name: "Admin", last_name: "Person", email: "admin@example.test", email_verified: true, password: "test-password" });
+  const challenge = await startAdminChallenge(admin);
+  const results = await Promise.allSettled(Array.from({ length: 2 }, () => consumeAdminChallenge(admin, challenge.login_challenge, challenge.otp)));
+  assert.equal(results.filter(result => result.status === "fulfilled").length, 1);
+  assert.equal(await AdminLoginToken.countDocuments(), 0);
+  const expired = await startAdminChallenge(admin);
+  await AdminLoginToken.updateOne({ _id: expired.login_challenge.split(".")[0] }, { $set: { expires_at: new Date(Date.now() - 1000) } });
+  await assert.rejects(consumeAdminChallenge(admin, expired.login_challenge, expired.otp), error => error.status === 401);
+  assert.equal(await AdminLoginToken.countDocuments(), 1);
 });
 const withdrawalBank = { account_name: "Client Override", account_number: "1234567890", bank_data: { code: "123", name: "Client Override" } };
+
+function controllerResponse() {
+  return { statusCode: 200, headers: {}, status(code) { this.statusCode = code; return this; },
+    json(body) { this.body = body; return this; }, set(key, value) { this.headers[key] = value; return this; },
+    header(key, value) { this.headers[key] = value; return this; } };
+}
+async function challengeAdmin() {
+  return Admin.create({ first_name: "Admin", last_name: "Person", email: "admin@example.test", email_verified: true,
+    password: require("bcryptjs").hashSync("correct-password", 4) });
+}
+
+async function paidFlight() { await seedFlight(); await recordPayment(input); }
+function ticketProvider({ pending = false, timeout = false } = {}) {
+  const fetcher = require("../src/api/fetcher"), sender = require("../src/api/sender");
+  const previousFetch = fetcher.fetcher_tiqwa, previousSend = sender.sender_tiqwa;
+  let state = "booked", calls = 0, reads = 0;
+  fetcher.fetcher_tiqwa = async () => { reads++; return { status: 200, data: { reference: "TW-example", status: state } }; };
+  sender.sender_tiqwa = async url => {
+    assert.equal(url, "/flight/pay/TW-example"); calls++;
+    if (timeout) throw new Error("Provider timeout");
+    if (!pending) state = "issued";
+    return { status: 200, data: { reference: "TW-example" } };
+  };
+  return { get calls() { return calls; }, get reads() { return reads; }, issued() { state = "issued"; },
+    restore() { fetcher.fetcher_tiqwa = previousFetch; sender.sender_tiqwa = previousSend; } };
+}
+const issueInput = { firm: "site", reference: "TW-example", admin: "test-admin" };
+
+test("real replica set: booking margin uses confirmed amounts when provider markup is absent", async () => {
+  providerPricing = { payable: 900, markup: null };
+  const { createFlightBooking } = require("../src/services/create-flight-booking");
+  const booking = await createFlightBooking({ firm: "site", apiKey: "test-public", offer: "null-markup", body: {
+    contact_details: flightData().contact_details, passenger_details: flightData().passenger_details,
+  } });
+  const sale = await Sale.findOne();
+  assert.equal(Number(booking.price), 1000); assert.equal(Number(sale.service_cost), 900);
+  assert.equal(Number(sale.profit), 100); assert.equal(providerCalls, 1);
+});
+
+test("real replica set: contradictory provider pricing remains reconcilable and cannot trigger another reservation", async () => {
+  providerPricing = { payable: 1100 };
+  const { createFlightBooking } = require("../src/services/create-flight-booking");
+  const request = { firm: "site", apiKey: "test-public", offer: "invalid-pricing", body: {
+    contact_details: flightData().contact_details, passenger_details: flightData().passenger_details,
+  } };
+  await assert.rejects(createFlightBooking(request), error => error.status === 409);
+  await assert.rejects(createFlightBooking(request), error => error.status === 409);
+  assert.equal((await Attempt.findOne()).state, "provider_confirmed");
+  assert.equal(providerCalls, 1); assert.equal(await Flight.countDocuments(), 0); assert.equal(await Sale.countDocuments(), 0);
+});
+
+test("real replica set: flight reconciliation compares authority without changing records or leaking provider details", async () => {
+  await paidFlight();
+  const { flightReconciliation } = require("../src/services/flight-reconciliation");
+  const report = await flightReconciliation(await Flight.findOne());
+  assert.equal(report.payment_verification, "verified"); assert.equal(report.atomic_payment_receipt, true);
+  assert.equal(report.provider_status, "booked"); assert.ok(report.issues.includes("paid_booking_not_confirmed_issued"));
+  assert.equal(JSON.stringify(report).includes("owner@example.test"), false);
+  assert.equal(JSON.stringify(report).includes("test-public"), false);
+  assert.equal(await TicketAttempt.countDocuments(), 0); assert.equal(await Payment.countDocuments(), 1);
+  assert.equal((await Flight.findOne()).status, "booked");
+  const fetcher = require("../src/api/fetcher"), previous = fetcher.fetcher_tiqwa;
+  fetcher.fetcher_tiqwa = async () => ({ status: 200, data: { reference: "foreign", status: "issued", passengers: ["private"] } });
+  try {
+    const mismatch = await flightReconciliation(await Flight.findOne());
+    assert.equal(mismatch.provider_status, "mismatch"); assert.equal(JSON.stringify(mismatch).includes("private"), false);
+  } finally { fetcher.fetcher_tiqwa = previous; }
+});
+
+test("HTTP: only an authenticated admin can reconcile a verified flight payment; retries cannot double-record or issue tickets", async () => {
+  await seedFlight();
+  const APIToken = require("../src/models/app-core/APIToken");
+  await APIToken.create({ firm: "site", api_key: "test-public", action_by: "test-admin" });
+  const admin = await challengeAdmin(); const owner = String(admin._id);
+  await Session.create({ owner, key: "reconcile-admin", value: jwt.sign({ id: owner, auth_version: 0 }, process.env.JWT_ADMIN_SECRET_KEY, { expiresIn: "1h" }) });
+  const { createApp } = require("../server/createApp");
+  const server = createApp().listen(0, "127.0.0.1");
+  await new Promise(resolve => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api/v1/admin-app/booking-management/flight`;
+  const headers = { firm: "site", api_key: "test-public", "Content-Type": "application/json" };
+  const body = JSON.stringify({ transaction_reference: "payment-1", amount: 1, status: "paid" });
+  try {
+    assert.equal((await fetch(`${base}/reconciliation/TW-example`, { headers })).status, 401);
+    assert.equal((await fetch(`${base}/reconcile-payment/TW-example`, { method: "POST", headers, body })).status, 401);
+    headers["a-x-key"] = "reconcile-admin";
+    for (let i = 0; i < 2; i++) assert.equal((await fetch(`${base}/reconcile-payment/TW-example`, { method: "POST", headers, body })).status, 200);
+    const result = await fetch(`${base}/reconciliation/TW-example`, { headers });
+    assert.equal(result.status, 200); assert.equal((await result.json()).data.payment_verification, "verified");
+    assert.equal(await Payment.countDocuments(), 1); assert.equal(await Receipt.countDocuments(), 1);
+    assert.equal(await TicketAttempt.countDocuments(), 0); assert.equal(providerCalls, 0);
+    await Flight.create(flightData());
+    assert.equal((await fetch(`${base}/reconciliation/TW-example`, { headers })).status, 409);
+    assert.equal((await fetch(`${base}/reconcile-payment/TW-example`, { method: "POST", headers, body })).status, 409);
+    assert.equal(await Payment.countDocuments(), 1);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test("real replica set: ticket issuance requires a provider-verified payment before any Tiqwa call", async () => {
+  const { issueFlightTicket } = require("../src/services/issue-flight-ticket");
+  await seedFlight(); const provider = ticketProvider();
+  try {
+    await assert.rejects(issueFlightTicket(issueInput), error => error.status === 409);
+    await Flight.updateOne({}, { $set: { payment_status: "paid" } });
+    await assert.rejects(issueFlightTicket(issueInput), error => error.status === 409);
+    assert.equal(provider.calls, 0); assert.equal(provider.reads, 0);
+    assert.equal(await TicketAttempt.countDocuments(), 0);
+  } finally { provider.restore(); }
+});
+
+test("real replica set: concurrent issuance and replay submit at most one provider pay request", async () => {
+  const { issueFlightTicket } = require("../src/services/issue-flight-ticket");
+  await paidFlight(); const provider = ticketProvider();
+  try {
+    const results = await Promise.allSettled([issueFlightTicket(issueInput), issueFlightTicket(issueInput)]);
+    assert.ok(results.some(result => result.status === "fulfilled"));
+    assert.equal(provider.calls, 1);
+    assert.equal((await Flight.findOne()).status, "issued");
+    assert.equal((await TicketAttempt.findOne()).state, "completed");
+    assert.equal((await issueFlightTicket(issueInput)).replay, true);
+    assert.equal(provider.calls, 1);
+  } finally { provider.restore(); }
+});
+
+test("real replica set: ticket pay timeout is reconciled by reads and never re-sent", async () => {
+  const { issueFlightTicket } = require("../src/services/issue-flight-ticket");
+  await paidFlight(); const provider = ticketProvider({ timeout: true });
+  try {
+    await assert.rejects(issueFlightTicket(issueInput));
+    await assert.rejects(issueFlightTicket(issueInput), error => error.status === 409);
+    assert.equal(provider.calls, 1); assert.equal((await Flight.findOne()).status, "booked");
+    provider.issued();
+    await issueFlightTicket(issueInput);
+    assert.equal(provider.calls, 1); assert.equal((await Flight.findOne()).status, "issued");
+  } finally { provider.restore(); }
+});
+
+test("real replica set: successful pay acknowledgement alone does not imply an issued ticket", async () => {
+  const { issueFlightTicket } = require("../src/services/issue-flight-ticket");
+  await paidFlight(); const provider = ticketProvider({ pending: true });
+  try {
+    await assert.rejects(issueFlightTicket(issueInput), error => error.status === 409);
+    assert.equal(provider.calls, 1); assert.equal((await Flight.findOne()).status, "booked");
+    assert.equal((await TicketAttempt.findOne()).state, "pay_started");
+  } finally { provider.restore(); }
+});
+
+test("real replica set: local ticket persistence failure recovers without another provider payment", async () => {
+  const { issueFlightTicket } = require("../src/services/issue-flight-ticket");
+  await paidFlight(); const provider = ticketProvider();
+  const update = Flight.findOneAndUpdate;
+  Flight.findOneAndUpdate = async () => { throw new Error("Local booking write unavailable"); };
+  try { await assert.rejects(issueFlightTicket(issueInput)); } finally { Flight.findOneAndUpdate = update; }
+  try {
+    assert.equal((await TicketAttempt.findOne()).state, "provider_confirmed");
+    await issueFlightTicket(issueInput);
+    assert.equal(provider.calls, 1); assert.equal((await Flight.findOne()).status, "issued");
+  } finally { provider.restore(); }
+});
+
+test("HTTP: public API keys cannot use legacy admin flight aliases; cancellation cannot falsely change local status", async () => {
+  await paidFlight();
+  const APIToken = require("../src/models/app-core/APIToken");
+  await APIToken.create({ firm: "site", api_key: "test-public", action_by: "test-admin" });
+  const admin = await challengeAdmin(); const owner = String(admin._id);
+  await Session.create({ owner, key: "flight-admin", value: jwt.sign({ id: owner, auth_version: 0 }, process.env.JWT_ADMIN_SECRET_KEY, { expiresIn: "1h" }) });
+  const { createApp } = require("../server/createApp");
+  const server = createApp().listen(0, "127.0.0.1");
+  await new Promise(resolve => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api/v1/admin-app/booking-management`;
+  const headers = { firm: "site", api_key: "test-public" };
+  try {
+    for (const [method, path] of [["GET", "all-bookings"], ["GET", "ticket-details/TW-example"],
+      ["GET", "booking-payment-details/TW-example"], ["POST", "issue-ticket/TW-example"], ["POST", "cancel-ticket/TW-example"]]) {
+      assert.equal((await fetch(`${base}/flight-tp/${path}`, { method, headers })).status, 401);
+    }
+    const activeHeaders = { ...headers, "a-x-key": "flight-admin" };
+    assert.equal((await fetch(`${base}/flight/booking-payment-details/TW-example`, { headers: activeHeaders })).status, 200);
+    const result = await fetch(`${base}/flight/cancel-ticket/TW-example`, { method: "POST", headers: activeHeaders });
+    assert.equal(result.status, 409); assert.equal((await Flight.findOne()).status, "booked");
+    assert.equal(await TicketAttempt.countDocuments(), 0);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test("admin controllers: a password check is required to start a challenge; user ID and forged body flags cannot resend", async () => {
+  const controller = require("../src/controllers/admin/admin-auth-controller");
+  const admin = await challengeAdmin();
+  const denied = controllerResponse(); let bypass = false;
+  await controller.generateAdminLoginToken({ body: { userId: String(admin._id), adminPasswordVerifiedId: String(admin._id) } }, denied, () => { bypass = true; });
+  assert.equal(denied.statusCode, 401); assert.equal(bypass, false); assert.equal(await AdminLoginToken.countDocuments(), 0);
+  const req = { body: { existingAdmin: admin, password: "correct-password" } };
+  let checked = false;
+  await controller.loginAdminAttempt(req, controllerResponse(), () => { checked = true; });
+  assert.equal(checked, true);
+  await controller.generateAdminLoginToken(req, controllerResponse(), () => {});
+  assert.equal(typeof req.body.login_challenge, "string"); assert.equal(req.body.user.password, undefined);
+  const { login_challenge, otp } = req.body;
+  const missing = controllerResponse();
+  await controller.verifyLoginAttempt({ body: { userId: String(admin._id), otp } }, missing, () => { bypass = true; });
+  assert.equal(missing.statusCode, 401); assert.equal(bypass, false);
+  const verified = { body: { userId: String(admin._id), otp, login_challenge } };
+  let accepted = false;
+  await controller.verifyLoginAttempt(verified, controllerResponse(), () => { accepted = true; });
+  assert.equal(accepted, true); assert.equal(verified.body.admin.password, undefined);
+  const response = controllerResponse();
+  await controller.logAdminIn(verified, response, () => {});
+  const claims = jwt.verify(verified.body.token, process.env.JWT_ADMIN_SECRET_KEY);
+  assert.equal(claims.auth_version, 0); assert.ok(response.headers["a-x-key"]);
+  assert.equal(await Session.countDocuments(), 1);
+});
+
+test("real replica set: resends require the original challenge and do not extend its deadline or cross accounts", async () => {
+  const { startAdminChallenge, resendAdminChallenge, consumeAdminChallenge } = require("../src/services/admin-login-challenge");
+  const admin = await challengeAdmin();
+  const challenge = await startAdminChallenge(admin);
+  const before = await AdminLoginToken.findById(challenge.login_challenge.split(".")[0]);
+  await assert.rejects(resendAdminChallenge(admin, undefined), error => error.status === 401);
+  const other = await Admin.create({ first_name: "Other", last_name: "Admin", email: "other@example.test", email_verified: true, password: "different-password" });
+  await assert.rejects(consumeAdminChallenge(other, challenge.login_challenge, challenge.otp), error => error.status === 401);
+  const resent = await resendAdminChallenge(admin, challenge.login_challenge);
+  const after = await AdminLoginToken.findById(before._id);
+  assert.equal(after.expires_at.getTime(), before.expires_at.getTime());
+  assert.equal(resent.login_challenge, challenge.login_challenge);
+  await assert.rejects(consumeAdminChallenge(admin, challenge.login_challenge, "0000"), error => error.status === 401);
+  await consumeAdminChallenge(admin, resent.login_challenge, resent.otp);
+  await assert.rejects(resendAdminChallenge(admin, challenge.login_challenge), error => error.status === 401);
+});
+
+test("real replica set: pending login challenges are bound to current admin credentials", async () => {
+  const { startAdminChallenge, consumeAdminChallenge } = require("../src/services/admin-login-challenge");
+  const admin = await challengeAdmin();
+  const challenge = await startAdminChallenge(admin);
+  await Admin.updateOne({ _id: admin._id }, { $set: { password: "changed-credential-hash" } });
+  await assert.rejects(consumeAdminChallenge(await Admin.findById(admin._id), challenge.login_challenge, challenge.otp), error => error.status === 401);
+  assert.equal(await AdminLoginToken.countDocuments(), 1);
+});
+
+test("real replica set: admin password reset is one-use and revokes sessions and pending login challenges", async () => {
+  const { resetAdminCredential } = require("../src/services/admin-credentials");
+  const admin = await challengeAdmin(); const owner = String(admin._id);
+  const oldJwt = jwt.sign({ id: owner, auth_version: 0 }, process.env.JWT_ADMIN_SECRET_KEY, { expiresIn: "1h" });
+  await Session.create({ owner, key: "before-reset", value: oldJwt });
+  await require("../src/services/admin-login-challenge").startAdminChallenge(admin);
+  await AdminReset.create({ owner: admin._id, token: "reset-once" });
+  const hash = require("bcryptjs").hashSync("new-password", 4);
+  const results = await Promise.allSettled([resetAdminCredential(admin._id, "reset-once", hash), resetAdminCredential(admin._id, "reset-once", hash)]);
+  assert.equal(results.filter(result => result.status === "fulfilled").length, 1);
+  assert.equal(results.find(result => result.status === "rejected").reason.status, 401);
+  assert.equal((await Admin.findById(owner)).auth_version, 1);
+  assert.equal(await AdminReset.countDocuments(), 0); assert.equal(await Session.countDocuments(), 0);
+  assert.equal(await AdminLoginToken.countDocuments(), 0);
+  // Even a restored legacy session record cannot authorize a superseded JWT.
+  await Session.create({ owner, key: "stale-restored", value: oldJwt });
+  const { createApp } = require("../server/createApp");
+  const server = createApp().listen(0, "127.0.0.1");
+  await new Promise(resolve => server.once("listening", resolve));
+  try {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/api/v1/admin-app/admin-auth/check-session`, { headers: { "a-x-key": "stale-restored" } });
+    assert.equal(response.status, 401);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test("real replica set: failed admin reset rolls back the credential, version, token claim and session revocation", async () => {
+  const { resetAdminCredential } = require("../src/services/admin-credentials");
+  const admin = await challengeAdmin(); const owner = String(admin._id);
+  await Session.create({ owner, key: "keep-session", value: "existing-token" });
+  await AdminReset.create({ owner: admin._id, token: "reset-rollback" });
+  const remove = AdminLoginToken.deleteMany;
+  AdminLoginToken.deleteMany = async () => { throw new Error("Challenge storage unavailable"); };
+  try { await assert.rejects(resetAdminCredential(admin._id, "reset-rollback", "new-password-hash")); } finally { AdminLoginToken.deleteMany = remove; }
+  const saved = await Admin.findById(owner);
+  assert.equal(saved.password, admin.password); assert.equal(saved.auth_version, 0);
+  assert.equal(await AdminReset.countDocuments(), 1); assert.equal(await Session.countDocuments(), 1);
+});
+
+test("HTTP: admin password updates ignore caller versions and immediately invalidate the old session", async () => {
+  const admin = await challengeAdmin(); const owner = String(admin._id);
+  await Session.create({ owner, key: "profile-session", value: jwt.sign({ id: owner, auth_version: 0 }, process.env.JWT_ADMIN_SECRET_KEY, { expiresIn: "1h" }) });
+  const { createApp } = require("../server/createApp");
+  const server = createApp().listen(0, "127.0.0.1");
+  await new Promise(resolve => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api/v1/admin-app`;
+  const headers = { "a-x-key": "profile-session", "Content-Type": "application/json" };
+  try {
+    const response = await fetch(`${base}/admin-management/update-admin-profile/${owner}`, {
+      method: "PUT", headers, body: JSON.stringify({ password: "updated-password", auth_version: 0 }),
+    });
+    assert.equal(response.status, 200); assert.equal((await response.json()).data.password, undefined);
+    const saved = await Admin.findById(owner);
+    assert.equal(saved.auth_version, 1); assert.equal(require("bcryptjs").compareSync("updated-password", saved.password), true);
+    assert.equal((await fetch(`${base}/admin-auth/get-admin`, { headers })).status, 401);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test("real replica set: blocked users and mismatched session owners cannot read flight tickets by session", async () => {
+  const { canReadBooking } = require("../src/services/booking-access");
+  const user = await User.create({ first_name: "First", last_name: "Last", email: "owner@example.test", password: "test-password", status: "Blocked" });
+  const identity = String(user._id);
+  await Session.create({ owner: identity, key: "blocked-owner", value: jwt.sign({ id: identity }, process.env.JWT_USER_SECRET_KEY, { expiresIn: "1h" }) });
+  assert.equal(await canReadBooking({ headers: { "u-x-key": "blocked-owner" } }, flightData()), false);
+  await User.updateOne({ _id: user._id }, { $set: { status: "Active" } });
+  assert.equal(await canReadBooking({ headers: { "u-x-key": "blocked-owner" } }, flightData()), true);
+  await Session.updateOne({ key: "blocked-owner" }, { $set: { owner: "different-owner" } });
+  assert.equal(await canReadBooking({ headers: { "u-x-key": "blocked-owner" } }, flightData()), false);
+});
 
 test("real replica set: invalid withdrawals and foreign bank accounts cannot change balances", async () => {
   const { requestHostWithdrawal } = require("../src/services/request-host-withdrawal");

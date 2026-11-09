@@ -255,6 +255,7 @@ const loginVerificationEmail = async (req, res) => {
       success: true,
       message: `Login verification code sent to your email - ${email}`,
       adminId: user._id,
+      login_challenge: req.body.login_challenge,
     });
   } catch (error) {
     console.error("OTP email failed:", error.message || error);

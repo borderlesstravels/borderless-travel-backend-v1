@@ -308,3 +308,24 @@ test("authentication throttling fails closed without exposing database errors", 
   });
   await assert.rejects(service.consumeAuthAttempt("login", "account", 10, 900), error => error.status === 503 && !error.message.includes("database"));
 });
+
+test("payment verification refuses fractional kobo and rounded-to-zero stored amounts", () => {
+  for (const price of [0.001, 0.004, 10.001, 123.456]) {
+    assert.throws(() => integrity.validateTransaction({ ...good(), amount: Math.round(price * 100) }, { ...booking, price }, "payment-1"), error => error.status === 409);
+  }
+  assert.equal(integrity.minorUnits(0.01), 1);
+  assert.equal(integrity.minorUnits(19.99), 1999);
+});
+
+test("ticket reads encode references and refuse a mismatched provider booking", async () => {
+  let path;
+  const controller = load("src/controllers/website/flight-controller.js", {
+    "../../api/fetcher": { fetcher_tiqwa: async url => { path = url; return { status: 200, data: { reference: "other", passengers: ["private"] } }; } },
+    "../../services/booking-access": { findReadableFlight: async () => ({}) },
+    "../../utils/helpers": { verifyAPIToken: async () => true, sendError: (res, error, status) => res.status(status).json({ error }) },
+  });
+  const res = response();
+  await controller.fetchFlightTicketDetails({ headers: { firm: "site", api_key: "key" }, params: { booking_reference: "REF/../other" } }, res);
+  assert.equal(path, "/flight/REF%2F..%2Fother");
+  assert.equal(res.statusCode, 502); assert.equal(res.body.passengers, undefined);
+});

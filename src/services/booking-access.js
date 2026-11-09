@@ -28,9 +28,10 @@ async function canReadBooking(req, booking) {
   if (req.headers["u-x-key"]) {
     const session = await getSessionToken(String(req.headers["u-x-key"]));
     const identity = {};
-    if (session && await verifyLoginSession(session.value, process.env.JWT_USER_SECRET_KEY, identity)) {
-      const user = await User.findById(identity.id).select("email");
-      if (user && user.email === booking.owner) return true;
+    if (session && await verifyLoginSession(session.value, process.env.JWT_USER_SECRET_KEY, identity) &&
+        String(session.owner) === String(identity.id)) {
+      const user = await User.findById(identity.id).select("email status");
+      if (user && String(user.status).toLowerCase() !== "blocked" && user.email === booking.owner) return true;
     }
   }
   return false;

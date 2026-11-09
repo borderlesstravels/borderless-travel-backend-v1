@@ -157,7 +157,7 @@ const confirmFlightPrice = async (req, res) => {
   if (!(await verifyAPIToken(res, firm, api_key))) return;
 
   const { flight_id } = req.params;
-  const response = await fetcher_tiqwa(`/flight/confirm_price/${flight_id}`);
+  const response = await fetcher_tiqwa(`/flight/confirm_price/${encodeURIComponent(flight_id)}`);
   if (!response) {
     return sendError(
       res,
@@ -339,9 +339,12 @@ const fetchFlightTicketDetails = async (req, res) => {
   if (!(await findReadableFlight(req, booking_reference))) {
     return sendError(res, "Booking not found", 404);
   }
-  const response = await fetcher_tiqwa(`/flight/${booking_reference}`);
+  const response = await fetcher_tiqwa(`/flight/${encodeURIComponent(booking_reference)}`);
   if (!response) return sendError(res, "Ticket details are temporarily unavailable", 502);
   if (response?.status === 200) {
+    if (response.data?.reference !== booking_reference) {
+      return sendError(res, "Ticket details could not be verified", 502);
+    }
     return res
       .status(response.status)
       .json({ success: true, data: response.data });

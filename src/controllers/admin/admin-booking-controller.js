@@ -17,205 +17,99 @@ const TransferBooking = require("../../models/general/TransferBooking");
 // Flight
 //
 const allFlightBookings = async (req, res) => {
+  if (!req.id) return sendError(res, "Admin authentication required", 401);
   const { firm, api_key } = req.headers;
   if (!(await verifyAPIToken(res, firm, api_key))) return;
-  try {
-    const flightBookings = await FlightBooking.find({ firm }).limit(
-      req.query.limit,
-    );
-    if (!flightBookings) {
-      return sendError(res, "Flight bookings not available at this time.");
-    } else {
-      return sendSuccess(
-        res,
-        "Successfully fetched all flight bookings",
-        flightBookings,
-      );
-    }
-  } catch (error) {
-    return sendError(res, "Cannot fetch flight bookings");
-  }
+  const bookings = await FlightBooking.find({ firm }).select("-api_key").limit(Math.min(100, Math.max(1, Number(req.query.limit) || 50)));
+  return sendSuccess(res, "Successfully fetched flight bookings", bookings);
 };
 
 const singleFlightBooking = async (req, res) => {
+  if (!req.id) return sendError(res, "Admin authentication required", 401);
   const { firm, api_key } = req.headers;
   if (!(await verifyAPIToken(res, firm, api_key))) return;
-  try {
-    const flightBooking = await FlightBooking.findById(req.params.id);
-    if (!flightBooking) {
-      return sendSuccess(res, "No flight booking record found");
-    }
-    if (flightBooking.api_key !== api_key)
-      return sendError(
-        res,
-        "Unauthorised! You are not authorised to perform this request",
-      );
-    return sendSuccess(res, "Successfully fetched booking", flightBooking);
-  } catch (error) {
-    return sendError(res, "Cannot fetch flight bookings");
-  }
+  const booking = await FlightBooking.findOne({ _id: req.params.id, firm }).select("-api_key");
+  if (!booking) return sendError(res, "Booking not found", 404);
+  return sendSuccess(res, "Successfully fetched flight booking", booking);
 };
 
-const fetchTicketDetails = async (req, res) => {
-  const { booking_reference } = req.params;
+async function adminFlight(req, res) {
+  if (!req.id) { sendError(res, "Admin authentication required", 401); return null; }
   const { firm, api_key } = req.headers;
-  if (!(await verifyAPIToken(res, firm, api_key))) return;
+  if (!(await verifyAPIToken(res, firm, api_key))) return null;
+  const reference = req.params.booking_reference;
+  if (typeof reference !== "string" || !reference || reference.length > 200) { sendError(res, "Invalid booking reference", 400); return null; }
+  const bookings = await FlightBooking.find({ firm, booking_reference: reference }).limit(2);
+  if (!bookings.length) { sendError(res, "Booking not found", 404); return null; }
+  if (bookings.length !== 1) { sendError(res, "Duplicate booking records require reconciliation", 409); return null; }
+  return bookings[0];
+}
 
-  const booking = await FlightBooking.findOne({ booking_reference });
-  if (!booking)
-    return sendError(
-      res,
-      "Invalid booking reference provided. Booking doesn't exist",
-    );
-  if (booking.api_key !== api_key)
-    return sendError(
-      res,
-      "Unauthorised! You are not authorised to perform this request",
-    );
-
-  const response = await fetcher_tiqwa(`/flight/${booking_reference}`);
-  if (!response) {
-    return sendError(
-      res,
-      "Unable to complete this request at this time. Please try again.",
-    );
-  }
-  if (response?.status === 200) {
-    return res
-      .status(response.status)
-      .json({ success: true, data: response.data });
-  } else {
-    return sendError(res, response?.data.message, response?.status);
-  }
+const fetchTicketDetails = async (req, res) => {
+  const booking = await adminFlight(req, res);
+  if (!booking) return;
+  const response = await fetcher_tiqwa(`/flight/${encodeURIComponent(booking.booking_reference)}`);
+  if (response?.status !== 200 || response.data?.reference !== booking.booking_reference) return sendError(res, "Unable to verify ticket details", 502);
+  return sendSuccess(res, "Successfully fetched ticket details", response.data);
 };
 
 const issueFlightTicket = async (req, res, next) => {
-  const adminId = req.id;
-  const { booking_reference } = req.params;
-
-  const { firm, api_key } = req.headers;
-  if (!(await verifyAPIToken(res, firm, api_key))) return;
-  const booking = await FlightBooking.findOne({ booking_reference });
-  if (!booking)
-    return sendError(
-      res,
-      "Invalid booking reference provided. Booking doesn't exist",
-    );
-  if (booking.api_key !== api_key)
-    return sendError(
-      res,
-      "Unauthorised! You are not authorised to perform this request",
-    );
-
-  const response = await sender_tiqwa(`/flight/pay/${booking_reference}`);
-  if (!response) {
-    return sendError(
-      res,
-      "Unable to complete this request at this time. Please try again.",
-    );
-  } else {
-    if (response?.status === 200) {
-      try {
-        booking.status = "issued";
-        booking.action_by = adminId ? adminId : api_key;
-        await booking.save();
-
-        const date = dateFormatter(booking?.departure_time);
-        const time = timeFormatter(booking?.departure_time);
-        req.body = {
-          first_name: booking.client_name.split(" ")[0],
-          email: booking.client_email,
-          booking_reference,
-          flight: booking.airline,
-          destination: booking.destination,
-          route: `${booking.origin} - ${booking.destination}`,
-          date,
-          time,
-        };
-
-        next();
-      } catch (error) {
-        console.log("Issue ticket action error: ", error);
-        return sendError(
-          res,
-          "Ticket issued successfully. But the system could not update the booking record with new status",
-          204,
-        );
-      }
-    } else {
-      return sendError(res, response?.data.message, response?.status);
+  const booking = await adminFlight(req, res);
+  if (!booking) return;
+  try {
+    const result = await require("../../services/issue-flight-ticket").issueFlightTicket({
+      firm: booking.firm, reference: booking.booking_reference, admin: req.id,
+    });
+    if (result.replay || req.path.startsWith("/flight-tp/")) {
+      return sendSuccess(res, "Ticket issuance confirmed", { booking_reference: booking.booking_reference, status: result.booking.status });
     }
+    const current = result.booking;
+    req.body = { first_name: current.contact_details?.c_first_name, email: current.contact_details?.c_email,
+      booking_reference: current.booking_reference, flight: current.airline, destination: current.destination,
+      route: `${current.origin} - ${current.destination}`, date: dateFormatter(current.departure_time), time: timeFormatter(current.departure_time) };
+    return next();
+  } catch (error) {
+    return sendError(res, error.status ? error.message : "Ticket issuance requires reconciliation before retrying", error.status || 503);
   }
 };
 
-const cancelFlightTicket = async (req, res, next) => {
-  const { booking_reference } = req.params;
-  const adminId = req.id;
-
-  const { firm, api_key } = req.headers;
-  if (!(await verifyAPIToken(res, firm, api_key))) return;
-  const booking = await FlightBooking.findOne({ booking_reference });
-
-  if (!booking)
-    return sendError(
-      res,
-      "Invalid booking reference provided. Booking doesn't exist",
-    );
-  if (booking.api_key !== api_key)
-    return sendError(
-      res,
-      "Unauthorised! You are not authorised to perform this request",
-    );
-
-  try {
-    const booking = await FlightBooking.findOne({ booking_reference });
-    booking.status = "canceled";
-    booking.action_by = adminId ? adminId : api_key;
-    await booking.save();
-
-    const date = dateFormatter(booking?.departure_time);
-    req.body = {
-      first_name: booking.client_name.split(" ")[0],
-      email: booking.client_email,
-      booking_reference,
-      route: `${booking.origin} - ${booking.destination}`,
-      date,
-    };
-
-    next();
-  } catch (error) {
-    console.log("Cancel ticket action error: ", error);
-    return sendError(
-      res,
-      "Ticket canceled successfully. But the system could not update the booking record with new status",
-      204,
-    );
-  }
+const cancelFlightTicket = async (req, res) => {
+  if (!(await adminFlight(req, res))) return;
+  // The old handler only changed a local flag; it never cancelled the provider
+  // reservation. Do not send a false cancellation email or imply a refund.
+  return sendError(res, "Cancellation requires provider confirmation and refund review. Contact support; no cancellation has been submitted.", 409);
 };
 
 const fetchBookingPayemnt = async (req, res) => {
-  const { booking_reference } = req.params;
-  try {
-    const bookingPayment = await Payment.findOne({
-      booking_reference: booking_reference,
-    });
-    if (!bookingPayment) {
-      return sendError(res, "Payment has not been made for this booking");
-    }
-    return sendSuccess(
-      res,
-      "Successfully fetched the booking payment details",
-      bookingPayment,
-    );
-  } catch (error) {
-    console.log(error);
-    return sendError(res, `Unable to fetch payment details. Error - ${error}`);
-  }
+  const booking = await adminFlight(req, res);
+  if (!booking) return;
+  const payment = await Payment.findOne({ booking_reference: booking.booking_reference, service_name: "flight" });
+  if (!payment) return sendError(res, "Payment not found", 404);
+  return sendSuccess(res, "Successfully fetched payment details", payment);
 };
 
-//
-// Stays
-//
+const fetchFlightReconciliation = async (req, res) => {
+  const booking = await adminFlight(req, res);
+  if (!booking) return;
+  const report = await require("../../services/flight-reconciliation").flightReconciliation(booking);
+  return sendSuccess(res, "Flight reconciliation report", report);
+};
+
+const reconcileFlightPayment = async (req, res) => {
+  const booking = await adminFlight(req, res);
+  if (!booking) return;
+  try {
+    const result = await require("../../services/record-payment").recordPayment({ service: "flight", firm: booking.firm,
+      bookingReference: booking.booking_reference, transactionReference: req.body.transaction_reference });
+    // Only record a verified payment. This endpoint never issues a ticket,
+    // creates a provider reservation, cancels a flight or initiates a refund.
+    return sendSuccess(res, result.replay ? "Payment already recorded" : "Verified payment recorded", {
+      booking_reference: booking.booking_reference, payment_status: result.booking.payment_status, replay: result.replay,
+    });
+  } catch (error) {
+    return sendError(res, error.status ? error.message : "Payment reconciliation unavailable", error.status || 503);
+  }
+};
 const allShortletBookings = async (req, res) => {
   const { firm, api_key } = req.headers;
   if (!(await verifyAPIToken(res, firm, api_key))) return;
@@ -337,6 +231,8 @@ module.exports = {
   issueFlightTicket,
   cancelFlightTicket,
   fetchBookingPayemnt,
+  fetchFlightReconciliation,
+  reconcileFlightPayment,
 
   allShortletBookings,
   singleShortletBooking,

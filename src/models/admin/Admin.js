@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const adminSchema = new Schema({
+  auth_version: { type: Number, default: 0 },
   first_name: {
     type: String,
     required: true,
