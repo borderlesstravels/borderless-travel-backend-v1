@@ -237,3 +237,74 @@ test("Paystack modern signatures enforce timestamp, rotation, and prevent legacy
   const legacy = crypto.createHmac("sha512", "legacy").update(raw).digest("hex");
   assert.equal(verifyPaystackSignature(raw, { "x-paystack-signature": legacy }, { PAYSTACK_WEBHOOK_SECRET: "new", PAYSTACK_SECRET: "legacy" }, time), false);
 });
+
+test("transfer gateway uses only fixed Paystack URLs, bounded requests, and no credential redirects", async () => {
+  const calls = [];
+  const gateway = load("src/services/paystack-transfers.js", { axios: {
+    post: async (url, body, options) => { calls.push({ url, body, options }); return { status: 200, data: { status: true, data: { recipient_code: "RCP_test" } } }; },
+    get: async (url, options) => { calls.push({ url, options }); return { status: 200, data: { status: true, data: { status: "pending" } } }; },
+  } });
+  await gateway.createRecipient({ account_number: "example" });
+  await gateway.initiateTransfer({ amount: 10000, reference: "withdrawal_example" });
+  await gateway.verifyTransfer("reference/../other");
+  assert.equal(calls[0].url, "https://api.paystack.co/transferrecipient");
+  assert.equal(calls[1].url, "https://api.paystack.co/transfer");
+  assert.equal(calls[2].url, "https://api.paystack.co/transfer/verify/reference%2F..%2Fother");
+  for (const call of calls) {
+    assert.equal(call.options.timeout, 15000); assert.equal(call.options.maxRedirects, 0);
+    assert.equal(call.options.headers.Authorization, "Bearer test-secret");
+  }
+});
+
+test("transfer gateway never retries an uncertain POST or returns raw upstream failures", async () => {
+  let calls = 0;
+  const gateway = load("src/services/paystack-transfers.js", { axios: {
+    post: async () => { calls++; throw new Error("upstream credential and banking details"); },
+  } });
+  await assert.rejects(gateway.initiateTransfer({}), error => error.status === 502 && !error.message.includes("banking"));
+  assert.equal(calls, 1);
+});
+
+const { shortletQuote } = require("../src/services/shortlet-quote");
+const quotedProperty = { status: "available", single: 1, single_price: "1234.50", suites: 1, suites_price: "2000" };
+const quoteBody = { check_in_date: "2026-12-12", check_out_date: "2026-12-14", price: 1234.5 };
+test("shortlet totals use stored room rates and preserve the current client's matching quote", () => {
+  const result = shortletQuote(quotedProperty, quoteBody, new Date("2026-11-08"));
+  assert.equal(result.price, 2469); assert.equal(result.difference_in_days, 2);
+  const selected = shortletQuote(quotedProperty, { ...quoteBody, room_type: "suites", price: 1 }, new Date("2026-11-08"));
+  assert.equal(selected.price, 4000);
+});
+test("shortlet quote refuses client underpricing, invalid dates, unavailable rooms and unsafe stored prices", () => {
+  const now = new Date("2026-11-08");
+  for (const change of [{ price: 1 }, { check_out_date: "2026-12-12" }, { check_out_date: "2026-12-11" },
+    { check_in_date: "2026-02-30" }, { check_in_date: "2026-01-01" }, { check_out_date: "invalid" },
+    { room_type: "nonexistent" }]) assert.throws(() => shortletQuote(quotedProperty, { ...quoteBody, ...change }, now));
+  assert.throws(() => shortletQuote({ ...quotedProperty, status: "unavailable" }, quoteBody, now));
+  assert.throws(() => shortletQuote({ ...quotedProperty, single_price: "1234.567" }, { ...quoteBody, room_type: "single" }, now));
+});
+
+test("new administrators no longer receive the predictable name-based password", async () => {
+  const passwords = [];
+  class Admin {
+    constructor(data) { passwords.push(data.password); this._id = "new-admin"; }
+    async save() {}
+  }
+  const controller = load("src/controllers/admin/admin-admin-controller.js", {
+    "../../models/admin/Admin": Admin, bcryptjs: { hashSync: value => value },
+  });
+  for (let i = 0; i < 2; i++) {
+    let next = false;
+    const req = { body: { first_name: "First", last_name: "Last", email: "admin@example.test" } };
+    await controller.addAdmin(req, response(), () => { next = true; });
+    assert.equal(next, true); assert.equal(req.body.userId, "new-admin");
+  }
+  assert.notEqual(passwords[0], "firstpass"); assert.notEqual(passwords[0], passwords[1]);
+  assert.ok(passwords.every(password => password.length >= 40));
+});
+
+test("authentication throttling fails closed without exposing database errors", async () => {
+  const service = load("src/services/auth-rate-limit.js", {
+    "../models/general/AuthRateBucket": { findOneAndUpdate: async () => { throw new Error("private database connection"); } },
+  });
+  await assert.rejects(service.consumeAuthAttempt("login", "account", 10, 900), error => error.status === 503 && !error.message.includes("database"));
+});

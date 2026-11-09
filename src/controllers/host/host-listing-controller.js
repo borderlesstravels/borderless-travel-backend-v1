@@ -28,8 +28,6 @@ const hostAddProperty = async (req, res) => {
 
     req.body.images = images;
     req.body.owner = req.id;
-    console.log("req body", req.body);
-    console.log("images", images);
 
     const host = await Host.findById(req.id);
     if (!host) {
@@ -38,7 +36,7 @@ const hostAddProperty = async (req, res) => {
         "Unauthorised. Host account cannot ben found. Kindly try again."
       );
     }
-    hostPropCount = host.properties;
+    const hostPropCount = host.properties;
     host.properties = Number(hostPropCount + 1);
     const markup = await Markup.findOne({ service_name: "stay" });
     if (markup) {
@@ -63,95 +61,60 @@ const hostAddProperty = async (req, res) => {
         req.body.executive_price = Number(price) + Number(commission_amount);
       }
     }
-    const property = new ShortLet(req.body);
+    const { listingFields } = require("../../services/listing-fields");
+    const property = new ShortLet({ ...listingFields(req.body), owner: req.id, images, status: "available" });
     await property.save();
     await host.save();
-    console.log("property", property);
     return sendSuccess(
       res,
       `Successfully added a new listing - ${req.body.apartment_name}`,
       property
     );
   } catch (error) {
-    console.log(error);
     return sendError(res, "Unable to add a new listing");
   }
 };
 
 const hostEditProperty = async (req, res) => {
-  // let new_images = [];
-  let current_images = req.body.current_images;
-  if (req.files?.length) {
-    let new_images = await uploadMultipleImages(
-      req,
-      res,
-      "Apartment images are missing!"
-    );
-    console.log("new_images", new_images);
-    if (new_images) {
-      let images = current_images.concat(new_images);
-      req.body.images = images;
-    } else {
-      req.body.images = req.body.images;
-    }
-  }
-  console.log("req body", req.body);
-  let commission_amount = 0;
-
   try {
-    const selectedProperty = await ShortLet.findById(req.params.id);
-    console.log("selectedProperty", selectedProperty);
-    if (selectedProperty.owner != req.id) {
-      return sendError(
-        res,
-        "You are not authenticated to modify this property"
-      );
-    }
-
+    const selected = await ShortLet.findOne({ _id: req.params.id, owner: req.id });
+    if (!selected) return sendError(res, "Listing not found", 404);
+    const { listingFields } = require("../../services/listing-fields");
+    const changes = listingFields(req.body);
     const markup = await Markup.findOne({ service_name: "stay" });
-    if (markup) {
-      const commission_percent = markup.commission;
-
-      if (Number(req.body.single_price) > 0) {
-        const price = req.body.single_price;
-        const commission_amount =
-          (Number(commission_percent) / 100) * Number(price);
-        req.body.single_price = Number(price) + Number(commission_amount);
-      }
-      if (Number(req.body.suites_price) > 0) {
-        const price = req.body.suites_price;
-        const commission_amount =
-          (Number(commission_percent) / 100) * Number(price);
-        req.body.suites_price = Number(price) + Number(commission_amount);
-      }
-      if (Number(req.body.executive_price) > 0) {
-        const price = req.body.executive_price;
-        const commission_amount =
-          (Number(commission_percent) / 100) * Number(price);
-        req.body.executive_price = Number(price) + Number(commission_amount);
+    for (const key of ["single_price", "suites_price", "executive_price", "double_chambers_price"]) {
+      if (Object.hasOwn(changes, key)) {
+        const price = Number(changes[key]);
+        if (!Number.isFinite(price) || price < 0) return sendError(res, "Invalid listing price", 400);
+        changes[key] = price + price * Number(markup?.commission || 0) / 100;
       }
     }
-
-    const property = await ShortLet.findByIdAndUpdate(
-      req.params.id,
-      { $set: req.body },
-      { new: true }
-    );
-    return sendSuccess(
-      res,
-      `Successfully updated the listing - ${req.body.apartment_name}`,
-      property
-    );
-  } catch (error) {
-    console.log(error);
-    return sendError(res, "Unable to update the listing data");
+    let retained = req.body.current_images;
+    if (typeof retained === "string") {
+      try { retained = JSON.parse(retained); } catch { return sendError(res, "Invalid images", 400); }
+    }
+    if (retained !== undefined) {
+      if (!Array.isArray(retained)) return sendError(res, "Invalid images", 400);
+      changes.images = selected.images.filter(image => retained.some(item =>
+        typeof item?.url === "string" && item.url === image.url && item.public_id === image.public_id));
+    }
+    if (req.files?.length) {
+      const uploaded = await uploadMultipleImages(req, res, "Apartment images are missing!");
+      if (!uploaded) return;
+      changes.images = [...(changes.images || selected.images), ...uploaded];
+    }
+    const property = await ShortLet.findOneAndUpdate({ _id: req.params.id, owner: req.id },
+      { $set: changes }, { new: true, runValidators: true });
+    if (!property) return sendError(res, "Listing not found", 404);
+    return sendSuccess(res, "Successfully updated the listing", property);
+  } catch {
+    return sendError(res, "Unable to update the listing data", 400);
   }
 };
-
 const hostGetHostProperties = async (req, res) => {
   const userId = req.id;
   try {
-    const properties = await ShortLet.find();
+    const properties = await ShortLet.find({ owner: userId });
     if (!properties.length) {
       return sendSuccess(res, "No listings record yet");
     }
@@ -161,7 +124,6 @@ const hostGetHostProperties = async (req, res) => {
     }
     return sendSuccess(res, "Successfully fetched data", hostProperties);
   } catch (error) {
-    console.log("error", error);
     return sendError(res, "Cannot fetch host's listings", 500);
   }
 };
@@ -169,7 +131,7 @@ const hostGetHostProperties = async (req, res) => {
 const hostGetHostAvailableProperties = async (req, res) => {
   const userId = req.id;
   try {
-    const properties = await ShortLet.find({ status: "available" });
+    const properties = await ShortLet.find({ owner: userId, status: "available" });
     if (!properties.length) {
       return sendSuccess(res, "No listings record yet");
     }
@@ -179,7 +141,6 @@ const hostGetHostAvailableProperties = async (req, res) => {
     }
     return sendSuccess(res, "Successfully fetched data", hostProperties);
   } catch (error) {
-    console.log("error", error);
     return sendError(res, "Cannot fetch host's listings", 500);
   }
 };
@@ -187,7 +148,7 @@ const hostGetHostAvailableProperties = async (req, res) => {
 const hostGetHostUnavailableProperties = async (req, res) => {
   const userId = req.id;
   try {
-    const properties = await ShortLet.find({ status: "unavailable" });
+    const properties = await ShortLet.find({ owner: userId, status: "unavailable" });
     if (!properties.length) {
       return sendSuccess(res, "No listings record yet");
     }
@@ -197,16 +158,15 @@ const hostGetHostUnavailableProperties = async (req, res) => {
     }
     return sendSuccess(res, "Successfully fetched data", hostProperties);
   } catch (error) {
-    console.log("error", error);
     return sendError(res, "Cannot fetch host's listings", 500);
   }
 };
 
 const hostMarkListingAsAvailable = async (req, res, next) => {
   try {
-    const listing = await ShortLet.findById(req.params.id);
+    const listing = await ShortLet.findOne({ _id: req.params.id, owner: req.id });
     if (!listing) {
-      return sendError(res, "Could not verify property existence");
+      return sendError(res, "Listing not found", 404);
     }
     listing.status = "available";
     await listing.save();
@@ -221,9 +181,9 @@ const hostMarkListingAsAvailable = async (req, res, next) => {
 };
 const hostMarkListingAsUnavailable = async (req, res, next) => {
   try {
-    const listing = await ShortLet.findById(req.params.id);
+    const listing = await ShortLet.findOne({ _id: req.params.id, owner: req.id });
     if (!listing) {
-      return sendError(res, "Could not verify property existence");
+      return sendError(res, "Listing not found", 404);
     }
     listing.status = "unavailable";
     await listing.save();
@@ -239,12 +199,9 @@ const hostMarkListingAsUnavailable = async (req, res, next) => {
 
 const hostFetchSingleProperty = async (req, res) => {
   try {
-    const shortlet = await ShortLet.findById(req.params.id);
+    const shortlet = await ShortLet.findOne({ _id: req.params.id, owner: req.id });
     if (!shortlet) {
-      return sendSuccess(
-        res,
-        "No such shortlet apartment exists or no longer exists"
-      );
+      return sendError(res, "Listing not found", 404);
     }
     return sendSuccess(
       res,
@@ -252,7 +209,6 @@ const hostFetchSingleProperty = async (req, res) => {
       shortlet
     );
   } catch (error) {
-    console.log(error);
     return sendError(res, "Unable to fetch the requested shortlet apartment");
   }
 };
@@ -271,7 +227,6 @@ const hostDeleteProperty = async (req, res) => {
       status: "pending",
       payment_status: "paid",
     });
-    console.log("shortletBooking", shortletBooking);
     if (shortletBooking.length > 0) {
       return sendError(
         res,
@@ -281,126 +236,37 @@ const hostDeleteProperty = async (req, res) => {
     await ShortLet.findByIdAndDelete(req.params.id);
     return sendSuccess(res, "Successfully deleted the listing data");
   } catch (error) {
-    console.log(error);
     return sendError(res, "Unable to delete the listing data");
   }
 };
 
 const hostApproveShortletBooking = async (req, res, next) => {
   try {
-    const apartmentBooking = await ShortletBooking.findOne({
-      _id: req.params.id,
-    });
-    console.log({ apartmentBooking });
-
-    if (!apartmentBooking) {
-      return sendError(res, "Such apartment post cannot be found!");
-    }
-
-    if (apartmentBooking.apartment_owner !== req.id) {
-      return sendError(res, "Apartment is not owned by you!");
-    }
-    if (apartmentBooking.status === "confirmed") {
-      return sendError(
-        res,
-        "Apartment's availability had already been confirmed!"
-      );
-    }
-
-    apartmentBooking.status = "confirmed";
-
-    const user = await User.findOne({ email: apartmentBooking.owner });
-    if (!user) {
-      return sendError(res, "Sorry, booking request owner not found");
-    }
-
-    const newNot = new Notification({
-      owner: apartmentBooking.owner,
-      type: "booking",
-      title: `Reservation for ${apartmentBooking.apartment_name} confirmed`,
-      description: `Your reservation for a shortlet apartment; ${apartmentBooking.apartment_name} in ${apartmentBooking.address}, ${apartmentBooking.lga} has been successfully confirmed. Property is verified to be available. Please <a href="${process.env.USER_APP_URL}/stay-booking/${apartmentBooking.booking_reference}"> proceed to make payment</a>`,
-    });
-
-    await apartmentBooking.save();
-    await newNot.save();
-    const check_in_date = dateFormatter(apartmentBooking.check_in_date);
-    const check_out_date = dateFormatter(apartmentBooking.check_out_date);
-
-    req.body = {
-      email: user.email,
-      first_name: user.first_name,
-      apartment_name: apartmentBooking.apartment_name,
-      location: `${apartmentBooking.apartment_address}, ${apartmentBooking.apartment_city}, ${apartmentBooking.apartment_country}`,
-      price: apartmentBooking.price,
-      date: `${check_in_date} - ${check_out_date}`,
-    };
-    next();
+    const { reviewHostBooking } = require("../../services/review-host-booking");
+    const { booking, user } = await reviewHostBooking(req.params.id, req.id, "confirmed");
+    req.body = { email: user.email, first_name: user.first_name, apartment_name: booking.apartment_name,
+      location: `${booking.apartment_address}, ${booking.apartment_city}, ${booking.apartment_country}`,
+      price: booking.price, date: `${dateFormatter(booking.check_in_date)} - ${dateFormatter(booking.check_out_date)}` };
+    return next();
   } catch (error) {
-    console.log(error);
-    return sendError(
-      res,
-      "Unable to complete your request. Something went wrong"
-    );
+    return sendError(res, error.status ? error.message : "Unable to review booking", error.status || 503);
   }
 };
 
-const hostDeclineShortletBooking = async (req, res, next) => {
+const hostDeclineShortletBooking = async (req, res) => {
   try {
-    const apartmentBooking = await ShortletBooking.findOne({
-      _id: req.params.id,
-    });
-    if (apartmentBooking.apartment_owner !== req.id)
-      return sendError(res, "Apartment is not owned by you!");
-    if (apartmentBooking.status === "declined") {
-      return sendError(
-        res,
-        "Apartment's unavailability had already been confirmed!"
-      );
-    }
-    if (apartmentBooking.status === "confirmed") {
-      return sendError(
-        res,
-        "Apartment already confirmed to be available. Contact support for action."
-      );
-    }
-    if (!apartmentBooking) {
-      return sendError(res, "Such apartment post cannot be found!");
-    }
-
-    apartmentBooking.status = "declined";
-
-    const user = await User.findOne({ email: apartmentBooking.owner });
-    if (!user) {
-      return sendError(res, "Sorry, booking request owner not found");
-    }
-
-    await apartmentBooking.save();
-
-    await saveNotification(
-      apartmentBooking.owner,
-      "booking",
-      `Apartment ${apartmentBooking.apartment_name} is unavailable`,
-      `Your reservation for a shortlet apartment; ${apartmentBooking.apartment_name} in ${apartmentBooking.address}, ${apartmentBooking.lga} cannot continue due to unavailability. Please check for another apartment. Thank you for your understanding.`,
-      user
-    );
-    return sendSuccess(
-      res,
-      "Successfully verified apartment's unavailability"
-    );
+    const { reviewHostBooking } = require("../../services/review-host-booking");
+    await reviewHostBooking(req.params.id, req.id, "declined");
+    return sendSuccess(res, "Successfully declined the reservation");
   } catch (error) {
-    console.log(error);
-    return sendError(
-      res,
-      "Unable to complete your request. Something went wrong"
-    );
+    return sendError(res, error.status ? error.message : "Unable to review booking", error.status || 503);
   }
 };
-
 // fetchShortletBookings
 const hostFetchShortletBookings = async (req, res) => {
   const userId = req.id;
   try {
-    let bookings = await ShortletBooking.find();
+    let bookings = await ShortletBooking.find({ apartment_owner: userId }).select("-api_key -firm");
     bookings = bookings.filter((book) => book.apartment_owner == userId);
 
     const pendingBookings = bookings.filter(
@@ -425,16 +291,15 @@ const hostFetchShortletBookings = async (req, res) => {
       }
     );
   } catch (error) {
-    console.log(error);
     return sendError(res, "Unable to fetch the requested shortlet apartment");
   }
 };
 
 const hostFetchSingleShortletBooking = async (req, res) => {
   try {
-    const shortletBooking = await ShortletBooking.findById(req.params.id);
+    const shortletBooking = await ShortletBooking.findOne({ _id: req.params.id, apartment_owner: req.id }).select("-api_key -firm");
     if (!shortletBooking) {
-      return sendSuccess(res, "No shortlet booking record found");
+      return sendError(res, "Booking not found", 404);
     }
     return sendSuccess(res, "Successfully fetched booking", shortletBooking);
   } catch (error) {

@@ -185,7 +185,8 @@ const verifyLoginAttempt = async (req, res, next) => {
   const admin = await Admin.findById(userId, "-password");
   if (!admin) return sendError(res, "Sorry, admin not found");
 
-  const vToken = await AdminLoginToken.findOne({ owner: admin._id });
+  const vToken = await AdminLoginToken.findOne({ owner: admin._id,
+    createdAt: { $gt: new Date(Date.now() - 3600000) } });
   if (!vToken) return sendError(res, "Sorry, verification token not found");
   const token = vToken.token;
 
@@ -194,7 +195,9 @@ const verifyLoginAttempt = async (req, res, next) => {
     return sendError(res, "Please provide a valid token");
   }
 
-  await AdminLoginToken.findByIdAndDelete(vToken._id);
+  const consumed = await AdminLoginToken.findOneAndDelete({ _id: vToken._id, token: vToken.token,
+    createdAt: { $gt: new Date(Date.now() - 3600000) } });
+  if (!consumed) return sendError(res, "Login token has expired or already been used", 401);
   console.log("admin login verified");
   req.body = { admin };
   next();
@@ -255,6 +258,9 @@ const verifyAdminLoginToken = async (req, res, next) => {
         if (!checkSession) {
           return sendError(res, "Invalid Token");
         } else {
+          if (String(req.id) !== String(sessionToken.owner) || !(await Admin.exists({ _id: sessionToken.owner }))) {
+            return sendError(res, "Unauthorised", 401);
+          }
           req.id = sessionToken.owner;
           next();
         }

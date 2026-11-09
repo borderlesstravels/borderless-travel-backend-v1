@@ -10,6 +10,11 @@ const hostWithdrawalSchema = new Schema({
   transaction_id: {
     type: String,
   },
+  funds_reserved: { type: Boolean, default: false },
+  transfer_reference: String,
+  recipient_code: String,
+  transfer_started_at: Date,
+  rejection_reason: String,
   amount: {
     type: Double,
     required: true,

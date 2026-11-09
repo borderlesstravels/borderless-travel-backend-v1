@@ -17,8 +17,8 @@ const updateUserProfile = async (req, res) => {
     const savedUserProfile = await User.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
-      { new: true }
-    );
+      { new: true, runValidators: true }
+    ).select("-password");
     return res.status(200).json({
       success: true,
       message: "Successfully updated the user profile",
@@ -137,7 +137,7 @@ const deleteUser = async (req, res) => {
 
 const fetchAllUsers = async (req, res) => {
   try {
-    const users = await User.find()
+    const users = await User.find().select("-password")
       .limit(req.query.limit)
       .sort({ _id: "desc" })
       .limit(req.query.limit);
@@ -150,7 +150,7 @@ const fetchAllUsers = async (req, res) => {
 const fetchSingleUser = async (req, res) => {
   const { id } = req.params;
   try {
-    const user = await User.findById(id);
+    const user = await User.findById(id).select("-password");
     if (!user) {
       return sendError(res, "User profile does not exist");
     }

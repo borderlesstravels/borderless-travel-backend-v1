@@ -13,8 +13,9 @@ const AdminRole = require("../../models/app-core/AdminRole");
 const addAdmin = async (req, res, next) => {
   const { first_name, last_name, email, phone, role, username } = req.body;
 
-  const password = `${first_name.toLowerCase().toString()}pass`;
-  log("password:", password);
+  // No predictable starter password. New administrators use the existing
+  // verified-email password reset flow to set their own password.
+  const password = require("crypto").randomBytes(32).toString("base64url");
 
   const hashedPassword = bcrypt.hashSync(password);
   const admin = new Admin({
@@ -90,8 +91,8 @@ const updateAdminProfile = async (req, res) => {
     const savedAdminProfile = await Admin.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
-      { new: true }
-    );
+      { new: true, runValidators: true }
+    ).select("-password");
     return res.status(200).json({
       success: true,
       message: "Successfully updated the admin profile",
@@ -113,7 +114,7 @@ const setProfileAvatar = async (req, res) => {
   try {
     const savedAdminProfile = await Admin.findByIdAndUpdate(req.params.id, {
       avatar: avatar,
-    });
+    }).select("-password");
     return sendSuccess(
       res,
       "Successfully updated the profile avatar",
@@ -140,7 +141,7 @@ const deleteAdmin = async (req, res) => {
 
 const fetchAllAdmins = async (req, res, next) => {
   try {
-    const admins = await Admin.find().limit(req.query.limit);
+    const admins = await Admin.find().select("-password").limit(req.query.limit);
     return res.status(200).json({ success: true, data: admins });
   } catch (error) {
     console.log(error);

@@ -26,7 +26,7 @@ async function requestHostWithdrawal(owner, amount, bankDetails) {
       const balance = await Balance.findOneAndUpdate({ owner, available_balance: { $gte: amount } },
         { $inc: { available_balance: -amount } }, { new: true, session });
       if (!balance) throw new PaymentError("Insufficient available balance", 409);
-      [withdrawal] = await Withdrawal.create([{ owner, amount,
+      [withdrawal] = await Withdrawal.create([{ owner, amount, funds_reserved: true,
         bank_details: { account_name: account.account_name, account_number: account.account_number, bank_data: account.bank_data },
       }], { session });
     });

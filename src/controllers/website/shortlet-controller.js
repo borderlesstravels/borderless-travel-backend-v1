@@ -113,6 +113,7 @@ const bookStayAUth = async (req, res, next) => {
   const { apartment_id } = req.params;
   const { firm, api_key } = req.headers;
   const userId = req.id;
+  if (!(await verifyAPIToken(res, firm, api_key))) return;
 
   const user = await User.findById(userId, "-password");
   if (!user) return sendError(res, "Sorry, please login first");
@@ -129,11 +130,10 @@ const bookStayAUth = async (req, res, next) => {
   if (!host) return sendError(res, "Apartment does not belong to anyone");
   const hostGuestsCount = host.guests;
 
-  let check_in_date = new Date(req.body.check_in_date);
-  let check_out_date = new Date(req.body.check_out_date);
-  let difference_in_time = check_out_date.getTime() - check_in_date.getTime();
-  let difference_in_days = Math.round(difference_in_time / (1000 * 3600 * 24));
-  let price = Number(req.body.price) * Number(difference_in_days);
+  let quote;
+  try { quote = require("../../services/shortlet-quote").shortletQuote(apartment, req.body); }
+  catch (error) { return sendError(res, error.status ? error.message : "Unable to price booking", error.status || 503); }
+  const { check_in_date, check_out_date, difference_in_days, price } = quote;
 
   try {
     const newBooking = new ShortletBooking({
@@ -232,11 +232,10 @@ const bookStayThirdParty = async (req, res, next) => {
   const host = await Host.findById(apartment.owner);
   if (!host) return sendError(res, "Apartment does not belong to anyone");
 
-  let check_in_date = new Date(req.body.check_in_date);
-  let check_out_date = new Date(req.body.check_out_date);
-  let difference_in_time = check_out_date.getTime() - check_in_date.getTime();
-  let difference_in_days = Math.round(difference_in_time / (1000 * 3600 * 24));
-  let price = Number(req.body.price) * Number(difference_in_days);
+  let quote;
+  try { quote = require("../../services/shortlet-quote").shortletQuote(apartment, req.body); }
+  catch (error) { return sendError(res, error.status ? error.message : "Unable to price booking", error.status || 503); }
+  const { check_in_date, check_out_date, difference_in_days, price } = quote;
 
   try {
     const newBooking = new ShortletBooking({
@@ -249,7 +248,7 @@ const bookStayThirdParty = async (req, res, next) => {
       apartment_city: apartment.lga,
       apartment_state: apartment.state,
       apartment_country: apartment.country,
-      apartment_img: apartment.images.split(", ")[0].toString(),
+      apartment_img: apartment.images[0],
       apartment_owner: apartment.owner,
       name: `${req.body.first_name} ${req.body.last_name}`,
       email: req.body.email,
@@ -259,6 +258,7 @@ const bookStayThirdParty = async (req, res, next) => {
       check_in_time: req.body.check_in_time ? req.body.check_in_time : "",
       gps_location: req.body.gps_location ? req.body.gps_location : "",
       price,
+      number_of_days: difference_in_days,
       booking_reference,
     });
     await newBooking.save();
