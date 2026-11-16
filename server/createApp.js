@@ -93,6 +93,12 @@ function createApp() {
 
   app.use(requestIp.mw());
   app.use(cookieParser());
+  // Bounded raw bytes must be captured before JSON parsing for GoTrip HMAC.
+  app.use("/api/v1/credit/webhook", express.json({ limit: "256kb", inflate: false, verify(req, res, buffer) { req.rawBody = buffer; } }));
+  app.use("/api/v1/credit/webhook", (error, req, res, next) => {
+    if (!error) return next();
+    return res.status(error.status === 413 ? 413 : 400).json({ error: "Invalid webhook body" });
+  });
   app.use(express.json({ limit: "10mb", verify(req, res, buffer) {
     if (req.path === "/api/v1/website/paystack-webhook") req.rawBody = buffer;
   } }));
@@ -102,6 +108,7 @@ function createApp() {
   app.use("/email-templates", express.static("public/email-templates"));
 
   app.use("/api/v1/user-auth", userAuthRouter);
+  app.use("/api/v1/credit", require("../src/routes/website/credit-routes"));
   app.use("/api/v1/host-auth", hostAuthRouter);
   app.use("/api/v1/user-profile", userProfileRouter);
   app.use("/api/v1/host-app/profile", hostProfileRouter);

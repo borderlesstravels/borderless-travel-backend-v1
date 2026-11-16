@@ -3,6 +3,7 @@ const Double = require("@mongoosejs/double");
 const Schema = mongoose.Schema;
 
 const flightBookingSchema = new Schema({
+  source_offer_id: String,
   owner: {
     type: String,
     required: true,
@@ -93,4 +94,6 @@ const flightBookingSchema = new Schema({
   },
 });
 
-module.exports = mongoose.models.FlightBooking || mongoose.model("FlightBooking", flightBookingSchema);
+module.exports =
+  mongoose.models.FlightBooking ||
+  mongoose.model("FlightBooking", flightBookingSchema);

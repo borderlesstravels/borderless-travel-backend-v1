@@ -6,7 +6,14 @@ const schema = new mongoose.Schema({
   _id: String,
   booking_reference: { type: String, required: true },
   service: { type: String, required: true },
+  funding_source: {
+    type: String,
+    enum: ["paystack", "gotrip"],
+    default: "paystack",
+  },
+  credit_allocation: String,
   created_at: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.models.PaymentReceipt || mongoose.model("PaymentReceipt", schema);
+module.exports =
+  mongoose.models.PaymentReceipt || mongoose.model("PaymentReceipt", schema);
