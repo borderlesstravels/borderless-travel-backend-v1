@@ -88,7 +88,6 @@ const shortletBookingSchema = new Schema({
     type: String,
     default: "pending",
   },
-  currency: { type: String, default: "NGN" },
   booking_reference: {
     type: String,
     required: true,

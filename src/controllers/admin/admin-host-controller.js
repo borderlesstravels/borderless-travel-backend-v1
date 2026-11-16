@@ -10,10 +10,13 @@ const ShortLet = require("../../models/host/ShortLet");
 const Review = require("../../models/general/Review");
 const ShortletBooking = require("../../models/general/ShortletBooking");
 const HostWithdrawal = require("../../models/host/HostWithdrawal");
-
-
-
-
+const HostBalance = require("../../models/host/HostBalance");
+const Notification = require("../../models/general/Notification");
+const { sender_paystack } = require("../../api/sender");
+const {
+  createPaystackRecipient,
+  createPaystackTransfer,
+} = require("../../api");
 
 const updateHostProfile = async (req, res) => {
   if (req.body.password) {
@@ -23,8 +26,8 @@ const updateHostProfile = async (req, res) => {
     const savedHostProfile = await Host.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
-      { new: true, runValidators: true }
-    ).select("-password");
+      { new: true }
+    );
     return sendSuccess(
       res,
       "Successfully updated the host profile",
@@ -105,7 +108,7 @@ const fetchAllHosts = async (req, res) => {
   try {
     const hosts = await Host.find({
       ...others,
-    }).select("-password")
+    })
       .sort({ _id: "desc" })
       .limit(req.query.limit);
     return sendSuccess(res, "Hosts fetched", hosts);
@@ -117,7 +120,7 @@ const fetchAllHosts = async (req, res) => {
 const fetchSingleHost = async (req, res, next) => {
   const { id } = req.params;
   try {
-    const host = await Host.findById(id).select("-password");
+    const host = await Host.findById(id);
     if (!host) {
       return sendError(res, "Host profile does not exist");
     }
@@ -190,24 +193,106 @@ const getWithdrawalRequests = async (req, res) => {
 };
 
 const rejectWithdrawalRequest = async (req, res) => {
+  const adminId = req.id;
+  const { reason } = req.body;
   try {
-    const { rejectHostWithdrawal } = require("../../services/review-host-withdrawal");
-    const request = await rejectHostWithdrawal(req.params.id, req.id, req.body.reason);
-    return sendSuccess(res, "Action is successful!", request);
+    if (!reason) {
+      return sendError(res, "Why is the request being rejected? Kindly state");
+    }
+    const request = await HostWithdrawal.findById(req.params.id);
+    if (request.status === "rejected") {
+      return sendError(res, "Request is already rejected");
+    }
+    request.status = "rejected";
+    request.action_by = adminId;
+    // Return amount back to host earning balance
+
+    const hostBalAcc = await HostBalance.findOne({ owner: request.owner });
+    if (!hostBalAcc) {
+      return sendError(res, "Unable to verify balance");
+    } else {
+      const hostAvailableBal = hostBalAcc.available_balance;
+      hostBalAcc.available_balance = hostAvailableBal + request.amount;
+      await hostBalAcc.save();
+      await request.save();
+
+      const notifyUser = new Notification({
+        owner: request.owner,
+        type: "booking",
+        title: `Your withdrawal request of ${request.amount} was rejected`,
+        description: `Your withdrawal request of ${
+          request.amount
+        } made on ${dateFormatter(
+          request.created_at
+        )} has been declined. Reason: ${reason}`,
+      });
+      await notifyUser.save();
+      return sendSuccess(res, "Action is successful!", request);
+    }
   } catch (error) {
-    return sendError(res, error.status ? error.message : "Unable to review withdrawal", error.status || 503);
+    console.log("error", error);
+    return sendError(res, "Cannot fetch withdrawal requests", 501);
   }
 };
 
 const completeWithdrawalRequest = async (req, res) => {
+  const adminId = req.id;
+  const { transaction_id } = req.body;
   try {
-    const { approveHostWithdrawal } = require("../../services/review-host-withdrawal");
-    const request = await approveHostWithdrawal(req.params.id, req.id);
-    return sendSuccess(res, request.status === "completed" ? "Transfer confirmed successful" : "Transfer is awaiting provider confirmation", request);
+    const request = await HostWithdrawal.findById(req.params.id);
+    if (!request) {
+      return sendError(res, "Withdrawal request does not exist. Check again");
+    }
+    if (request.status === "completed") {
+      return sendError(res, "Request is already completed");
+    }
+    const requestData = {
+      type: "nuban",
+      name: request.bank_details.account_name,
+      account_number: request.bank_details.account_number,
+      bank_code: request.bank_details.bank_data?.code,
+      currency: "NGN",
+    };
+    const payStackRecipient = await createPaystackRecipient(requestData);
+    if (!payStackRecipient.status) {
+      return sendError(res, "Unable to initialise transaction. Try again");
+    }
+    console.log("payStackRecipient", payStackRecipient);
+    const transferData = {
+      source: "balance",
+      amount: request.amount,
+      recipient: payStackRecipient?.data?.recipient_code,
+      reason: "Host withdrawal request",
+    };
+
+    const transfer = await createPaystackTransfer(transferData);
+    console.log("transfer", transfer);
+    if (!transfer.status || !transfer?.status?.toString()?.includes("20")) {
+      return sendError(res, transfer?.data?.message);
+    }
+    request.status = "completed";
+    request.action_by = adminId;
+    request.transaction_id = transaction_id;
+
+    const notifyUser = new Notification({
+      owner: request.owner,
+      type: "booking",
+      title: `Your withdrawal request of ${request.amount} was approved`,
+      description: `Your withdrawal request of ${
+        request.amount
+      } made on ${dateFormatter(
+        request.created_at
+      )} has been approved. Kindly check your bank account to see the new balance.`,
+    });
+    await request.save();
+    await notifyUser.save();
+    return sendSuccess(res, "Action is successful!", request);
   } catch (error) {
-    return sendError(res, error.status ? error.message : "Unable to review withdrawal", error.status || 503);
+    console.log("error", error);
+    return sendError(res, "Cannot fetch withdrawal requests", 501);
   }
 };
+
 const getSingleWithdrawalRequest = async (req, res) => {
   try {
     const withdrawalRequest = await HostWithdrawal.findById(req.params.id);

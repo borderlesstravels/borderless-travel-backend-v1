@@ -250,6 +250,7 @@ const loginHost = async (req, res, next) => {
 
 const verifyHostLoginToken = async (req, res, next) => {
   const tokenKey = req.headers["u-x-key"];
+  console.log(tokenKey);
 
   try {
     if (!tokenKey) {

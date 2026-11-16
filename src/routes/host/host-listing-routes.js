@@ -42,10 +42,10 @@ router.get(
   verifyHostLoginToken,
   hostGetHostUnavailableProperties
 );
-router.put("/mark-listing-available/:id", verifyHostLoginToken, hostMarkListingAsAvailable);
-router.put("/mark-listing-unavailable/:id", verifyHostLoginToken, hostMarkListingAsUnavailable);
+router.put("/mark-listing-available/:id", hostMarkListingAsAvailable);
+router.put("/mark-listing-unavailable/:id", hostMarkListingAsUnavailable);
 
-router.get("/listing/:id", verifyHostLoginToken, hostFetchSingleProperty);
+router.get("/listing/:id", hostFetchSingleProperty);
 router.delete("/delete-listing/:id", verifyHostLoginToken, hostDeleteProperty);
 router.put(
   "/update-listing/:id",
@@ -70,6 +70,6 @@ router.get(
   verifyHostLoginToken,
   hostFetchShortletBookings
 );
-router.get("/single-shortlet-booking/:id", verifyHostLoginToken, hostFetchSingleShortletBooking);
+router.get("/single-shortlet-booking/:id", hostFetchSingleShortletBooking);
 
 module.exports = router;

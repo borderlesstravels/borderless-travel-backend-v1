@@ -1,5 +1,4 @@
 const express = require("express");
-const { authLimit } = require("../../middlewares/auth-rate-limit");
 const {
   validateHostSignupParams,
   validate,
@@ -41,19 +40,17 @@ router.post(
 );
 router.post(
   "/resend-verification-otp",
-  authLimit("host-email-send", req => req.body.userId, 5, 900),
   generateHostEmailVerificationToken,
   accountVerificationEmail
 );
-router.post("/verify-email", authLimit("host-email-verify", req => req.body.userId), verifyHostEmail, emailVerifiedEmail);
-router.post("/forgot-password", authLimit("host-reset-send", req => req.body.email, 5, 3600), forgotPasswordHost, resetPasswordEmail);
+router.post("/verify-email", verifyHostEmail, emailVerifiedEmail);
+router.post("/forgot-password", forgotPasswordHost, resetPasswordEmail);
 router.post(
   "/reset-password",
-  authLimit("host-reset-verify", req => req.query.id),
   isHostPasswordResetTokenValid,
   resetPasswordHost,
   passwordUpdatedEmail
 );
-router.post("/login", validateHostLoginType, authLimit("host-login", req => req.body.host?._id), loginHost);
+router.post("/login", validateHostLoginType, loginHost);
 
 module.exports = router;
