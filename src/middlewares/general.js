@@ -17,7 +17,7 @@ const addSessionToken = async (key, value, id) => {
       return true;
     }
   } catch (error) {
-    console.log("session store error:", error);
+    console.error("Session persistence failed", { code: error.code || "SESSION_WRITE_FAILED" });
     return false;
   }
 };
@@ -29,7 +29,7 @@ const getSessionToken = async (key) => {
       return session;
     }
   } catch (error) {
-    console.log("session store error:", error);
+    console.error("Session lookup failed", { code: error.code || "SESSION_READ_FAILED" });
     return false;
   }
 };
@@ -41,25 +41,28 @@ const deleteSessionToken = async (id) => {
       return true;
     }
   } catch (error) {
-    console.log("session store deletion error:", error);
+    console.error("Session deletion failed", { code: error.code || "SESSION_DELETE_FAILED" });
     return false;
   }
 };
 
 const createLoginSession = async (id, secrete) => {
   const sessionId = nanoid();
-  console.log("sessionId", sessionId);
   const token = jwt.sign(id, secrete, {
     expiresIn: "1d",
   });
   const sid = id.id;
-  await addSessionToken(sessionId, token, sid);
+  if (!(await addSessionToken(sessionId, token, sid))) {
+    const error = new Error("Unable to establish session. Please retry.");
+    error.status = 503;
+    throw error;
+  }
   return { sessionId, token, sid };
 };
 
 const verifyLoginSession = async (token, secrete, req) => {
   try {
-    const user = jwt.verify(String(token), secrete);
+    const user = jwt.verify(String(token), secrete, { algorithms: ["HS256"] });
     if (!user?.id) {
       return false;
     }

@@ -1,4 +1,5 @@
 const express = require("express");
+const { authLimit } = require("../../middlewares/auth-rate-limit");
 const { validateAdmin, validate } = require("../../middlewares/validator");
 const { validateNewAdmin } = require("../../middlewares/admin");
 
@@ -36,6 +37,7 @@ router.post(
 );
 router.post(
   "/resend-verification-otp",
+  authLimit("admin-email-send", req => req.body.userId, 5, 900),
   generateAdminEmailVerificationToken,
   accountVerificationEmail
 );

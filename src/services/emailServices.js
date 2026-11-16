@@ -255,6 +255,7 @@ const loginVerificationEmail = async (req, res) => {
       success: true,
       message: `Login verification code sent to your email - ${email}`,
       adminId: user._id,
+      login_challenge: req.body.login_challenge,
     });
   } catch (error) {
     console.error("OTP email failed:", error.message || error);
@@ -338,7 +339,15 @@ const bookingCreatedEmail = async (req, res) => {
   } catch (error) {
     console.error("Booking created email failed:", error.message || error);
   }
-  return sendSuccess(res, responseMessage, { booking_reference, newBooking });
+  const { issueBookingAccess } = require("./booking-access");
+  const safeBooking = newBooking?.toObject ? newBooking.toObject() : { ...newBooking };
+  delete safeBooking.api_key;
+  delete safeBooking.firm;
+  delete safeBooking.action_by;
+  return sendSuccess(res, responseMessage, {
+    booking_reference, newBooking: safeBooking,
+    ...(category === "Flight" && newBooking ? { booking_access_token: issueBookingAccess(newBooking) } : {}),
+  });
 };
 
 const apartmentAvailableEmail = async (req, res) => {

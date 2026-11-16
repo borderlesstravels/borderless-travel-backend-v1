@@ -27,7 +27,6 @@ const verifyEmail = async (req, res, next) => {
   if (!isValidObjectId(userId)) return sendError(res, "Invalid user id");
 
   const admin = await Admin.findById(userId, "-password");
-  console.log(admin);
   if (!admin) return sendError(res, "Sorry, user not found");
 
   if (admin.email_verified)
@@ -94,6 +93,9 @@ const forgotPassword = async (req, res, next) => {
 
 const resetPassword = async (req, res, next) => {
   const { admin, password } = req.body;
+  if (typeof password !== "string" || password.length < 8 || password.length > 20) {
+    return sendError(res, "Password must be between 8 and 20 characters", 400);
+  }
   const isPasswordSame = bcrypt.compareSync(password, admin.password);
   if (isPasswordSame)
     return sendError(
@@ -105,12 +107,15 @@ const resetPassword = async (req, res, next) => {
 
   const hashedPassword = bcrypt.hashSync(password);
 
-  admin.password = hashedPassword;
-  await admin.save();
-  await ResetAdminPasswordToken.findOneAndDelete({ owner: admin._id });
+  let updated;
+  try {
+    updated = await require("../../services/admin-credentials").resetAdminCredential(admin._id, req.query.token, hashedPassword);
+  } catch (error) {
+    return sendError(res, error.status ? error.message : "Unable to reset admin password", error.status || 503);
+  }
 
   req.body = {
-    user: admin,
+    user: updated,
   };
   next();
 };
@@ -118,12 +123,13 @@ const resetPassword = async (req, res, next) => {
 // LOGIN
 const loginAdminAttempt = async (req, res, next) => {
   const { existingAdmin, password } = req.body;
+  if (typeof password !== "string") return sendError(res, "Invalid email or password", 401);
 
   const isPasswordCorrect = bcrypt.compareSync(
     password,
     existingAdmin.password
   );
-  console.log("isPasswordCorrect", isPasswordCorrect);
+
   if (!isPasswordCorrect) {
     return sendError(res, "Invalid email or password");
   }
@@ -134,7 +140,7 @@ const loginAdminAttempt = async (req, res, next) => {
       userId: existingAdmin._id,
     });
   }
-  console.log("Login phase 1 checked");
+  req.adminPasswordVerifiedId = String(existingAdmin._id);
   req.body = {
     userId: existingAdmin._id,
   };
@@ -142,70 +148,40 @@ const loginAdminAttempt = async (req, res, next) => {
 };
 
 const generateAdminLoginToken = async (req, res, next) => {
-  const { userId } = req.body;
-  if (!userId) return sendError(res, "Invalid request. Missing parameters");
-  let existingLoginToken;
-  const admin = await Admin.findById(userId, "-password");
-  if (!admin) {
-    return sendError(res, "Admin account not found", 404);
-  }
   try {
-    existingLoginToken = await AdminLoginToken.findOne({ owner: userId });
-  } catch (err) {
-    console.log(err);
-  }
-  if (existingLoginToken) {
-    await AdminLoginToken.findByIdAndDelete(existingLoginToken._id);
-  }
-  const otp = generateOTP();
-  const hashedOtp = bcrypt.hashSync(otp);
-  const adminLoginToken = new AdminLoginToken({
-    owner: userId,
-    token: hashedOtp,
-  });
-  try {
-    await adminLoginToken.save();
-    console.log("OTP saved", otp);
-    req.body = {
-      user: admin,
-      otp,
-    };
-    next();
+    const { userId, login_challenge } = req.body;
+    if (typeof userId !== "string" && typeof userId?.toHexString !== "function") return sendError(res, "Invalid admin identity", 400);
+    const admin = await Admin.findById(userId);
+    if (!admin) return sendError(res, "Invalid login verification", 401);
+    const { startAdminChallenge, resendAdminChallenge } = require("../../services/admin-login-challenge");
+    const challenge = req.adminPasswordVerifiedId === String(admin._id)
+      ? await startAdminChallenge(admin) : await resendAdminChallenge(admin, login_challenge);
+    const user = admin.toObject(); delete user.password;
+    req.body = { user, ...challenge };
+    return next();
   } catch (error) {
-    console.log(error);
-    return sendError(res, "Unable to send OTP");
+    return sendError(res, error.status ? error.message : "Unable to prepare login verification", error.status || 503);
   }
 };
 
 const verifyLoginAttempt = async (req, res, next) => {
-  const { userId, otp } = req.body;
-
-  if (!userId || !otp)
-    return sendError(res, "Invalid request. Missing parameters");
-  if (!isValidObjectId(userId)) return sendError(res, "Invalid admin id");
-
-  const admin = await Admin.findById(userId, "-password");
-  if (!admin) return sendError(res, "Sorry, admin not found");
-
-  const vToken = await AdminLoginToken.findOne({ owner: admin._id });
-  if (!vToken) return sendError(res, "Sorry, verification token not found");
-  const token = vToken.token;
-
-  const isTokenMatched = bcrypt.compareSync(otp, token);
-  if (!isTokenMatched) {
-    return sendError(res, "Please provide a valid token");
+  try {
+    const { userId, login_challenge, otp } = req.body;
+    if (typeof userId !== "string" || !isValidObjectId(userId)) return sendError(res, "Invalid login verification", 401);
+    const admin = await Admin.findById(userId);
+    if (!admin) return sendError(res, "Invalid login verification", 401);
+    await require("../../services/admin-login-challenge").consumeAdminChallenge(admin, login_challenge, otp);
+    const safeAdmin = admin.toObject(); delete safeAdmin.password;
+    req.body = { admin: safeAdmin };
+    return next();
+  } catch (error) {
+    return sendError(res, error.status ? error.message : "Unable to verify admin login", error.status || 503);
   }
-
-  await AdminLoginToken.findByIdAndDelete(vToken._id);
-  console.log("admin login verified");
-  req.body = { admin };
-  next();
 };
-
 const logAdminIn = async (req, res, next) => {
   const { admin } = req.body;
   const { sessionId, token } = await createLoginSession(
-    { id: admin._id },
+    { id: admin._id, auth_version: admin.auth_version || 0 },
     process.env.JWT_ADMIN_SECRET_KEY
   );
   res.set("a-x-key", sessionId);
@@ -216,7 +192,6 @@ const logAdminIn = async (req, res, next) => {
 
 const isAdminLogin = async (req, res) => {
   const tokenKey = req.headers["a-x-key"];
-  console.log(tokenKey);
   try {
     if (!tokenKey) {
       return sendError(res, "Unauthorised. No headers key");
@@ -238,7 +213,6 @@ const isAdminLogin = async (req, res) => {
 
 const verifyAdminLoginToken = async (req, res, next) => {
   const tokenKey = req.headers["a-x-key"];
-  console.log(tokenKey);
 
   try {
     if (!tokenKey) {
@@ -259,6 +233,12 @@ const verifyAdminLoginToken = async (req, res, next) => {
         if (!checkSession) {
           return sendError(res, "Invalid Token");
         } else {
+          const claims = require("jsonwebtoken").verify(token, process.env.JWT_ADMIN_SECRET_KEY, { algorithms: ["HS256"] });
+          const admin = await Admin.findById(sessionToken.owner).select("auth_version email_verified");
+          if (String(req.id) !== String(sessionToken.owner) || !admin ||
+              !admin.email_verified || claims.auth_version !== admin.auth_version) {
+            return sendError(res, "Unauthorised", 401);
+          }
           req.id = sessionToken.owner;
           next();
         }
@@ -305,7 +285,6 @@ const logoutAdmin = async (req, res) => {
         const deleteData = await SessionStore.findByIdAndDelete(
           sessionToken._id
         );
-        console.log("deleteData", deleteData);
         if (deleteData) {
           return sendSuccess(res, "Successfully logged out");
         }

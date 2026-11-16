@@ -18,8 +18,6 @@ const {
   fetchJobPostings,
   fetchSingleJobPosting,
   services,
-  payForFlight,
-  payForShortlet,
   saveWaitlist,
   fetchWaitlists,
   fetchAllHelpArticles,
@@ -31,12 +29,16 @@ const {
   fetchUsers,
   fetchHosts,
 } = require("../../controllers/website/general-controller");
+const { payForFlight, payForShortlet } = require("../../controllers/website/payment-controller");
+const { paystackWebhook } = require("../../controllers/website/paystack-webhook-controller");
+const { verifyAdminLoginToken } = require("../../controllers/admin/admin-auth-controller");
 const { careerAppDocUpload } = require("../../utils/helpers/files");
 const {
   verifyUserLoginToken,
 } = require("../../controllers/website/user-auth-controller");
 
 const router = express.Router();
+router.post("/paystack-webhook", paystackWebhook);
 
 router.get("/services", services);
 router.post(
@@ -65,9 +67,9 @@ router.post(
   saveWaitlist,
   waitlistSubscribedEMail
 );
-router.get("/fetch-waitlists", fetchWaitlists);
-router.get("/fetch-users", fetchUsers);
-router.get("/fetch-hosts", fetchHosts);
+router.get("/fetch-waitlists", verifyAdminLoginToken, fetchWaitlists);
+router.get("/fetch-users", verifyAdminLoginToken, fetchUsers);
+router.get("/fetch-hosts", verifyAdminLoginToken, fetchHosts);
 
 router.get("/jobs", fetchJobPostings);
 router.get("/single-job/:id", fetchSingleJobPosting);

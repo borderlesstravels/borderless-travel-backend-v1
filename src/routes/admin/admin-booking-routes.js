@@ -10,6 +10,8 @@ const {
   singleFlightBooking,
   fetchTicketDetails,
   fetchBookingPayemnt,
+  fetchFlightReconciliation,
+  reconcileFlightPayment,
   allShortletBookings,
   singleShortletBooking,
   allTransferBookings,
@@ -23,6 +25,9 @@ const {
 } = require("../../services/emailServices");
 
 const router = express.Router();
+
+router.get("/flight/reconciliation/:booking_reference", verifyAdminLoginToken, fetchFlightReconciliation);
+router.post("/flight/reconcile-payment/:booking_reference", verifyAdminLoginToken, reconcileFlightPayment);
 
 router.get("/flight/all-bookings", verifyAdminLoginToken, allFlightBookings);
 router.get(
@@ -54,6 +59,9 @@ router.post(
 );
 
 // Third party apps
+// Legacy aliases are administrative operations, not public-key authorization.
+// Partners use the receipt-scoped website ticket route for customer reads.
+router.use("/flight-tp", verifyAdminLoginToken);
 router.get("/flight-tp/all-bookings", allFlightBookings);
 router.get("/flight-tp/single-booking/:id", singleFlightBooking);
 router.get("/flight-tp/ticket-details/:booking_reference", fetchTicketDetails);

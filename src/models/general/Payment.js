@@ -31,6 +31,7 @@ const paymentSchema = new Schema({
     type: Double,
     required: true,
   },
+  currency: { type: String, default: "NGN" },
   service_amount: {
     type: Double,
     required: true,
