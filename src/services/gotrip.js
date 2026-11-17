@@ -56,12 +56,19 @@ function parseEvent(body, key) {
       : body?.reference,
   );
   const occurredAt = new Date(body?.occurred_at);
+  const loan = body?.data?.loan || body?.data || {};
+  const legacyKey = `${loanReference}:${event}`;
+  const lendsqrKey =
+    body?.data?.loan?.id !== undefined &&
+    body?.data?.loan?.product_id !== undefined
+      ? `product:${body.data.loan.product_id}:${body.data.loan.id}:${event}`
+      : null;
   if (
     !event ||
     !loanReference ||
     !event.startsWith("loan.") ||
     !text(key, 512) ||
-    key !== `${loanReference}:${event}` ||
+    (key !== legacyKey && key !== lendsqrKey) ||
     !body?.occurred_at ||
     !Number.isFinite(occurredAt.getTime())
   )
@@ -76,7 +83,6 @@ function parseEvent(body, key) {
     body?.data?.customer?.email || body?.data?.user?.email,
     254,
   )?.toLowerCase();
-  const loan = body?.data?.loan || body?.data || {};
   const currency = text(loan.currency, 3)?.toUpperCase();
   const providerStatus = text(loan.status, 40)?.toLowerCase();
   const nestedReference = text(loan.reference);
@@ -85,7 +91,7 @@ function parseEvent(body, key) {
     reportedDisbursedMinor = null;
   if (disposition === "application") {
     const statuses = {
-      "loan.created": ["pending", "created"],
+      "loan.created": ["pending", "created", "pending mandate activation"],
       "loan.approved": ["approved"],
       "loan.declined": ["declined", "rejected"],
     };
