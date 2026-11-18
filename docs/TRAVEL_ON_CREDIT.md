@@ -109,3 +109,9 @@ Both final builds passed with lint/type checks (customer: 54 static pages; backe
 ## Staff review and release preparation
 
 The admin workspace now includes Travel on Credit customer matching, confirmed bank review, read-only fare recheck, linked-booking navigation and append-only staff notes. `POST /api/v1/credit/review/notes` requires an admin session, intent ID, approved note category and 10-500 character reason. It does not alter funding, booking or ticket state. `GET /api/v1/credit/review` supports cursor pagination and exact loanReference lookup, includes the linked application history and reports the current financial feature gates. See [the local release runbook](release/TRAVEL_ON_CREDIT_RELEASE.md) for index review, secure configuration, phased activation, operating procedure and rollback. No deployment or live provider test has been performed.
+
+## Temporary raw webhook capture
+
+Raw webhook bodies are not normally retained. For a one-off payload comparison, set `GOTRIP_RAW_CAPTURE_REFERENCE` to the exact loan reference and `GOTRIP_RAW_CAPTURE_KEY` to a randomly generated 32-byte key encoded as base64. The receiver encrypts only matching, signature-verified events with AES-256-GCM and stores them in `creditpayloadarchives` with a 24-hour TTL. Never enable capture without both values. Apply the TTL index from the credit index manifest first.
+
+Retrieve an unexpired capture locally with `npm.cmd run inspect:credit-payload -- <loan-reference> [event]`. The tool asks for the MongoDB URI and capture key with masked terminal input, then requires an explicit `SHOW` confirmation before printing personal data. Do not copy payloads into logs or ordinary chat. Remove both Vercel environment variables and redeploy once the payload has been retrieved. MongoDB TTL cleanup is asynchronous.

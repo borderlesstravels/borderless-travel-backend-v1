@@ -13,7 +13,8 @@
     "lint": "next lint",
     "check:credit-release": "node scripts/check-credit-release.js",
     "credit:index-manifest": "node scripts/credit-index-manifest.js",
-    "inspect:credit-events": "node scripts/inspect-credit-events.js"
+    "inspect:credit-events": "node scripts/inspect-credit-events.js",
+    "inspect:credit-payload": "node scripts/read-credit-payload.js"
   },
   "keywords": [
     "borderless",

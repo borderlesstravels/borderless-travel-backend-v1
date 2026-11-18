@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const Intent = require("../../models/general/CreditIntent");
 const Event = require("../../models/general/CreditEvent");
+const { captureRawPayload } = require("../../services/credit-payload-capture");
 const Link = require("../../models/general/CreditLink");
 const User = require("../../models/user/User");
 const Allocation = require("../../models/general/CreditAllocation");
@@ -74,6 +75,16 @@ router.post("/webhook", async (req, res) => {
     return res.status(400).json({ error: "Invalid event envelope" });
   }
   const payloadHash = hash(req.rawBody);
+  const captureEnabled =
+    process.env.GOTRIP_RAW_CAPTURE_REFERENCE === parsed.loanReference;
+  if (captureEnabled) {
+    try {
+      await withDeadline(captureRawPayload({ parsed, rawBody: req.rawBody }), 2500);
+    } catch {
+      console.error("GoTrip webhook capture failed", { reason: "capture_write_failed" });
+      return res.status(503).json({ error: "Unable to securely capture event; retry delivery" });
+    }
+  }
   try {
     await withDeadline(Event.create({ ...parsed, payloadHash }), 2500);
     console.info("GoTrip webhook accepted", {

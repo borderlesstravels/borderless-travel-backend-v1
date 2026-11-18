@@ -63,6 +63,46 @@
     ]
   },
   {
+    "model": "CreditPayloadArchive",
+    "collection": "creditpayloadarchives",
+    "indexes": [
+      {
+        "keys": {
+          "_id": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "keys": {
+          "captureKey": 1
+        },
+        "options": {
+          "unique": true,
+          "background": true
+        }
+      },
+      {
+        "keys": {
+          "loanReference": 1
+        },
+        "options": {
+          "background": true
+        }
+      },
+      {
+        "keys": {
+          "expiresAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0,
+          "background": true
+        }
+      }
+    ]
+  },
+  {
     "model": "CreditLink",
     "collection": "creditlinks",
     "indexes": [

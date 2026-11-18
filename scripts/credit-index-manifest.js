@@ -2,6 +2,7 @@
 const names = [
   "CreditIntent",
   "CreditEvent",
+  "CreditPayloadArchive",
   "CreditLink",
   "CreditFundingReview",
   "CreditFareReview",
