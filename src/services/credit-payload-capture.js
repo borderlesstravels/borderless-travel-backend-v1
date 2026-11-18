@@ -18,6 +18,11 @@ async function captureRawPayload({ parsed, rawBody }) {
   if (!key || !Buffer.isBuffer(rawBody))
     throw new Error("RAW_CAPTURE_NOT_CONFIGURED");
 
+  await Archive.collection.createIndex(
+    { expiresAt: 1 },
+    { expireAfterSeconds: 0, name: "credit_payload_expiry" },
+  );
+
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
   const ciphertext = Buffer.concat([cipher.update(rawBody), cipher.final()]);
