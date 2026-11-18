@@ -4,13 +4,17 @@
   "description": "Borderless Travels API - Next.js + Express on Vercel",
   "private": true,
   "scripts": {
-    "test": "node --test tests/security.test.js",
-    "test:integration": "node --test tests/transactions.integration.test.js",
+    "test": "node --test tests/security.test.js tests/gotrip.test.js tests/request-deadline.test.js tests/credit-release.test.js",
+    "test:integration": "node --test tests/transactions.integration.test.js tests/gotrip.integration.test.js tests/credit-accounting.integration.test.js",
     "dev": "next dev -p 2023",
     "build": "next build",
     "start": "next start -p 2023",
     "start:express": "node app.js",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check:credit-release": "node scripts/check-credit-release.js",
+    "credit:index-manifest": "node scripts/credit-index-manifest.js",
+    "inspect:credit-events": "node scripts/inspect-credit-events.js",
+    "inspect:credit-payload": "node scripts/read-credit-payload.js"
   },
   "keywords": [
     "borderless",

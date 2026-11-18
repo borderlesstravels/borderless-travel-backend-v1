@@ -1,0 +1,291 @@
+[
+  {
+    "model": "CreditIntent",
+    "collection": "creditintents",
+    "indexes": [
+      {
+        "keys": {
+          "_id": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "keys": {
+          "owner": 1
+        },
+        "options": {
+          "background": true
+        }
+      },
+      {
+        "keys": {
+          "owner": 1,
+          "requestKey": 1
+        },
+        "options": {
+          "unique": true,
+          "background": true
+        }
+      }
+    ]
+  },
+  {
+    "model": "CreditEvent",
+    "collection": "creditevents",
+    "indexes": [
+      {
+        "keys": {
+          "_id": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "keys": {
+          "keyHash": 1
+        },
+        "options": {
+          "unique": true,
+          "background": true
+        }
+      },
+      {
+        "keys": {
+          "loanReference": 1
+        },
+        "options": {
+          "background": true
+        }
+      }
+    ]
+  },
+  {
+    "model": "CreditPayloadArchive",
+    "collection": "creditpayloadarchives",
+    "indexes": [
+      {
+        "keys": {
+          "_id": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "keys": {
+          "captureKey": 1
+        },
+        "options": {
+          "unique": true,
+          "background": true
+        }
+      },
+      {
+        "keys": {
+          "loanReference": 1
+        },
+        "options": {
+          "background": true
+        }
+      },
+      {
+        "keys": {
+          "expiresAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0,
+          "background": true
+        }
+      }
+    ]
+  },
+  {
+    "model": "CreditLink",
+    "collection": "creditlinks",
+    "indexes": [
+      {
+        "keys": {
+          "_id": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "keys": {
+          "intent": 1
+        },
+        "options": {
+          "unique": true,
+          "background": true
+        }
+      },
+      {
+        "keys": {
+          "loanReference": 1
+        },
+        "options": {
+          "unique": true,
+          "background": true
+        }
+      }
+    ]
+  },
+  {
+    "model": "CreditFundingReview",
+    "collection": "creditfundingreviews",
+    "indexes": [
+      {
+        "keys": {
+          "_id": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "keys": {
+          "intent": 1
+        },
+        "options": {
+          "unique": true,
+          "background": true
+        }
+      },
+      {
+        "keys": {
+          "providerReference": 1
+        },
+        "options": {
+          "unique": true,
+          "background": true
+        }
+      },
+      {
+        "keys": {
+          "bankReference": 1
+        },
+        "options": {
+          "unique": true,
+          "background": true
+        }
+      }
+    ]
+  },
+  {
+    "model": "CreditFareReview",
+    "collection": "creditfarereviews",
+    "indexes": [
+      {
+        "keys": {
+          "_id": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "keys": {
+          "intent": 1
+        },
+        "options": {
+          "background": true
+        }
+      }
+    ]
+  },
+  {
+    "model": "CreditAllocation",
+    "collection": "creditallocations",
+    "indexes": [
+      {
+        "keys": {
+          "_id": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "keys": {
+          "intent": 1
+        },
+        "options": {
+          "unique": true,
+          "background": true
+        }
+      },
+      {
+        "keys": {
+          "funding": 1
+        },
+        "options": {
+          "unique": true,
+          "background": true
+        }
+      },
+      {
+        "keys": {
+          "booking": 1
+        },
+        "options": {
+          "unique": true,
+          "background": true
+        }
+      }
+    ]
+  },
+  {
+    "model": "CreditReservation",
+    "collection": "creditreservations",
+    "indexes": [
+      {
+        "keys": {
+          "_id": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ]
+  },
+  {
+    "model": "CreditReviewNote",
+    "collection": "creditreviewnotes",
+    "indexes": [
+      {
+        "keys": {
+          "_id": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "keys": {
+          "intent": 1
+        },
+        "options": {
+          "background": true
+        }
+      }
+    ]
+  },
+  {
+    "model": "PaymentReceipt",
+    "collection": "paymentreceipts",
+    "indexes": [
+      {
+        "keys": {
+          "_id": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ]
+  }
+]

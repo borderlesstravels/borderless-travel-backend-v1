@@ -1,0 +1,14 @@
+node_modules
+.next
+dist
+.git
+.env*
+key
+.vercel
+tests
+docs
+cypress
+e2eMocks.json
+.babelrc.json
+*.log
+*.tsbuildinfo

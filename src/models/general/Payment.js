@@ -3,6 +3,12 @@ const Double = require("@mongoosejs/double");
 const Schema = mongoose.Schema;
 
 const paymentSchema = new Schema({
+  funding_source: {
+    type: String,
+    enum: ["paystack", "gotrip"],
+    default: "paystack",
+  },
+  credit_allocation: String,
   owner: {
     type: String,
     required: true,
@@ -61,4 +67,5 @@ const paymentSchema = new Schema({
   },
 });
 
-module.exports = mongoose.models.Payment || mongoose.model("Payment", paymentSchema);
+module.exports =
+  mongoose.models.Payment || mongoose.model("Payment", paymentSchema);
