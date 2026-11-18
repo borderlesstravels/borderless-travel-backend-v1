@@ -4,6 +4,17 @@ const { hash } = require("./gotrip");
 
 const RETENTION_MS = 24 * 60 * 60 * 1000;
 
+function shouldCapture(parsed, now = Date.now()) {
+  const until = Date.parse(process.env.GOTRIP_RAW_CAPTURE_UNTIL || "");
+  const target = process.env.GOTRIP_RAW_CAPTURE_REFERENCE;
+  return Boolean(
+    target === "*" &&
+    Number.isFinite(until) &&
+    now < until &&
+    parsed?.loanReference,
+  );
+}
+
 function captureKeyFromEnv() {
   const value = process.env.GOTRIP_RAW_CAPTURE_KEY || "";
   const key = Buffer.from(value, "base64");
@@ -12,8 +23,7 @@ function captureKeyFromEnv() {
 }
 
 async function captureRawPayload({ parsed, rawBody }) {
-  const target = process.env.GOTRIP_RAW_CAPTURE_REFERENCE;
-  if (!target || target !== parsed.loanReference) return false;
+  if (!shouldCapture(parsed)) return false;
   const key = captureKeyFromEnv();
   if (!key || !Buffer.isBuffer(rawBody))
     throw new Error("RAW_CAPTURE_NOT_CONFIGURED");
@@ -44,4 +54,4 @@ async function captureRawPayload({ parsed, rawBody }) {
   return true;
 }
 
-module.exports = { captureRawPayload, captureKeyFromEnv };
+module.exports = { captureRawPayload, captureKeyFromEnv, shouldCapture };
